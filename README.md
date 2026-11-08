@@ -10,17 +10,28 @@ que funciona en tu navegador: lleva la cuenta de los episodios que ves, te avisa
 nuevo, te recomienda qué ver y te enseña tus estadísticas. Todo se guarda en tu PC, sin cuentas
 ni nube.
 
-**[⬇ Descargar Miraru para Windows](https://github.com/lucasusamentiaga/anime-tracker/releases/latest/download/Miraru-Setup.exe)**
+<a href="https://apps.microsoft.com/detail/9PJZK97ZG03G"><img src="https://get.microsoft.com/images/es%20dark.svg" alt="Descárgalo de Microsoft Store" width="200"></a>
+
+Gratis, firmada por Microsoft y se actualiza sola. ¿Sin Store? [Descarga el instalador](https://github.com/lucasusamentiaga/anime-tracker/releases/latest/download/Miraru-Setup.exe)
+o la [versión portable](https://github.com/lucasusamentiaga/anime-tracker/releases/latest/download/Miraru-Portable.exe).
+
+> 🇬🇧 **In English:** Miraru is a free anime and manga tracker for Windows. Log the episodes you
+> watch, get alerts for new ones, see your stats and your year in anime, and keep every season of a
+> franchise in order. Everything stays on your PC: no account, no ads. The app is available in
+> English, Spanish, French and German.
+> **[Get it from the Microsoft Store](https://apps.microsoft.com/detail/9PJZK97ZG03G)**.
 
 ## 📸 Capturas
 
-| Biblioteca (oscuro) | Biblioteca (claro) |
-|---|---|
-| ![Biblioteca en modo oscuro](screenshots/dark.png) | ![Biblioteca en modo claro](screenshots/light.png) |
+![Toda tu biblioteca de anime en un solo sitio](screenshots/store-biblioteca.jpg)
 
-| Estadísticas | Calendario semanal |
+| Temporadas ordenadas solas | Estadísticas |
 |---|---|
-| ![Estadísticas](screenshots/stats.png) | ![Calendario semanal](screenshots/calendar.png) |
+| ![Las temporadas de cada saga, ordenadas](screenshots/store-temporadas.jpg) | ![Estadísticas de lo que has visto](screenshots/store-estadisticas.jpg) |
+
+| Tu año en anime | In English |
+|---|---|
+| ![Resumen «Mi año en anime»](screenshots/store-mi-ano.jpg) | ![Miraru in English](screenshots/store-library-en.jpg) |
 
 ## ✨ Qué puedes hacer
 
