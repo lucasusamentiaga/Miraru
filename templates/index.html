@@ -2655,10 +2655,10 @@ function onTipoBusquedaChange() {
       }
     }
     fuenteSel.value = 'anilist';
-    if (inp) inp.placeholder = 'Buscar manga…';
+    if (inp) inp.placeholder = _tr('Buscar manga…');
   } else {
     for (const opt of fuenteSel.options) opt.disabled = false;
-    if (inp) inp.placeholder = 'Buscar anime…';
+    if (inp) inp.placeholder = _tr('Buscar anime…');
   }
 }
 

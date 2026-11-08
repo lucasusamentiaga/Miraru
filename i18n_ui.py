@@ -22,6 +22,17 @@ import re
 LANGS = ("en", "fr", "de")
 
 UI: dict[str, tuple[str, str, str]] = {
+    # ── v2.16.4: botones de la barra y «Mi año en anime» ──────────────────────
+    'Móvil': ('Mobile', 'Mobile', 'Handy'),
+    'Copia': ('Backup', 'Sauvegarde', 'Sicherung'),
+    'Carpeta': ('Folder', 'Dossier', 'Ordner'),
+    'Ajustes': ('Settings', 'Réglages', 'Einstellungen'),
+    'de anime': ('of anime', "d'anime", 'Anime'),
+    'Buscar manga…': ('Search manga…', 'Rechercher un manga…', 'Manga suchen…'),
+    'Buscar anime…': ('Search anime…', 'Rechercher un anime…', 'Anime suchen…'),
+    '1 día': ('1 day', '1 jour', '1 Tag'),
+    'animes distintos': ('different anime', 'anime différents', 'verschiedene Anime'),
+    'Aquí cuenta lo que vas marcando con +1 desde que usas Miraru. Lo que importaste de golpe no tiene fecha, así que no entra: tu año se irá llenando según veas anime.': ("This counts what you mark with +1 since you started using Miraru. Anything you imported in bulk has no date, so it isn't included: your year fills up as you watch.", "Ceci compte ce que tu marques avec +1 depuis que tu utilises Miraru. Ce que tu as importé d'un coup n'a pas de date, donc n'y entre pas : ton année se remplit au fil de tes visionnages.", 'Hier zählt, was du seit Beginn mit Miraru per +1 markierst. Was du auf einmal importiert hast, hat kein Datum und zählt nicht: Dein Jahr füllt sich, während du schaust.'),
     # ── v2.16: recorrido, novedades, menús, estadísticas, móvil ──────────────
     'Trae tu lista y no apuntes a mano': ('Bring your list and stop logging by hand', 'Importe ta liste et arrête de tout noter à la main', 'Hol deine Liste und trag nichts mehr von Hand ein'),
     '¿Tu lista está en AniList? Tráela entera de golpe. ¿Ves anime en AnimeAV1? Con su extensión cada episodio se apunta solo.': ('Is your list on AniList? Bring it all over at once. Watch anime on AnimeAV1? With its extension every episode is logged automatically.', "Ta liste est sur AniList ? Importe-la d'un coup. Tu regardes sur AnimeAV1 ? Avec son extension, chaque épisode est noté tout seul.", 'Ist deine Liste auf AniList? Hol sie auf einmal. Schaust du auf AnimeAV1? Mit der Erweiterung wird jede Folge automatisch eingetragen.'),
@@ -1094,6 +1105,10 @@ UI: dict[str, tuple[str, str, str]] = {
 
 # Textos con números u otras partes variables. Se prueban en orden.
 PATTERNS: list[tuple[str, tuple[str, str, str]]] = [
+    (r"^Además, (\d+) mangas? · ([\d.,]+) capítulos leídos \(no cuentan como episodios ni horas de anime\)\.$", (
+        "Plus $1 manga · $2 chapters read (they don't count as anime episodes or hours).",
+        "En plus, $1 manga(s) · $2 chapitres lus (ils ne comptent pas comme épisodes ni heures d'anime).",
+        "Außerdem $1 Manga · $2 gelesene Kapitel (zählen nicht als Anime-Folgen oder -Stunden).")),
     (r"^Lo que trajo la versión ([\d.]+) \((\d+)\)$", ("What version $1 brought ($2)", "Ce qu'a apporté la version $1 ($2)", "Was Version $1 brachte ($2)")),
     (r"^Lo que trajeron las versiones que te saltaste \((\d+)\)$", ("What the versions you skipped brought ($1)", "Ce qu'ont apporté les versions sautées ($1)", "Was die übersprungenen Versionen brachten ($1)")),
 

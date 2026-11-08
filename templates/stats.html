@@ -894,7 +894,16 @@ async function loadHeatmap() {
 
     // Etiquetas de día de la semana (lun, mié, vie)
     // Filas: lunes a domingo. Miércoles es «X» (antes ponía «M», que es martes).
-    ['L','','X','','V','',''].forEach((d, i) => {
+    // v2.16.4: en otros idiomas, la inicial del día en ese idioma (M/W/F en inglés).
+    const _lg = (document.documentElement.lang || 'es').slice(0, 2);
+    let _dSem = ['L','','X','','V','',''];
+    if (_lg !== 'es') {
+      try {
+        const f = new Intl.DateTimeFormat(_lg, {weekday: 'narrow'});
+        _dSem = [f.format(new Date(2026, 0, 5)), '', f.format(new Date(2026, 0, 7)), '', f.format(new Date(2026, 0, 9)), '', ''];
+      } catch (e) { /* se quedan las españolas */ }
+    }
+    _dSem.forEach((d, i) => {
       if (d) svg += `<text x="0" y="${OFFSET_TOP + i*(CELL+GAP) + 10}" font-size="9" fill="#6b6b88">${d}</text>`;
     });
 
@@ -936,12 +945,34 @@ async function loadHeatmap() {
   }
 }
 loadHeatmap();
+// v2.16.4: el idioma llega después del primer pintado; se repinta para que
+// las iniciales de los días salgan en el idioma de la app.
+window.addEventListener('miraru-i18n-listo', () => loadHeatmap(), {once: true});
 
 // ── v2.16: «Mi año en anime» ────────────────────────────────────────────────
 // Antes era solo un botón que descargaba una imagen. Ahora abre tu resumen del
 // año en grande (con selector de año) y desde ahí se descarga la imagen.
-const _MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-const _MESES_L = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+// v2.16.4: meses y frases en el idioma de la app (antes salían en español siempre).
+const _wLang = () => (document.documentElement.lang || 'es').slice(0, 2);
+const _wTr = t => (window.miraruTraducir ? window.miraruTraducir(t) : t);
+function _wMeses(formato) {
+  const l = _wLang();
+  if (l === 'es') return formato === 'long'
+    ? ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
+    : ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  let f;
+  try { f = new Intl.DateTimeFormat(l, {month: formato}); } catch (e) { f = new Intl.DateTimeFormat('en', {month: formato}); }
+  return Array.from({length: 12}, (_, i) => {
+    const m = f.format(new Date(2026, i, 15)).replace(/\.$/, '');
+    return formato === 'long' ? m : m.charAt(0).toUpperCase() + m.slice(1);
+  });
+}
+const _W_FRASES = {
+  es: {mes: (m, n) => `Tu mes más fuerte fue <b>${m}</b>, con ${n} episodios.`, racha: n => `Tu mejor racha: <b>${n} días seguidos</b> viendo anime.`, dias: n => `Viste anime <b>${n} ${n === 1 ? 'día' : 'días'}</b> del año.`, eps: 'episodios'},
+  en: {mes: (m, n) => `Your biggest month was <b>${m}</b>, with ${n} episodes.`, racha: n => `Your best streak: <b>${n} days in a row</b> watching anime.`, dias: n => `You watched anime on <b>${n} ${n === 1 ? 'day' : 'days'}</b> this year.`, eps: 'episodes'},
+  fr: {mes: (m, n) => `Ton meilleur mois a été <b>${m}</b>, avec ${n} épisodes.`, racha: n => `Ta meilleure série : <b>${n} jours d'affilée</b> à regarder de l'anime.`, dias: n => `Tu as regardé de l'anime <b>${n} ${n === 1 ? 'jour' : 'jours'}</b> cette année.`, eps: 'épisodes'},
+  de: {mes: (m, n) => `Dein stärkster Monat war <b>${m}</b> mit ${n} Folgen.`, racha: n => `Deine beste Serie: <b>${n} Tage in Folge</b> Anime geschaut.`, dias: n => `Du hast an <b>${n} ${n === 1 ? 'Tag' : 'Tagen'}</b> dieses Jahr Anime geschaut.`, eps: 'Folgen'},
+};
 let _wrapDatos = null;
 
 function _wEl(tag, cls, txt) {
@@ -1092,10 +1123,10 @@ function _pintarWrapped(fondo, d) {
     // Cifras grandes
     const cif = _wEl('div', 'wrap-cifras');
     const horas = Number(d.horas_estimadas || 0);
-    [['▶️', _wNum(d.total_episodios), 'episodios'],
-     ['⏱️', horas >= 48 ? _wNum(horas / 24) + ' d' : _wNum(horas) + ' h', horas >= 48 ? 'de anime (' + _wNum(horas) + ' h)' : 'de anime'],
-     ['📺', _wNum(d.animes_vistos), 'animes distintos'],
-     ['🏁', _wNum(d.completados), 'completados']].forEach(([i, n, l], k) => {
+    [['▶️', _wNum(d.total_episodios), _wTr('episodios')],
+     ['⏱️', horas >= 48 ? _wNum(horas / 24) + ' d' : _wNum(horas) + ' h', horas >= 48 ? _wTr('de anime') + ' (' + _wNum(horas) + ' h)' : _wTr('de anime')],
+     ['📺', _wNum(d.animes_vistos), _wTr('animes distintos')],
+     ['🏁', _wNum(d.completados), _wTr('completados')]].forEach(([i, n, l], k) => {
       const c = _wEl('div', 'wrap-cifra'); c.style.setProperty('--i', k);
       c.append(_wEl('span', 'ico', i), _wEl('strong', null, n), _wEl('small', null, l));
       cif.append(c);
@@ -1109,11 +1140,14 @@ function _pintarWrapped(fondo, d) {
     }
     // Frase resumen
     const frases = [];
-    if (d.mes_top != null) frases.push('Tu mes más fuerte fue <b>' + _MESES_L[d.mes_top] + '</b>, con ' + d.por_mes[d.mes_top] + ' episodios.');
-    if (d.racha_max > 1) frases.push('Tu mejor racha: <b>' + d.racha_max + ' días seguidos</b> viendo anime.');
-    if (d.dias_activos) frases.push('Viste anime <b>' + d.dias_activos + (d.dias_activos === 1 ? ' día' : ' días') + '</b> del año.');
+    const _F = _W_FRASES[_wLang()] || _W_FRASES.en;
+    const _MESES = _wMeses('short'), _MESES_L = _wMeses('long');
+    if (d.mes_top != null) frases.push(_F.mes(_MESES_L[d.mes_top], d.por_mes[d.mes_top]));
+    if (d.racha_max > 1) frases.push(_F.racha(d.racha_max));
+    if (d.dias_activos) frases.push(_F.dias(d.dias_activos));
     if (frases.length) {
       const p = _wEl('p', 'wrap-frase');
+      p.setAttribute('data-no-i18n', '');
       // Solo números y nombres de meses fijos: seguro.
       p.innerHTML = frases.join(' ');
       cuerpo.append(p);
@@ -1126,7 +1160,7 @@ function _pintarWrapped(fondo, d) {
     const max = Math.max(1, ...(d.por_mes || []));
     (d.por_mes || []).forEach((n, i) => {
       const col = _wEl('div', 'wrap-mes' + (i === d.mes_top ? ' top' : ''));
-      col.title = _MESES_L[i] + ': ' + n + ' episodios';
+      col.title = _MESES_L[i] + ': ' + n + ' ' + _F.eps;
       const barra = _wEl('i'); barra.style.setProperty('--h', (n / max).toFixed(3)); barra.style.setProperty('--i', i);
       col.append(_wEl('span', 'n', n ? String(n) : ''), barra, _wEl('span', 'm', _MESES[i]));
       graf.append(col);
@@ -1348,7 +1382,7 @@ async function exportarWrapped(btn) {
       ctx.fillStyle = i === d.mes_top ? `rgba(${ACC},1)` : 'rgba(255,255,255,.18)';
       ctx.beginPath(); ctx.roundRect(x + 8, base - h, ancho - 16, h, 6); ctx.fill();
       ctx.fillStyle = i === d.mes_top ? '#fff' : 'rgba(255,255,255,.45)'; ctx.font = F(600, 16); ctx.textAlign = 'center';
-      ctx.fillText(_MESES[i], x + ancho / 2, base + 24);
+      ctx.fillText(_wMeses('short')[i], x + ancho / 2, base + 24);
       if (n && i === d.mes_top) { ctx.fillStyle = '#fff'; ctx.font = F(700, 18); ctx.fillText(String(n), x + ancho / 2, base - h - 10); }
       ctx.textAlign = 'left';
     });
