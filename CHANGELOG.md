@@ -324,7 +324,7 @@ Windows 11 con el *Control inteligente de aplicaciones* bloquea los `.exe` sin f
 sin dejar abrirlos. Ahora Miraru se instala pegando una línea en PowerShell:
 
 ```powershell
-irm https://raw.githubusercontent.com/lucasusamentiaga/anime-tracker/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/lucasusamentiaga/Miraru/main/install.ps1 | iex
 ```
 
 - No usa ningún `.exe` propio: instala Python oficial de python.org (firmado; comprueba la

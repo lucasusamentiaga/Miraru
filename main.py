@@ -338,7 +338,7 @@ async def latest_version():
 
 
 # ── Actualizar con un clic (instalaciones hechas con install.ps1) ─────────────
-_URL_INSTALADOR = "https://raw.githubusercontent.com/lucasusamentiaga/anime-tracker/main/install.ps1"
+_URL_INSTALADOR = "https://raw.githubusercontent.com/lucasusamentiaga/Miraru/main/install.ps1"
 _MARCA_INSTALACION = ".miraru-instalado"   # la escribe install.ps1 (igual que launcher.py)
 
 
@@ -403,7 +403,7 @@ async def actualizar(request: Request):
 def _check_github_release() -> dict:
     try:
         resp = requests.get(
-            "https://api.github.com/repos/lucasusamentiaga/anime-tracker/releases/latest",
+            "https://api.github.com/repos/lucasusamentiaga/Miraru/releases/latest",
             headers={"User-Agent": f"AnimeTracker/{VERSION}", "Accept": "application/vnd.github+json"},
             timeout=8,
         )
@@ -423,7 +423,7 @@ def _check_github_release() -> dict:
         return {"current": VERSION, "latest": None, "update_available": False, "error": str(e)[:120]}
 
 
-_URL_CHANGELOG = "https://raw.githubusercontent.com/lucasusamentiaga/anime-tracker/main/CHANGELOG.md"
+_URL_CHANGELOG = "https://raw.githubusercontent.com/lucasusamentiaga/Miraru/main/CHANGELOG.md"
 
 
 def novedades_en_changelog(texto: str, version: str, maximo: int = 5) -> list[str]:

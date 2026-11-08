@@ -57,7 +57,7 @@ puedes exportarlos (CSV, JSON), borrarlos o desinstalar Miraru cuando quieras.
 **Cambios.** Si esta política cambia, se actualizará la fecha de arriba y se indicará en
 las notas de la versión.
 
-**Contacto.** Abre un aviso en https://github.com/lucasusamentiaga/anime-tracker/issues
+**Contacto.** Abre un aviso en https://github.com/lucasusamentiaga/Miraru/issues
 
 Ver también los [términos de uso](TERMS.md).
 
@@ -114,6 +114,6 @@ can export it (CSV, JSON), delete it or uninstall Miraru at any time.
 **Changes.** If this policy changes, the date above will be updated and the change noted in
 the release notes.
 
-**Contact.** Open an issue at https://github.com/lucasusamentiaga/anime-tracker/issues
+**Contact.** Open an issue at https://github.com/lucasusamentiaga/Miraru/issues
 
 See also the [terms of use](TERMS.md).

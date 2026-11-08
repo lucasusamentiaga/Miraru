@@ -22,7 +22,7 @@ _TTL = 3600.0                      # 1 hora
 _cache: dict = {"ts": 0.0, "data": None}
 _lock = threading.Lock()
 
-_session = net.make_session({"User-Agent": "Miraru/2.7 (+https://github.com/lucasusamentiaga/anime-tracker)"})
+_session = net.make_session({"User-Agent": "Miraru/2.7 (+https://github.com/lucasusamentiaga/Miraru)"})
 
 
 def _descargar_todo(limite_por_fuente: int = 8) -> list[dict]:

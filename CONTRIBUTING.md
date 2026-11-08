@@ -17,8 +17,8 @@ lo que más ayuda son los cambios **pequeños, probados y con una explicación c
 Requiere Python 3.10 o superior.
 
 ```bash
-git clone https://github.com/lucasusamentiaga/anime-tracker.git
-cd anime-tracker
+git clone https://github.com/lucasusamentiaga/Miraru.git
+cd Miraru
 pip install -r requirements-dev.txt
 python main.py            # http://127.0.0.1:8765
 ```

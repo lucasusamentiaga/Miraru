@@ -20,7 +20,7 @@ Todo lo técnico ya está hecho en el repositorio:
 1. **Verificación en dos pasos en GitHub** (obligatoria para SignPath):
    GitHub → Settings → Password and authentication → Two-factor authentication.
 2. **Solicitar el certificado**: https://signpath.org/apply
-   - Proyecto: `https://github.com/lucasusamentiaga/anime-tracker`
+   - Proyecto: `https://github.com/lucasusamentiaga/Miraru`
    - Licencia: MIT. Descarga: la página de Releases.
    - Indica que se compila con GitHub Actions (`.github/workflows/release.yml`).
    La aprobación la decide SignPath Foundation y puede tardar días o semanas.

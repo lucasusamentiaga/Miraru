@@ -230,7 +230,7 @@ footer a{{color:var(--light);text-decoration:none}}
 </div>
 <section class="panel" id="p-anime" role="tabpanel"><div class="grid">{''.join(anime_html)}</div></section>
 {panel_manga}<section class="panel" id="p-otros" role="tabpanel" hidden>{otros_html}</section>
-<footer>Generado con <a href="https://github.com/lucasusamentiaga/anime-tracker">Miraru</a></footer>
+<footer>Generado con <a href="https://github.com/lucasusamentiaga/Miraru">Miraru</a></footer>
 </div>
 <script>
 (function(){{

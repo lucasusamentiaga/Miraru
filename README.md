@@ -1,7 +1,7 @@
 # Miraru
 
-[![Miraru CI](https://github.com/lucasusamentiaga/anime-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/lucasusamentiaga/anime-tracker/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/lucasusamentiaga/anime-tracker)](https://github.com/lucasusamentiaga/anime-tracker/releases/latest)
+[![Miraru CI](https://github.com/lucasusamentiaga/Miraru/actions/workflows/ci.yml/badge.svg)](https://github.com/lucasusamentiaga/Miraru/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/lucasusamentiaga/Miraru)](https://github.com/lucasusamentiaga/Miraru/releases/latest)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)
 
@@ -12,8 +12,8 @@ ni nube.
 
 <a href="https://apps.microsoft.com/detail/9PJZK97ZG03G"><img src="https://get.microsoft.com/images/es%20dark.svg" alt="Descárgalo de Microsoft Store" width="200"></a>
 
-Gratis, firmada por Microsoft y se actualiza sola. ¿Sin Store? [Descarga el instalador](https://github.com/lucasusamentiaga/anime-tracker/releases/latest/download/Miraru-Setup.exe)
-o la [versión portable](https://github.com/lucasusamentiaga/anime-tracker/releases/latest/download/Miraru-Portable.exe).
+Gratis, firmada por Microsoft y se actualiza sola. ¿Sin Store? [Descarga el instalador](https://github.com/lucasusamentiaga/Miraru/releases/latest/download/Miraru-Setup.exe)
+o la [versión portable](https://github.com/lucasusamentiaga/Miraru/releases/latest/download/Miraru-Portable.exe).
 
 > 🇬🇧 **In English:** Miraru is a free anime and manga tracker for Windows. Log the episodes you
 > watch, get alerts for new ones, see your stats and your year in anime, and keep every season of a
@@ -85,7 +85,7 @@ recupera tu lista automáticamente la primera vez que la abres.
 
 ### Descargar el instalador
 
-1. Pulsa **[⬇ Descargar Miraru](https://github.com/lucasusamentiaga/anime-tracker/releases/latest/download/Miraru-Setup.exe)**
+1. Pulsa **[⬇ Descargar Miraru](https://github.com/lucasusamentiaga/Miraru/releases/latest/download/Miraru-Setup.exe)**
    y abre el archivo `Miraru-Setup.exe` cuando termine de bajar.
 2. Si aparece la pantalla azul *"Windows protegió su PC"*, pulsa **Más información** y después
    **Ejecutar de todas formas** (sale porque el instalador no tiene firma digital).
@@ -96,7 +96,7 @@ Si ya lo tenías instalado, instalar la versión nueva conserva tu lista.
 **Para cerrar Miraru**, usa el botón **⏻ Salir** del menú: cerrar la pestaña no apaga la app.
 **Desinstalar**: *Configuración → Aplicaciones → Miraru*.
 
-¿Prefieres no instalar nada? Descarga **[Miraru-Portable.exe](https://github.com/lucasusamentiaga/anime-tracker/releases/latest/download/Miraru-Portable.exe)**:
+¿Prefieres no instalar nada? Descarga **[Miraru-Portable.exe](https://github.com/lucasusamentiaga/Miraru/releases/latest/download/Miraru-Portable.exe)**:
 doble clic y listo (guarda tus datos junto al `.exe`).
 
 ### Si Windows dice que *"Una directiva de Control de aplicaciones bloqueó este archivo"*
@@ -112,7 +112,7 @@ Microsoft lo firma y no se bloquea. Si no puedes usar la Store, también se pued
 2. Copia esta línea, pégala con clic derecho y pulsa `Intro`:
 
    ```powershell
-   irm https://raw.githubusercontent.com/lucasusamentiaga/anime-tracker/main/install.ps1 | iex
+   irm https://raw.githubusercontent.com/lucasusamentiaga/Miraru/main/install.ps1 | iex
    ```
 
 3. Espera al recuadro verde (2-5 minutos). Usa solo programas firmados (Python oficial de
@@ -120,7 +120,7 @@ Microsoft lo firma y no se bloquea. Si no puedes usar la Store, también se pued
 
 Instalado así, la app se actualiza con un clic desde el aviso amarillo `⬆ vX.Y.Z`. Si algo
 falla, el instalador guarda un registro en `%TEMP%\miraru-instalacion.log`: adjúntalo en un
-[aviso](https://github.com/lucasusamentiaga/anime-tracker/issues).
+[aviso](https://github.com/lucasusamentiaga/Miraru/issues).
 </details>
 
 ## 📱 Móvil
@@ -144,8 +144,8 @@ diálogo y guarda el detalle en `arranque.log`.
 <summary>A mano (cualquier sistema)</summary>
 
 ```bash
-git clone https://github.com/lucasusamentiaga/anime-tracker.git
-cd anime-tracker
+git clone https://github.com/lucasusamentiaga/Miraru.git
+cd Miraru
 pip install -r requirements.txt
 python launcher.py        # arranca y abre el navegador
 # o solo el servidor:     python main.py  →  http://127.0.0.1:8765

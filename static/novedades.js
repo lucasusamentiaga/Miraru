@@ -148,7 +148,7 @@
 
     var pie = el('div', 'mnv-pie');
     var todo = el('a', 'mnv-todo', 'Ver todos los cambios');
-    todo.href = 'https://github.com/lucasusamentiaga/anime-tracker/releases'; todo.target = '_blank'; todo.rel = 'noopener';
+    todo.href = 'https://github.com/lucasusamentiaga/Miraru/releases'; todo.target = '_blank'; todo.rel = 'noopener';
     var ok = el('button', 'mnv-ok', '¡Genial!'); ok.type = 'button';
     pie.append(todo, ok);
 

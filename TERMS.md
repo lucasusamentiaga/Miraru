@@ -31,7 +31,7 @@
    de pérdidas de datos ni de otros daños derivados del uso de la app.
 9. **Cambios.** Estos términos pueden actualizarse con nuevas versiones; la fecha de
    arriba indica la última. Seguir usando Miraru supone aceptar la versión vigente.
-10. **Contacto.** https://github.com/lucasusamentiaga/anime-tracker/issues
+10. **Contacto.** https://github.com/lucasusamentiaga/Miraru/issues
 
 Estos términos complementan los términos de la Microsoft Store y la licencia MIT del
 código, que siguen aplicándose.
@@ -65,7 +65,7 @@ código, que siguen aplicándose.
    arising from use of the app.
 9. **Changes.** These terms may be updated with new versions; the date above shows the
    latest. Continuing to use Miraru means accepting the current version.
-10. **Contact.** https://github.com/lucasusamentiaga/anime-tracker/issues
+10. **Contact.** https://github.com/lucasusamentiaga/Miraru/issues
 
 These terms supplement the Microsoft Store terms and the MIT licence of the code, which
 still apply.

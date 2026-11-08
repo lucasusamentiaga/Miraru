@@ -23,8 +23,8 @@ La app de PC ya es un servidor HTTP (FastAPI). La app móvil se conecta a él po
 # 1. Instalar Capacitor CLI
 npm install -g @capacitor/cli
 
-# 2. En la carpeta anime-tracker/mobile/
-cd anime-tracker/mobile
+# 2. En la carpeta Miraru/mobile/
+cd Miraru/mobile
 npm init -y
 npm install @capacitor/core @capacitor/android @capacitor/app @capacitor/status-bar
 
@@ -119,7 +119,7 @@ Para ver en el móvil los cambios hechos en PC, pulsa el botón **⟳** (recarga
 ## Estructura de archivos
 
 ```
-anime-tracker/
+Miraru/
 ├── mobile/
 │   ├── index.html          ← La app móvil completa (HTML/CSS/JS)
 │   ├── capacitor.config.json

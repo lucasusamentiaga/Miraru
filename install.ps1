@@ -1,6 +1,6 @@
 # Miraru - instalador sin ejecutables propios / installer without own executables
 #
-#   irm https://raw.githubusercontent.com/lucasusamentiaga/anime-tracker/main/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/lucasusamentiaga/Miraru/main/install.ps1 | iex
 #
 # Por que existe: los .exe de Miraru aun no tienen firma digital y el Control inteligente
 # de aplicaciones de Windows 11 (Smart App Control) los bloquea sin opcion de abrirlos.
@@ -19,7 +19,7 @@
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-$MiraruRepo = 'lucasusamentiaga/anime-tracker'
+$MiraruRepo = 'lucasusamentiaga/Miraru'
 $MiraruPython = '3.13.15'
 $MiraruDestino = $env:MIRARU_DESTINO
 if (-not $MiraruDestino) { $MiraruDestino = Join-Path $env:LOCALAPPDATA 'Miraru' }

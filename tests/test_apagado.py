@@ -154,7 +154,7 @@ def test_actualizar_lanza_el_instalador_oficial(client_local):
     args, kwargs = popen.call_args
     orden = args[0]
     assert orden[0] == "powershell.exe"
-    assert "raw.githubusercontent.com/lucasusamentiaga/anime-tracker/main/install.ps1" in orden[-1]
+    assert "raw.githubusercontent.com/lucasusamentiaga/Miraru/main/install.ps1" in orden[-1]
     assert kwargs["env"]["MIRARU_DESTINO"] == str(main.APP_DIR)
     assert kwargs["env"]["MIRARU_PAUSA"] == "1"
 

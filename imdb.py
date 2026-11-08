@@ -27,7 +27,7 @@ log = logging.getLogger("miraru.imdb")
 
 URL_NOTAS = "https://datasets.imdbws.com/title.ratings.tsv.gz"
 URL_WIKIDATA = "https://query.wikidata.org/sparql"
-UA = "Miraru (https://github.com/lucasusamentiaga/anime-tracker)"
+UA = "Miraru (https://github.com/lucasusamentiaga/Miraru)"
 CADA = 7 * 86400
 FORMATO = 2          # 2 = también la nota de la serie para fichas de temporada
 _ARCHIVO = "imdb_notas.json"
