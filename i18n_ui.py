@@ -23,6 +23,9 @@ LANGS = ("en", "fr", "de")
 
 UI: dict[str, tuple[str, str, str]] = {
     # ── v2.16.4: botones de la barra y «Mi año en anime» ──────────────────────
+    'Miraru, mejor en tu idioma': ('Miraru, better in your language', 'Miraru, mieux dans ta langue', 'Miraru, besser in deiner Sprache'),
+    '«Mi año en anime» en tu idioma': ('“My year in anime” in your language', '« Mon année anime » dans ta langue', '„Mein Anime-Jahr“ in deiner Sprache'),
+    'Los meses, las frases y los botones salen ya en inglés, francés o alemán si usas Miraru en esos idiomas.': ('Months, sentences and buttons now show up in English, French or German if you use Miraru in those languages.', "Les mois, les phrases et les boutons s'affichent désormais en anglais, français ou allemand si tu utilises Miraru dans ces langues.", 'Monate, Sätze und Knöpfe erscheinen jetzt auf Englisch, Französisch oder Deutsch, wenn du Miraru in diesen Sprachen nutzt.'),
     'Móvil': ('Mobile', 'Mobile', 'Handy'),
     'Copia': ('Backup', 'Sauvegarde', 'Sicherung'),
     'Carpeta': ('Folder', 'Dossier', 'Ordner'),

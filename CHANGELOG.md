@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.16.4 — Mejor en tu idioma
+
+- **«Mi año en anime»** en inglés, francés y alemán: meses (con `Intl`), frases y etiquetas de
+  las cifras (antes salían en español siempre, también en la imagen descargable).
+- Estadísticas: iniciales de los días del mapa de actividad en el idioma de la app, línea de
+  mangas traducida y «1 día» en singular.
+- Barra de la biblioteca: «Móvil», «Copia», «Carpeta» y «Ajustes» traducidos; el buscador dice
+  «Search manga…» con la pestaña de manga.
+- README: botón de Microsoft Store arriba, resumen en inglés y capturas nuevas.
+
 ## v2.16.3 — Menos repetidos, IMDb en casi todo y avisos claros
 
 - **Repetidos**: se juntan nada más arrancar (antes esperaban al final del enriquecido, que

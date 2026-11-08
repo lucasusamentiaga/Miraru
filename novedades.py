@@ -11,6 +11,14 @@ from __future__ import annotations
 # accion (opcional): {"texto": "...", "url": "/app#..."} → botón dentro del punto.
 NOVEDADES: list[dict] = [
     {
+        "version": "2.16.4",
+        "titulo": "Miraru, mejor en tu idioma",
+        "puntos": [
+            {"icono": "🌍", "titulo": "«Mi año en anime» en tu idioma",
+             "texto": "Los meses, las frases y los botones salen ya en inglés, francés o alemán si usas Miraru en esos idiomas."},
+        ],
+    },
+    {
         "version": "2.16.3",
         "titulo": "Menos repetidos y más notas de IMDb",
         "puntos": [
