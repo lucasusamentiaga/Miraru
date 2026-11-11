@@ -42,10 +42,12 @@
 // v45 = sin servidor: franquicias guardadas y respuestas 503 (no 200) para que
 //       la página distinga «Miraru cerrado» de «lista vacía».
 // v46 = aviso emergente de versión nueva para instalaciones de Microsoft Store.
-const CACHE_NAME = 'miraru-v52';
+// v53 = el manga tiene su apartado (/manga).
+const CACHE_NAME = 'miraru-v53';
 const STATIC_ASSETS = [
   '/',
   '/app',
+  '/manga',
   '/stats',
   '/calendario',
   '/novedades',

@@ -483,14 +483,6 @@ function _thumbUrl(url) { return url ? url.replace('/cover/large/', '/cover/medi
 
 const COLORS = ['#7c3aed','#059669','#d97706','#dc2626','#0891b2','#9333ea','#65a30d'];
 
-function makeBar(label, value, max, color) {
-  const pct = max > 0 ? Math.round(value / max * 100) : 0;
-  return `<div class="bar-row">
-    <span class="bar-label" title="${label}">${label}</span>
-    <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
-    <span class="bar-count">${value}</span>
-  </div>`;
-}
 
 function _haceCuanto(f) {
   const t = Date.parse(String(f).replace(' ', 'T'));

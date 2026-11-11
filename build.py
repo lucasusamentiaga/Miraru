@@ -147,7 +147,7 @@ HIDDEN = [
     "urllib3", "certifi", "charset_normalizer", "idna",
     # std
     "multiprocessing", "sqlite3", "importlib.util",
-    "hashlib", "smtplib", "collections",
+    "hashlib", "collections",
     "email", "email.mime", "email.mime.text", "email.mime.multipart",
     "xml.etree.ElementTree", "html.parser",
     # bs4 parsers

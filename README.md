@@ -47,7 +47,7 @@ o la [versión portable](https://github.com/lucasusamentiaga/Miraru/releases/lat
 - **Paleta de comandos** (`Ctrl+K`) y atajos: `/` buscar, `N` añadir, `?` ver todos
 
 **Descubrir y no perderte nada**
-- **Calendario semanal** de lo que estás viendo y **avisos de nuevos episodios**: en el navegador, por email o como notificación del sistema aunque cierres la pestaña
+- **Calendario semanal** de lo que estás viendo y **avisos de nuevos episodios**: en el navegador o como notificación del sistema aunque cierres la pestaña
 - **¿Qué veo esta noche?**: te sugiere algo según tu ánimo y el tiempo que tengas
 - **Recomendaciones** según tus géneros favoritos y una selección para empezar en el anime
 - **Novedades**: estrenos por plataforma (Crunchyroll, Netflix, Amazon, Disney+) y noticias

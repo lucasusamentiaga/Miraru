@@ -45,8 +45,8 @@
      }, nota: 'Usa ← y → para moverte y Esc para salir.'},
     {sel: '#inp-nombre', ico: '🔎', tit: 'Añade un anime',
      txt: 'Escribe el nombre (o pega un enlace) y pulsa «+ Añadir». Si tiene más temporadas, te ofrece añadir la saga entera de una vez.'},
-    {sel: '#seg-tipo', ico: '📖', tit: 'Anime y manga, por separado',
-     txt: 'Cada uno en su pestaña, con sus cifras. Elige «Todo» para verlos juntos.'},
+    {sel: '#nav-manga', ico: '📖', tit: 'El manga, en su apartado',
+     txt: 'Pulsa «Manga» para ver y añadir tus mangas. Van aparte del anime, con sus capítulos leídos.'},
     {sel: '#lista .fq-header', ico: '📁', tit: 'Cada saga, en su carpeta',
      txt: function () {
        return (nCarpetas() > 1 ? ['Tienes ' + nCarpetas() + ' sagas agrupadas.'] : []).concat(
@@ -379,6 +379,8 @@
 
   // ¿Es la primera vez? Lo decide el servidor (instalación nueva).
   function arrancar() {
+    // El recorrido enseña la biblioteca de anime: en /manga no salta solo.
+    if (document.documentElement.classList.contains('modo-manga')) return;
     fetch('/api/recorrido', {cache: 'no-store'})
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {

@@ -649,15 +649,6 @@ def restaurar_copia(copia: dict) -> tuple[bool, str]:
     return True, "ok"
 
 
-def buscar_animes(query: str, limit: int = 20) -> list[dict]:
-    """Búsqueda local rápida en la BD por nombre (parcial, case-insensitive)."""
-    with get_conn() as conn:
-        rows = conn.execute(
-            "SELECT * FROM animes WHERE nombre LIKE ? ORDER BY creado_en DESC LIMIT ?",
-            (f"%{query}%", limit)
-        ).fetchall()
-        return [dict(r) for r in rows]
-
 
 def get_historial(nombre: str) -> list[dict]:
     """Devuelve el historial de cambios de estado de un anime."""
@@ -683,23 +674,6 @@ def registrar_historial(nombre: str, estado: str, nota: str = ""):
 
 # ── Listas personalizadas / Favoritos / Notificaciones ────────────────────────
 
-def listar_listas() -> list[str]:
-    """Listas personalizadas existentes."""
-    with get_conn() as conn:
-        rows = conn.execute(
-            "SELECT DISTINCT lista_personalizada FROM animes ORDER BY lista_personalizada"
-        ).fetchall()
-        return [r[0] for r in rows if r[0]]
-
-
-def listar_favoritos() -> list[dict]:
-    """Animes marcados como favoritos, ordenados por puntuación."""
-    with get_conn() as conn:
-        rows = conn.execute(
-            "SELECT * FROM animes WHERE favorito=1 ORDER BY puntuacion DESC, nombre"
-        ).fetchall()
-        return [dict(r) for r in rows]
-
 
 def listar_con_notif() -> list[dict]:
     """Animes de los que avisar cuando salga un episodio: los que tienen la
@@ -713,15 +687,6 @@ def listar_con_notif() -> list[dict]:
         ).fetchall()
         return [dict(r) for r in rows]
 
-
-def listar_por_lista(lista: str) -> list[dict]:
-    """Animes de una lista personalizada concreta."""
-    with get_conn() as conn:
-        rows = conn.execute(
-            "SELECT * FROM animes WHERE lista_personalizada=? ORDER BY creado_en DESC",
-            (lista,)
-        ).fetchall()
-        return [dict(r) for r in rows]
 
 
 # ── Episode log (v2.2) ────────────────────────────────────────────────────────
@@ -829,7 +794,7 @@ def ep_log_spans(min_eps: int = 2) -> list[dict]:
         rows = conn.execute(
             "SELECT nombre, MIN(date(fecha)) AS primer, MAX(date(fecha)) AS ultimo, "
             "COUNT(*) AS c "
-            "FROM ep_log GROUP BY nombre HAVING c >= ?",
+            "FROM ep_log WHERE " + _SIN_MANGA + " GROUP BY nombre HAVING c >= ?",
             (min_eps,),
         ).fetchall()
     import datetime as _dt
@@ -894,15 +859,6 @@ def obtener_notas_episodio(nombre: str) -> list[dict]:
         ).fetchall()
     return [dict(r) for r in rows]
 
-
-def obtener_nota_episodio(nombre: str, episodio: int) -> Optional[str]:
-    """Devuelve la nota de un episodio concreto o None."""
-    with get_conn() as conn:
-        row = conn.execute(
-            "SELECT nota FROM episode_notes WHERE nombre = ? AND episodio = ?",
-            (nombre, episodio),
-        ).fetchone()
-    return row["nota"] if row else None
 
 
 def borrar_nota_episodio(nombre: str, episodio: int) -> bool:

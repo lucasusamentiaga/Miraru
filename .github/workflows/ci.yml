@@ -60,7 +60,6 @@ jobs:
           python -m py_compile noticias.py
           python -m py_compile themes_api.py
           python -m py_compile personajes_api.py
-          python -m py_compile discord_presence.py
           python -m py_compile fuentes_respaldo.py
           python -m py_compile sheets_sync.py
           python -m py_compile i18n.py

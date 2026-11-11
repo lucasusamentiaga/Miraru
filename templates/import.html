@@ -35,6 +35,21 @@ header h1{
 main{max-width:860px;margin:0 auto;padding:24px 20px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
 @media(max-width:680px){main{grid-template-columns:1fr}}
 
+/* v2.17: traer la lista entera de AniList o MyAnimeList */
+.traer{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:680px){.traer{grid-template-columns:1fr}}
+.traer-tit{grid-column:1/-1;font-size:18px;font-weight:700;color:var(--fg);margin-bottom:-6px}
+.traer-sub{grid-column:1/-1;font-size:13px;color:var(--muted);margin-bottom:-4px;line-height:1.5}
+.traer input[type=text]{width:100%;background:#0a0a10;border:1px solid var(--border);border-radius:10px;color:var(--fg);padding:10px 12px;font-size:14px}
+.traer input[type=text]:focus{outline:2px solid var(--accent);border-color:transparent}
+.traer ol{margin:0 0 12px 18px;font-size:12px;color:var(--muted);line-height:1.7}
+.traer ol a{color:var(--light)}
+.traer-res{margin-top:12px;font-size:13px;line-height:1.5;border-radius:10px;padding:10px 12px;display:none}
+.traer-res.ok{display:block;background:rgba(5,150,105,.12);border:1px solid rgba(52,211,153,.35);color:#a7f3d0}
+.traer-res.err{display:block;background:rgba(220,38,38,.1);border:1px solid rgba(248,113,113,.35);color:#fecaca}
+.traer-res a{color:inherit;font-weight:700}
+.otra{grid-column:1/-1;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:6px 0 -8px}
+
 .panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
 .panel h2{font-size:14px;font-weight:700;color:var(--light);margin-bottom:6px;
           text-transform:uppercase;letter-spacing:.5px}
@@ -111,7 +126,7 @@ textarea:focus{outline:2px solid var(--accent);border-color:transparent}
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
 <script src="/static/customize.js"></script>
-<script src="/static/selects.js?v=2.16.4" defer></script>
+<script src="/static/selects.js?v=2.17.0" defer></script>
 <script src="/static/i18n-dom.js" defer></script>
 <script src="/static/dialogos.js" defer></script>
 </head>
@@ -124,6 +139,32 @@ textarea:focus{outline:2px solid var(--accent);border-color:transparent}
 </header>
 
 <main>
+  <!-- v2.17: lo más rápido — la lista entera, con estados, notas y progreso -->
+  <section class="traer" aria-labelledby="traer-tit">
+    <h2 class="traer-tit" id="traer-tit">Trae tu lista entera</h2>
+    <p class="traer-sub">Si ya llevas la cuenta en otro sitio, tráela de golpe: entra con tus estados, tus notas y por dónde vas. Vale para anime y manga.</p>
+    <div class="panel">
+      <h2>Desde AniList</h2>
+      <p class="desc">Solo hace falta tu nombre de usuario. Tu lista tiene que ser pública.</p>
+      <input type="text" id="al-user" placeholder="Tu usuario de AniList" autocomplete="off" maxlength="60"
+             onkeydown="if(event.key==='Enter')traerAniList()">
+      <button class="btn btn-p" id="btn-al" onclick="traerAniList()"><span id="al-txt">Traer mi lista</span></button>
+      <div class="traer-res" id="al-res" role="status"></div>
+    </div>
+    <div class="panel">
+      <h2>Desde MyAnimeList</h2>
+      <ol>
+        <li>Abre <a href="https://myanimelist.net/panel.php?go=export" target="_blank" rel="noopener">la página de exportar de MyAnimeList</a> y descarga tu lista.</li>
+        <li>Si el archivo acaba en .gz, descomprímelo.</li>
+        <li>Elige aquí el archivo .xml.</li>
+      </ol>
+      <input type="file" id="mal-file" accept=".xml,text/xml,application/xml" hidden onchange="traerMal(this)">
+      <button class="btn btn-p" id="btn-mal" onclick="document.getElementById('mal-file').click()"><span id="mal-txt">Elegir archivo .xml</span></button>
+      <div class="traer-res" id="mal-res" role="status"></div>
+    </div>
+  </section>
+
+  <div class="otra">O pega una lista de nombres</div>
   <!-- Panel izquierdo: pegar texto -->
   <div class="panel">
     <h2 id="h-paste">1. Pega el texto de la página</h2>
@@ -203,6 +244,61 @@ async function loadLang() {
 }
 
 function T(k) { return TR[k] || k; }
+
+// ── v2.17: traer la lista entera ──────────────────────────────────────────────
+const _tr = t => (window.miraruTraducir ? window.miraruTraducir(t) : t);
+function _resultadoTraer(id, d, error) {
+  const el = document.getElementById(id);
+  el.className = 'traer-res ' + (error ? 'err' : 'ok');
+  el.textContent = '';
+  if (error) { el.textContent = _tr(error); return; }
+  const partes = [];
+  const animes = (d['añadidos'] || 0) - (d.mangas || 0);
+  if (animes) partes.push(animes + ' anime');
+  if (d.mangas) partes.push(d.mangas + ' manga');
+  const b = document.createElement('strong');
+  b.textContent = partes.length ? '✓ ' + _tr('Añadidos:') + ' ' + partes.join(' · ') : _tr('No había nada nuevo que añadir.');
+  el.append(b);
+  const extra = [];
+  if (d.duplicados) extra.push(d.duplicados + ' ' + _tr('ya estaban en tu lista'));
+  if (d.no_encontrados) extra.push(d.no_encontrados + ' ' + _tr('no se han encontrado'));
+  if (extra.length) el.append(' ' + extra.join(' · ') + '.');
+  if (d['añadidos']) {
+    el.append(' ');
+    const a = document.createElement('a'); a.href = (animes || !d.mangas) ? '/app' : '/manga';
+    a.textContent = _tr('Ver mi lista') + ' →';
+    el.append(a);
+  }
+}
+async function _traer(btnId, txtId, resId, pedir) {
+  const btn = document.getElementById(btnId), txt = document.getElementById(txtId), antes = txt.textContent;
+  btn.disabled = true;
+  txt.innerHTML = '<span class="spin"></span> ' + _tr('Trayendo tu lista…');
+  document.getElementById(resId).className = 'traer-res';
+  try {
+    const r = await pedir();
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) _resultadoTraer(resId, null, d.detail || 'No se ha podido traer la lista. Inténtalo en un rato.');
+    else _resultadoTraer(resId, d);
+  } catch (_) {
+    _resultadoTraer(resId, null, 'No se ha podido conectar con Miraru. Comprueba que sigue abierto.');
+  } finally {
+    btn.disabled = false; txt.textContent = antes;
+  }
+}
+function traerAniList() {
+  const u = document.getElementById('al-user').value.trim();
+  if (!u) { document.getElementById('al-user').focus(); return; }
+  _traer('btn-al', 'al-txt', 'al-res', () => fetch('/api/import/anilist', {
+    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u})}));
+}
+function traerMal(inp) {
+  const f = inp.files && inp.files[0];
+  if (!f) return;
+  const fd = new FormData(); fd.append('file', f);
+  _traer('btn-mal', 'mal-txt', 'mal-res', () => fetch('/api/import/mal-xml', {method: 'POST', body: fd}))
+    .finally(() => { inp.value = ''; });
+}
 
 async function detectar() {
   const txt = document.getElementById('txt-input').value.trim();

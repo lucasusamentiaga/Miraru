@@ -14,8 +14,8 @@
    tratan se explica en la [política de privacidad](PRIVACY.md).
 4. **Servicios de terceros.** Miraru muestra información pública de AniList,
    MyAnimeList/Jikan, Kitsu, AnimeFLV, AnimeAV1, Anime-Planet, Crunchyroll, AnimeThemes y
-   TMDB, y puede conectarse a tus cuentas de AniList, AnimeAV1, Google, Discord o tu
-   correo si tú lo configuras. Esos servicios tienen sus propias condiciones, que debes
+   TMDB, y puede conectarse a tus cuentas de AniList, AnimeAV1 o Google
+   si tú lo configuras. Esos servicios tienen sus propias condiciones, que debes
    respetar, y Miraru no está afiliado ni respaldado por ninguno de ellos. Los títulos,
    portadas y textos pertenecen a sus titulares.
 5. **Sin contenido para adultos.** Miraru oculta el contenido que las fuentes marcan como
@@ -48,7 +48,7 @@ código, que siguen aplicándose.
    handled is explained in the [privacy policy](PRIVACY.md).
 4. **Third-party services.** Miraru shows public information from AniList,
    MyAnimeList/Jikan, Kitsu, AnimeFLV, AnimeAV1, Anime-Planet, Crunchyroll, AnimeThemes and
-   TMDB, and can connect to your AniList, AnimeAV1, Google, Discord or email accounts if you
+   TMDB, and can connect to your AniList, AnimeAV1 or Google accounts if you
    set them up. Those services have their own terms, which you must respect; Miraru is not
    affiliated with or endorsed by any of them. Titles, covers and texts belong to their
    owners.

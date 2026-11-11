@@ -11,9 +11,15 @@ from __future__ import annotations
 # accion (opcional): {"texto": "...", "url": "/app#..."} → botón dentro del punto.
 NOVEDADES: list[dict] = [
     {
-        "version": "2.16.4",
-        "titulo": "Miraru, mejor en tu idioma",
+        "version": "2.17.0",
+        "titulo": "El manga estrena apartado",
         "puntos": [
+            {"icono": "📖", "titulo": "Manga, en su propio apartado",
+             "texto": "Pulsa «Manga» en la cabecera: tus mangas van aparte del anime, con sus capítulos y su «+1» también en los que siguen publicándose.",
+             "accion": {"texto": "Abrir Manga", "url": "/manga"}},
+            {"icono": "📥", "titulo": "Trae tu lista entera",
+             "texto": "Con tu usuario de AniList o el archivo de MyAnimeList, tu lista entra de golpe con estados, notas y progreso.",
+             "accion": {"texto": "Traer mi lista", "url": "/import"}},
             {"icono": "🌍", "titulo": "«Mi año en anime» en tu idioma",
              "texto": "Los meses, las frases y los botones salen ya en inglés, francés o alemán si usas Miraru en esos idiomas."},
         ],

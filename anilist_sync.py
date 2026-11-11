@@ -29,7 +29,6 @@ from trabajos import NULO, Progreso
 log = logging.getLogger("miraru.anilist_sync")
 
 ANILIST_API = "https://graphql.anilist.co"
-OAUTH_AUTHORIZE = "https://anilist.co/api/v2/oauth/authorize"
 OAUTH_TOKEN = "https://anilist.co/api/v2/oauth/token"
 
 # ── Mapeos de estado ─────────────────────────────────────────────────────────

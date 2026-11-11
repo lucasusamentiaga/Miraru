@@ -53,16 +53,11 @@ def test_anilist_connect_cuerpo_malo_da_400(cliente, cuerpo):
     assert r.status_code == 400
 
 
-def test_email_de_prueba_sin_configurar_da_400(cliente):
-    c, _ = cliente
-    assert c.post("/api/notif/test-email").status_code == 400
-
-
 def test_endpoints_con_red_no_bloquean_el_servidor():
     """Las que hacen peticiones de red sin await no pueden ser `async def`:
     congelarían todo el servidor mientras esperan."""
     import inspect
 
     import main
-    for f in (main.verify_setup, main.sync_sheets, main.test_email):
+    for f in (main.verify_setup, main.sync_sheets):
         assert not inspect.iscoroutinefunction(f), f.__name__

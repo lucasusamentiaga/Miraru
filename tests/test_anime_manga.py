@@ -127,3 +127,28 @@ def test_lo_automatico_de_la_misma_saga_entra_en_tu_caja():
     grupos = {g["nombre"]: [a["nombre"] for a in g["animes"]]
               for g in fq.agrupar_franquicias(animes, {"3": [1]})}
     assert len(grupos["Attack on Titan"]) == 4 and "Otra cosa" not in grupos["Attack on Titan"]
+
+
+# ── v2.17: el manga tiene su apartado (/manga), como «No Anime» ───────────────
+
+def test_el_apartado_de_manga_es_la_biblioteca_en_modo_manga(db):
+    import main
+    importlib.reload(main)
+    c = TestClient(main.app, client=("127.0.0.1", 1))
+    r = c.get("/manga")
+    assert r.status_code == 200 and 'id="nav-manga"' in r.text and "modo-manga" in r.text
+    # Las pestañas Anime/Manga/Todo de la 2.16.2 ya no existen: cada uno en su página.
+    assert "seg-tipo" not in r.text and 'id="inp-tipo"' not in r.text and 'id="f-tipo"' not in r.text
+
+
+
+def test_mas_uno_en_un_manga_sin_total(db):
+    import main
+    importlib.reload(main)
+    db.guardar_anime({"nombre": "Berserk", "tipo": "manga", "capitulos": "?", "episodios_vistos": 120,
+                      "estado_usuario": "viendo", "estado_anime": "En emisión", "notif_activa": 1})
+    c = TestClient(main.app, client=("127.0.0.1", 1))
+    assert c.post("/api/animes/Berserk/plus1").json()["episodios_vistos"] == 121
+    # «Tiempo hasta completar» es de anime: los capítulos leídos no cuentan.
+    c.post("/api/animes/Berserk/plus1")
+    assert db.ep_log_spans(min_eps=1) == []

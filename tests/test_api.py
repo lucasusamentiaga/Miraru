@@ -117,49 +117,17 @@ def test_nombre_con_barra_sigue_resolviendo(client):
     assert r.status_code == 200
 
 
-def test_plus1_no_envia_email_sin_campanita(client, monkeypatch):
-    """Regresión: marcar +1 episodio enviaba un correo en CADA clic a cualquier
-    anime en emisión, ignorando el interruptor `notif_activa`. Maratonear
-    llenaba la bandeja de entrada."""
-    enviados = []
-    monkeypatch.setattr(main, "_sync_bg", lambda fn, *a: enviados.append(a))
-    db.set_config("email_notif", "yo@ejemplo.com")
-
-    # En emisión pero SIN campanita → no debe enviar nada
-    client.post("/api/animes/restore", json={
-        "nombre": "Sin campanita", "capitulos": "24",
-        "estado_anime": "En emisión", "notif_activa": 0,
-    })
-    client.post("/api/animes/Sin campanita/plus1")
-    assert enviados == []
-
-    # Con la campanita activada → sí notifica
-    client.post("/api/animes/restore", json={
-        "nombre": "Con campanita", "capitulos": "24",
-        "estado_anime": "En emisión", "notif_activa": 1,
-    })
-    client.post("/api/animes/Con campanita/plus1")
-    assert len(enviados) == 1
-
-    db.set_config("email_notif", "")   # no dejar el email puesto para otros tests
-
-
 def test_lifespan_arranca_y_limpia(monkeypatch):
     """El lifespan (que sustituyó a on_event) debe inicializar la BD, lanzar los
-    procesos de fondo y limpiar el estado de Discord al cerrar."""
-    import discord_presence
-
+    procesos de fondo."""
     eventos = []
     monkeypatch.setattr(main, "_start_auto_backup_once", lambda: eventos.append("backup"))
     monkeypatch.setattr(main, "_start_cap200_fix_once", lambda: eventos.append("cap200"))
     monkeypatch.setattr(main, "_start_emision_refresh_once", lambda: eventos.append("emision"))
-    monkeypatch.setattr(discord_presence, "limpiar", lambda: eventos.append("discord"))
 
     with TestClient(main.app) as c:
         assert eventos == ["backup", "cap200", "emision"]
         assert c.get("/api/health").status_code == 200
-    # Al salir del contexto se ejecuta el apagado
-    assert eventos == ["backup", "cap200", "emision", "discord"]
 
 
 def test_scraper_roto_devuelve_ficha_hueca_y_se_completa(client, monkeypatch):

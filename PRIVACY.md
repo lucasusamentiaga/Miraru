@@ -41,9 +41,7 @@ adultos.
   «Marcar como visto» en animeav1.com y se lo comunica a Miraru en tu propio ordenador
   (127.0.0.1). No lee tu historial ni otras páginas, y no envía nada a terceros.
 - *Google Sheets*: copia tu lista a una hoja de cálculo de tu cuenta de Google.
-- *Avisos por correo*: envía correos con el servidor de correo que tú configures.
 - *Notificaciones del navegador*: usan el servicio de notificaciones de tu navegador.
-- *Discord*: muestra en tu perfil de Discord lo que estás viendo.
 - *Acceso desde el móvil*: abre Miraru a otros dispositivos de tu red local, protegido
   con un PIN.
 
@@ -88,7 +86,7 @@ Miraru hides from searches any content those sources flag as adults-only.
   folder, Miraru keeps a copy of your list in it (in a `Miraru` folder) so you can restore
   it after formatting or changing computers. With OneDrive it turns on by itself; you can
   pick another folder or turn it off under ☁ Cloud backup. The backup **does not
-  include** passwords, sessions or keys (AniList token, AnimeAV1 cookie, email password,
+  include** passwords, sessions or keys (AniList token, AnimeAV1 cookie,
   phone PIN). That folder is synced by your cloud provider with your account; Miraru sends
   nothing anywhere else.
 - *AniList sync*: sends your list to your AniList account.
@@ -99,9 +97,7 @@ Miraru hides from searches any content those sources flag as adults-only.
   computer (127.0.0.1). It does not read your history or other pages and sends nothing to
   third parties.
 - *Google Sheets*: copies your list to a spreadsheet in your Google account.
-- *Email alerts*: sent through the mail server you configure.
 - *Browser notifications*: your browser's push service.
-- *Discord*: shows what you are watching on your Discord profile.
 - *Mobile access*: opens Miraru to devices on your local network, protected by a PIN.
 
 Each of these services has its own privacy policy.

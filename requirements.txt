@@ -27,5 +27,3 @@ google-api-python-client==2.196.0
 pywebpush>=2.0.0
 
 # ── Opcionales ────────────────────────────────────────────────────────────────
-# Discord Rich Presence: si falta, la función se desactiva sola (no rompe nada).
-pypresence>=4.3.0

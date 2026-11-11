@@ -91,34 +91,6 @@ def test_cascade_delete_limpia_historial_y_tags(db):
     assert db.get_config("tags:Z") is None, "tags NO limpiados tras delete"
 
 
-def test_listar_favoritos_ordena_por_puntuacion(db):
-    db.guardar_anime({"nombre": "A"})
-    db.guardar_anime({"nombre": "B"})
-    db.guardar_anime({"nombre": "C"})
-    db.actualizar_anime("A", {"favorito": 1, "puntuacion": 7.0})
-    db.actualizar_anime("B", {"favorito": 1, "puntuacion": 9.5})
-    db.actualizar_anime("C", {"favorito": 0, "puntuacion": 10.0})
-    favs = db.listar_favoritos()
-    assert [f["nombre"] for f in favs] == ["B", "A"]  # C excluido, B primero
-
-
-def test_listar_por_lista(db):
-    db.guardar_anime({"nombre": "P1"})
-    db.guardar_anime({"nombre": "P2"})
-    db.actualizar_anime("P2", {"lista_personalizada": "quiero_ver"})
-    principal = db.listar_por_lista("principal")
-    quiero = db.listar_por_lista("quiero_ver")
-    assert {a["nombre"] for a in principal} == {"P1"}
-    assert {a["nombre"] for a in quiero} == {"P2"}
-
-
-def test_buscar_animes_parcial_case_insensitive(db):
-    db.guardar_anime({"nombre": "Attack on Titan"})
-    db.guardar_anime({"nombre": "One Piece"})
-    res = db.buscar_animes("attack")
-    assert len(res) == 1 and res[0]["nombre"] == "Attack on Titan"
-
-
 def test_manga_volumenes_crud(db):
     """Guardar manga con volumenes_totales y actualizar volumenes_leidos."""
     db.guardar_anime({

@@ -17,18 +17,13 @@ import os
 import random
 import re
 import secrets
-import smtplib
 import sqlite3
 import tempfile
 import threading
 import time as _time
-import xml.etree.ElementTree as ET
 import zipfile
 from collections import Counter, OrderedDict
 from contextlib import asynccontextmanager
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from html import escape as _esc
 from pathlib import Path
 from typing import Literal, Optional
 
@@ -157,13 +152,6 @@ async def _lifespan(app: FastAPI):
 
     yield          # ← aquí el servidor atiende peticiones
 
-    # ── Apagado ──
-    # Limpiar el estado de Discord para no dejar "viendo X" colgado al cerrar.
-    try:
-        import discord_presence
-        discord_presence.limpiar()
-    except Exception:
-        pass
 
 
 app = FastAPI(title="Miraru", version=VERSION, lifespan=_lifespan)
@@ -238,7 +226,7 @@ async def _lan_auth_guard(request: Request, call_next):
     # v2.16: desde el móvil, la web de PC no sirve (sus llamadas no llevan
     # token y todo da 401). Quien abre la dirección del PC en el navegador del
     # móvil va directo a la versión para móvil, que pide el PIN.
-    if path in ("/", "/app"):
+    if path in ("/", "/app", "/manga"):
         return RedirectResponse("/m", status_code=307)
 
     # Páginas HTML (no /api) — siempre OK: no llevan datos, los piden luego a
@@ -813,8 +801,8 @@ def _hay_ids_repetidos() -> bool:
 
 # ── Daemon de notificaciones de nuevos episodios ─────────────────────────────
 # Comprueba periódicamente si los animes con notif_activa (campanita) tienen
-# episodio nuevo y avisa por email (si hay) y por Web Push (si algún navegador
-# está suscrito: llega aunque la pestaña esté cerrada). El último episodio
+# episodio nuevo y avisa por Web Push (si algún navegador está suscrito: llega
+# aunque la pestaña esté cerrada). El último episodio
 # avisado se guarda en config para no repetir avisos tras reiniciar (antes
 # vivía solo en memoria).
 
@@ -834,9 +822,7 @@ def _comprobar_nuevos_episodios() -> list[tuple[str, int]]:
     """Una pasada del daemon. Devuelve [(nombre, ultimo_emitido)] avisados."""
     import push_web
     activos = db.listar_con_notif()
-    email = db.get_config("email_notif") or ""
-    hay_push = push_web.num_suscripciones() > 0
-    if not activos or not (email or hay_push):
+    if not activos or not push_web.num_suscripciones():
         return []
     info = _fetch_ultimos_episodios(activos)
     visto = _notif_cargar_visto()
@@ -857,67 +843,30 @@ def _comprobar_nuevos_episodios() -> list[tuple[str, int]]:
         if ultimo_emitido > vistos and ultimo_emitido > prev:
             visto[a["nombre"]] = ultimo_emitido
             avisados.append((a["nombre"], ultimo_emitido))
-            if email:
-                _notif_enviar_nuevo_disponible(a, vistos, ultimo_emitido, email)
-            if hay_push:
-                pendientes = ultimo_emitido - vistos
-                try:
-                    push_web.enviar(
-                        f"📺 {a['nombre']}",
-                        f"Episodio {vistos + 1} disponible" if pendientes == 1
-                        else f"{pendientes} episodios sin ver (hasta el {ultimo_emitido})",
-                        url="/app", tag=f"anime-{a['nombre']}-{ultimo_emitido}",
-                        icono=a.get("imagen") or None)
-                except Exception as e:
-                    _sync_log.warning("push: %s", e)
+            pendientes = ultimo_emitido - vistos
+            try:
+                push_web.enviar(
+                    f"📺 {a['nombre']}",
+                    f"Episodio {vistos + 1} disponible" if pendientes == 1
+                    else f"{pendientes} episodios sin ver (hasta el {ultimo_emitido})",
+                    url="/app", tag=f"anime-{a['nombre']}-{ultimo_emitido}",
+                    icono=a.get("imagen") or None)
+            except Exception as e:
+                _sync_log.warning("push: %s", e)
     if avisados:
         db.set_config(_CFG_NOTIF_VISTO, json.dumps(visto))
     return avisados
 
 
 def _notif_daemon_loop():
-    """Hilo daemon: comprueba nuevos episodios cada 2h (4h si solo hay email)."""
-    import push_web
+    """Hilo daemon: comprueba nuevos episodios cada 2 h."""
     while True:
         try:
             _comprobar_nuevos_episodios()
         except Exception as e:
             _sync_log.warning("notif daemon: %s", e)
-        _time.sleep((2 if push_web.num_suscripciones() else 4) * 3600)
+        _time.sleep(2 * 3600)
 
-
-def _notif_enviar_nuevo_disponible(anime: dict, vistos: int, disponible: int, email: str):
-    """Envía email avisando de episodio(s) nuevo(s) disponible(s)."""
-    nombre_raw = anime.get("nombre", "?")
-    # Escapar: nombre/imagen vienen de scrapers externos y van dentro de HTML
-    nombre = _esc(nombre_raw)
-    imagen = _esc(anime.get("imagen", "") or "", quote=True)
-    pendientes = disponible - vistos
-    html = f"""
-    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#0a0812;
-                color:#edecf4;border-radius:16px;overflow:hidden">
-      <div style="background:linear-gradient(135deg,#059669,#34d399);padding:20px 24px">
-        <h2 style="margin:0;color:#fff;font-size:20px">{'Nuevo episodio' if pendientes == 1 else f'{pendientes} episodios nuevos'}</h2>
-      </div>
-      <div style="padding:24px;display:flex;gap:16px">
-        {'<img src="'+imagen+'" style="width:80px;height:110px;object-fit:cover;border-radius:8px;flex-shrink:0" />' if imagen else ''}
-        <div>
-          <h3 style="color:#6ee7b7;margin:0 0 8px">{nombre}</h3>
-          <p style="color:#a49dc0;font-size:14px;margin:0 0 8px">
-            {'Hay un episodio nuevo esperándote' if pendientes == 1
-             else f'Tienes {pendientes} episodios sin ver'}
-          </p>
-          <p style="color:#a49dc0;font-size:13px;margin:0">
-            Tu progreso: ep {vistos} · Disponible hasta ep {disponible}
-          </p>
-        </div>
-      </div>
-      <div style="padding:0 24px 20px">
-        <p style="color:#4a4a60;font-size:11px;margin:0">Miraru — notificación automática</p>
-      </div>
-    </div>"""
-    subj = f"🆕 {nombre_raw} — {'ep ' + str(disponible) if pendientes == 1 else str(pendientes) + ' eps nuevos'}"
-    _sync_bg(_enviar_email, email, subj, html)
 
 
 def _start_notif_daemon_once():
@@ -971,9 +920,6 @@ from core import executor  # noqa: E402
 class PinRequest(BaseModel):
     pin: str
 
-class MobileAuthResponse(BaseModel):
-    token: str
-    expira_en: int  # unix timestamp
 
 # Token de sesión en memoria — se regenera al reiniciar la app
 _mobile_tokens: dict[str, float] = {}   # token -> expiry
@@ -1403,11 +1349,6 @@ async def apagar(request: Request):
         # Margen para que la respuesta HTTP salga antes de morir; si no, el
         # navegador muestra un error de red justo al pulsar "Salir".
         _time.sleep(0.6)
-        try:
-            import discord_presence
-            discord_presence.limpiar()
-        except Exception:
-            pass
         os._exit(0)
 
     threading.Thread(target=_adios, daemon=True).start()
@@ -1428,6 +1369,12 @@ async def movil_web():
 @app.get("/app", response_class=HTMLResponse)
 async def index():
     """App principal de tracking."""
+    return FileResponse(str(TEMPLATES_DIR / "index.html"))
+
+@app.get("/manga", response_class=HTMLResponse)
+async def manga_page():
+    """v2.17: apartado de manga. Es la misma página que /app en «modo manga»
+    (la plantilla mira la ruta): solo enseña y añade manga."""
     return FileResponse(str(TEMPLATES_DIR / "index.html"))
 
 @app.get("/setup", response_class=HTMLResponse)
@@ -1471,9 +1418,6 @@ async def get_ui_translations():
     import i18n_ui
     return i18n_ui.ui_para(get_lang())
 
-@app.get("/api/langs")
-async def list_languages():
-    return {"langs": list(TRANSLATIONS.keys())}
 
 # ── Setup ─────────────────────────────────────────────────────────────────────
 
@@ -1513,9 +1457,6 @@ async def setup_status():
 
 # ── Animes ────────────────────────────────────────────────────────────────────
 
-@app.get("/api/fuentes")
-async def listar_fuentes():
-    return {"fuentes": list(SCRAPERS.keys())}
 
 @app.get("/api/animes/random")
 async def anime_aleatorio(estado: str = "pendiente", tipo: str = "anime"):
@@ -1705,13 +1646,6 @@ def _generar_razon(anime: dict, animo: str, mood_genres: set, genre_weight: Coun
     return " · ".join(razones) if razones else "variedad: algo diferente"
 
 
-@app.get("/api/animes/search")
-async def buscar_local(q: str = "", limit: int = 20):
-    """Búsqueda local rápida por nombre — para autocompletado."""
-    if not q.strip():
-        return {"animes": []}
-    resultados = db.buscar_animes(q.strip(), limit=min(limit, 50))
-    return {"animes": resultados}
 
 @app.get("/api/animes")
 async def listar_animes():
@@ -1883,11 +1817,6 @@ def _actualizar_relaciones(animes: list[dict], anilist_mod=None, sleep=None) -> 
         sleep(ANILIST_MIN_INTERVAL)
     return nuevas
 
-
-@app.post("/api/duplicados/fusionar")
-def api_fusionar_repetidos():
-    """Junta ahora los animes repetidos (lo mismo que se hace solo al arrancar)."""
-    return _fusionar_repetidos()
 
 
 @app.get("/api/franquicias")
@@ -2766,24 +2695,11 @@ async def importar_bulk(req: ImportRequest):
 
     return resultados
 
-@app.get("/api/animes/lista/{nombre_lista}")
-async def get_animes_lista(nombre_lista: str):
-    """Animes de una lista personalizada."""
-    return {"animes": db.listar_por_lista(nombre_lista), "lista": nombre_lista}
 
 @app.get("/api/animes/{nombre:path}/historial")
 async def get_historial_anime(nombre: str):
     """Devuelve el historial de cambios de estado de un anime."""
     return {"historial": db.get_historial(nombre)}
-
-def _actualizar_discord(anime: dict) -> None:
-    """Publica el estado en Discord sin bloquear la respuesta ni fallar nunca."""
-    try:
-        import discord_presence
-        if discord_presence.activado():
-            _sync_bg(discord_presence.actualizar, anime)
-    except Exception as e:      # pypresence ausente, etc.
-        _sync_log.debug("discord presence: %s", e)
 
 
 @app.post("/api/animes/{nombre:path}/plus1")
@@ -2811,18 +2727,11 @@ async def plus_episodio(nombre: str, nota: str = ""):
     # v2.9: guardar nota del episodio si se proporcionó
     if nota and nota.strip():
         db.guardar_nota_episodio(nombre, nuevos, nota.strip()[:2000])
-    # Una sola relectura para Sheets y para el email (antes se consultaba dos veces)
     actualizado = db.obtener_anime(nombre)
     # Igual que al editar: con AniList conectado, el +1 también se sube (antes
     # solo se subía al guardar desde la ficha y el +1 se quedaba en local).
     if actualizado and actualizado.get("anilist_id") and anilist_sync.is_connected():
         _sync_bg(anilist_sync.push_anime, actualizado)
-    # Notificar por email solo si el anime está en emisión Y tiene la campanita
-    if actualizado and actualizado.get("estado_anime", "").lower() in ("en emisión", "releasing", "en emision"):
-        _enviar_notif_nuevo_episodio(actualizado, nuevos)
-    # Discord Rich Presence (opcional, silencioso si no está configurado)
-    if actualizado:
-        _actualizar_discord(actualizado)
     return {"ok": True, "episodios_vistos": nuevos}
 
 # ── Notas por episodio ────────────────────────────────────────────────────────
@@ -2890,17 +2799,6 @@ async def mobile_auth(req: PinRequest, request: Request):
     _mobile_tokens[token] = _time.time() + _TOKEN_TTL
     return {"ok": True, "token": token, "expira_en": int(_time.time() + _TOKEN_TTL)}
 
-@app.post("/api/mobile/set-pin")
-async def set_mobile_pin(req: PinRequest):
-    """Configura el PIN. Protegido por el middleware: en modo móvil exige
-    loopback o token válido (en v1 cualquiera en LAN podía cambiarlo)."""
-    pin = req.pin.strip()
-    if not (4 <= len(pin) <= 8) or not pin.isdigit():
-        raise HTTPException(400, "El PIN debe tener entre 4 y 8 dígitos.")
-    db.set_config("mobile_pin", _hash_pin(pin))
-    # Invalidar todos los tokens existentes al cambiar PIN
-    _mobile_tokens.clear()
-    return {"ok": True}
 
 @app.get("/api/mobile/status")
 async def mobile_status():
@@ -3015,69 +2913,26 @@ async def disable_mobile():
     _mobile_tokens.clear()
     return {"ok": True, "mensaje": "Acceso móvil desactivado. Reinicia la app."}
 
-# ── Discord Rich Presence (opcional) ──────────────────────────────────────────
-
-class DiscordConfigRequest(BaseModel):
-    enabled: Optional[bool] = None
-    app_id:  Optional[str]  = None
-
-
-@app.get("/api/discord")
-async def get_discord_config():
-    """Estado del Rich Presence: activado, si hay App ID y si pypresence existe."""
-    try:
-        import pypresence  # noqa: F401
-        disponible = True
-    except Exception:
-        disponible = False
-    return {
-        "enabled":    db.get_config("discord_enabled") == "1",
-        "configured": bool(db.get_config("discord_app_id")),
-        "disponible": disponible,   # False → falta `pip install pypresence`
-    }
-
-
-@app.post("/api/discord")
-async def set_discord_config(req: DiscordConfigRequest):
-    """Guarda la configuración. Al desactivar, limpia el estado en Discord."""
-    if req.app_id is not None:
-        db.set_config("discord_app_id", req.app_id.strip()[:64])
-    if req.enabled is not None:
-        db.set_config("discord_enabled", "1" if req.enabled else "0")
-        if not req.enabled:
-            try:
-                import discord_presence
-                discord_presence.limpiar()
-            except Exception:
-                pass
-    return {"ok": True,
-            "enabled": db.get_config("discord_enabled") == "1",
-            "configured": bool(db.get_config("discord_app_id"))}
-
 
 # ── Perfil de usuario ─────────────────────────────────────────────────────────
 
 class PerfilRequest(BaseModel):
     nombre_usuario: Optional[str] = None
-    email_notif:    Optional[str] = None
 
 @app.get("/api/perfil")
 async def get_perfil():
     """Devuelve el perfil del usuario guardado."""
     return {
         "nombre_usuario": db.get_config("nombre_usuario") or "",
-        "email_notif":    db.get_config("email_notif") or "",
         "avatar_url":     "/api/perfil/avatar",
         "tiene_avatar":   (APP_DIR / "avatar.jpg").exists() or (APP_DIR / "avatar.png").exists(),
     }
 
 @app.post("/api/perfil")
 async def set_perfil(req: PerfilRequest):
-    """Guarda nombre de usuario y email de notificaciones."""
+    """Guarda el nombre de usuario."""
     if req.nombre_usuario is not None:
         db.set_config("nombre_usuario", req.nombre_usuario.strip()[:50])
-    if req.email_notif is not None:
-        db.set_config("email_notif", req.email_notif.strip()[:100])
     return {"ok": True}
 
 @app.post("/api/perfil/avatar")
@@ -3226,114 +3081,6 @@ def _novedades_respaldo(plataforma: str, motivo: str) -> dict:
         return {"novedades": [], "plataforma": plataforma, "total": 0,
                 "error": "Ahora mismo no se pueden cargar los datos. Inténtalo en un rato."}
 
-# ── Notificaciones por email (nuevos episodios) ───────────────────────────────
-
-class EmailConfigRequest(BaseModel):
-    gmail_user: str    # tu@gmail.com
-    gmail_app_password: str   # contraseña de app de Google (16 chars)
-
-@app.post("/api/notif/config-email")
-async def config_email(req: EmailConfigRequest):
-    """Guarda credenciales Gmail para notificaciones."""
-    if not req.gmail_user.endswith("@gmail.com"):
-        raise HTTPException(400, "Solo se admiten cuentas @gmail.com")
-    if len(req.gmail_app_password.replace(" ","")) != 16:
-        raise HTTPException(400, "La contraseña de app de Gmail tiene 16 caracteres.")
-    db.set_config("gmail_user", req.gmail_user.strip())
-    # Guardar contraseña ofuscada (no encriptada, solo local)
-    db.set_config("gmail_app_pass", req.gmail_app_password.replace(" ",""))
-    return {"ok": True}
-
-@app.get("/api/notif/config-email")
-async def get_email_config():
-    return {
-        "gmail_user":    db.get_config("gmail_user") or "",
-        "configurado":   bool(db.get_config("gmail_user") and db.get_config("gmail_app_pass")),
-    }
-
-@app.post("/api/notif/test-email")
-def test_email():
-    """Envía un email de prueba."""
-    ok, msg = _enviar_email_prueba()
-    if not ok:
-        # Falta configuración → 400 (es cosa del usuario, no un fallo del servidor);
-        # el envío fallido (SMTP, contraseña) → 502.
-        raise HTTPException(400 if msg.startswith(("Configura", "Email no configurado")) else 502, msg)
-    return {"ok": True, "msg": msg}
-
-def _enviar_email(destinatario: str, asunto: str, cuerpo: str) -> tuple[bool, str]:
-    """Envía un email via Gmail SMTP."""
-    gmail_user = db.get_config("gmail_user")
-    gmail_pass = db.get_config("gmail_app_pass")
-    if not gmail_user or not gmail_pass:
-        return False, "Email no configurado"
-    try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = asunto
-        msg["From"]    = f"Miraru <{gmail_user}>"
-        msg["To"]      = destinatario
-        msg.attach(MIMEText(cuerpo, "html", "utf-8"))
-
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
-            server.login(gmail_user, gmail_pass)
-            server.sendmail(gmail_user, destinatario, msg.as_string())
-        return True, "Enviado"
-    except smtplib.SMTPAuthenticationError:
-        return False, "Credenciales Gmail incorrectas. Usa una contraseña de app."
-    except Exception as e:
-        return False, str(e)[:200]
-
-def _enviar_email_prueba() -> tuple[bool, str]:
-    email = db.get_config("email_notif") or db.get_config("gmail_user") or ""
-    if not email:
-        return False, "Configura el email de destino en tu perfil."
-    html = """
-    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#1a1a24;
-                color:#e2e2e8;padding:24px;border-radius:12px">
-      <h2 style="color:#a78bfa">🎌 Miraru</h2>
-      <p>Este es un email de prueba. Las notificaciones están funcionando correctamente.</p>
-    </div>"""
-    return _enviar_email(email, "✅ Miraru — Notificaciones activas", html)
-
-def _enviar_notif_nuevo_episodio(anime: dict, num_ep: int):
-    """Envía notificación de progreso de un anime en emisión.
-
-    Solo si el usuario activó las notificaciones DE ESE anime (campanita). Antes
-    bastaba con tener un email configurado, así que marcar +1 episodio enviaba un
-    correo en cada clic —maratonear llenaba la bandeja— e ignoraba por completo
-    el interruptor `notif_activa` que existe justo para esto.
-    """
-    if not anime.get("notif_activa"):
-        return
-    email = db.get_config("email_notif") or ""
-    if not email:
-        return
-    nombre_raw = anime.get("nombre", "?")
-    nombre   = _esc(nombre_raw)
-    imagen   = _esc(anime.get("imagen", "") or "", quote=True)
-    genero   = _esc(anime.get("genero", "") or "")
-    puntuacion = _esc(str(anime.get("puntuacion") or "—"))
-
-    html = f"""
-    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#0a0812;
-                color:#edecf4;border-radius:16px;overflow:hidden">
-      <div style="background:linear-gradient(135deg,#7c3aed,#a855f7);padding:20px 24px">
-        <h2 style="margin:0;color:#fff;font-size:20px">Progreso registrado</h2>
-      </div>
-      <div style="padding:24px;display:flex;gap:16px">
-        {'<img src="'+imagen+'" style="width:80px;height:110px;object-fit:cover;border-radius:8px;flex-shrink:0" />' if imagen else ''}
-        <div>
-          <h3 style="color:#c4b1ff;margin:0 0 8px">{nombre}</h3>
-          <p style="color:#a49dc0;font-size:13px;margin:0 0 4px">Vas por el episodio <strong style="color:#edecf4">{num_ep}</strong></p>
-          <p style="color:#a49dc0;font-size:13px;margin:0 0 4px">Géneros: {genero}</p>
-          <p style="color:#a49dc0;font-size:13px;margin:0">Tu puntuación: {puntuacion}</p>
-        </div>
-      </div>
-      <div style="padding:0 24px 20px">
-        <p style="color:#4a4a60;font-size:11px;margin:0">Miraru — notificación automática</p>
-      </div>
-    </div>"""
-    _sync_bg(_enviar_email, email, f"📺 {nombre_raw} — episodio {num_ep}", html)
 
 # ── Ruta novedades page ────────────────────────────────────────────────────────
 
@@ -3529,97 +3276,43 @@ def copia_recuperar(req: CopiaRecuperarRequest):
     return r
 
 
+# ── Traer la lista de AniList o MyAnimeList de golpe (v2.17) ──────────────────
+
+class ImportarAniListRequest(BaseModel):
+    username: str = Field("", max_length=60)
+
+
+@app.post("/api/import/anilist")
+def import_anilist(req: ImportarAniListRequest):
+    """Lista pública de AniList por nombre de usuario (anime y manga)."""
+    import importar_listas
+    r = importar_listas.desde_anilist(req.username)
+    if not r.get("ok"):
+        raise HTTPException(400, r.get("error") or "No se pudo importar")
+    return r
+
+
+@app.post("/api/import/mal-xml")
+def importar_mal_xml(file: UploadFile = File(...)):
+    """El .xml que exporta MyAnimeList (anime o manga)."""
+    import importar_listas
+    contenido = file.file.read(8 * 1024 * 1024 + 1)
+    if len(contenido) > 8 * 1024 * 1024:
+        raise HTTPException(413, "El archivo es demasiado grande.")
+    r = importar_listas.desde_mal_xml(contenido, pausa=lambda: _time.sleep(1.2))
+    if not r.get("ok"):
+        raise HTTPException(400, r.get("error") or "No se pudo importar")
+    return r
+
+
 @app.post("/api/copia/empezar-de-cero")
 def copia_empezar_de_cero():
     copia_nube.empezar_de_cero()
     return {"ok": True}
 
 
-@app.get("/api/backups")
-async def listar_backups():
-    backup_dir = Path(os.environ.get("ANIME_APP_DIR", str(APP_DIR))) / "backups"
-    if not backup_dir.exists():
-        return {"backups": []}
-    backups = sorted(backup_dir.glob("anime_tracker_*.zip"),
-                     key=lambda f: f.stat().st_mtime, reverse=True)
-    return {"backups": [
-        {"nombre": f.name, "size_kb": f.stat().st_size // 1024,
-         "fecha": f.stat().st_mtime}
-        for f in backups[:20]
-    ]}
 
-# ── Importar desde MAL XML ────────────────────────────────────────────────────
 
-@app.post("/api/import/mal-xml")
-async def importar_mal_xml(file: UploadFile = File(...)):
-    """Importa lista de animes desde el XML de exportación de MyAnimeList."""
-    content = await file.read()
-    try:
-        root = ET.fromstring(content)
-    except ET.ParseError as e:
-        raise HTTPException(400, f"XML inválido: {e}")
-
-    status_map = {
-        "Watching":     "viendo",
-        "Completed":    "completado",
-        "On-Hold":      "pausa",
-        "Dropped":      "abandonado",
-        "Plan to Watch":"pendiente",
-    }
-
-    animes_raw = []
-    for anime in root.findall(".//anime"):
-        title = anime.findtext("series_title","").strip()
-        status = anime.findtext("my_status","").strip()
-        score = anime.findtext("my_score","0")
-        watched = anime.findtext("my_watched_episodes","0")
-        if not title:
-            continue
-        animes_raw.append({
-            "nombre": title,
-            "estado_usuario": status_map.get(status, "pendiente"),
-            "puntuacion": float(score) if score and score != "0" else None,
-            "episodios_vistos": int(watched) if watched else 0,
-        })
-
-    loop = asyncio.get_running_loop()
-    añadidos, duplicados, errores = [], [], []
-
-    for data in animes_raw[:200]:  # máx 200
-        # Buscar info completa en AniList
-        scraper = SCRAPERS.get("anilist")
-        resultado = None
-        if scraper:
-            resultado = await loop.run_in_executor(executor, scraper.buscar, data["nombre"])
-
-        if resultado:
-            d = resultado.__dict__.copy()
-            d.update({k: v for k, v in data.items() if v is not None and k != "nombre"})
-        else:
-            d = {
-                "nombre": data["nombre"], "fuente": "mal-import",
-                "capitulos": 0, "imagen": "", "genero": [],
-                "sinopsis": "", "estado_anime": "",
-                **{k: v for k, v in data.items() if v is not None},
-            }
-
-        ok, msg = db.guardar_anime(d)
-        if msg == "duplicado":
-            duplicados.append(data["nombre"])
-        elif ok:
-            añadidos.append(data["nombre"])
-        else:
-            errores.append(data["nombre"])
-
-    return {
-        "ok": True,
-        "añadidos": len(añadidos),
-        "duplicados": len(duplicados),
-        "errores": len(errores),
-        "total_procesados": min(len(animes_raw), 200),
-        "total_en_archivo": len(animes_raw),
-        "omitidos": max(0, len(animes_raw) - 200),
-    }
 
 # ── Tags personalizados ───────────────────────────────────────────────────────
 
@@ -3655,26 +3348,9 @@ async def del_tag(nombre: str, tag: str):
 
 # ── Sugerencias de búsqueda ───────────────────────────────────────────────────
 
-@app.get("/api/suggest")
-async def sugerencias(q: str = ""):
-    """Autocompletado rápido: lista local + historial de búsquedas."""
-    if len(q) < 2:
-        return {"sugerencias": []}
-    local = db.buscar_animes(q, limit=5)
-    return {"sugerencias": [a["nombre"] for a in local]}
-
-
-
 
 # ── Listas personalizadas ─────────────────────────────────────────────────────
 
-@app.get("/api/listas")
-async def get_listas():
-    return {"listas": db.listar_listas()}
-
-@app.get("/api/favoritos")
-async def get_favoritos():
-    return {"animes": db.listar_favoritos()}
 
 @app.post("/api/animes/{nombre:path}/favorito")
 async def toggle_favorito(nombre: str):
@@ -4160,23 +3836,6 @@ async def _scores_en_paralelo(nombre: str) -> dict:
     return _combinar_scores(a, m, k)
 
 
-def _fetch_scores(nombre: str) -> dict:
-    """Consulta las tres fuentes y devuelve scores normalizados a 0-10."""
-    anilist = _fetch_score_anilist(nombre)
-    mal = _fetch_score_mal(nombre)
-    kitsu = _fetch_score_kitsu(nombre)
-
-    # Media ponderada de los scores disponibles
-    scores = [s["score"] for s in [anilist, mal, kitsu] if s["score"] is not None]
-    media = round(sum(scores) / len(scores), 1) if scores else None
-
-    return {
-        "anilist": anilist,
-        "mal": mal,
-        "kitsu": kitsu,
-        "media": media,
-    }
-
 
 @app.get("/api/animes/{nombre:path}/scores")
 async def anime_scores(nombre: str):
@@ -4496,197 +4155,13 @@ def _fetch_calendario(nombres: list) -> dict:
         return {"dias": {}, "total": 0, "error": str(e)[:200]}
 
 
-# ── Importar desde AniList por username ───────────────────────────────────────
-
-@app.post("/api/import/anilist")
-async def import_anilist(data: dict):
-    username = (data.get("username") or "").strip()
-    if not username:
-        raise HTTPException(400, "Username requerido")
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(executor, _import_from_anilist, username)
-
-
-def _import_from_anilist(username: str) -> dict:
-    query = """query($username: String) {
-      MediaListCollection(userName: $username, type: ANIME) {
-        lists { name entries {
-          status score progress
-          media {
-            title { romaji english }
-            coverImage { large }
-            genres episodes description(asHtml:false)
-            status siteUrl
-          }
-        }}
-      }
-    }"""
-    try:
-        data = _anilist(query, {"username": username}, timeout=20)
-        lists = (data.get("MediaListCollection") or {}).get("lists", [])
-        if not lists:
-            return {"ok": False, "error": "Usuario no encontrado o lista vacía"}
-        status_map = {"CURRENT":"viendo","COMPLETED":"completado","PAUSED":"pausa","DROPPED":"abandonado","PLANNING":"pendiente","REPEATING":"viendo"}
-        added, skipped = 0, 0
-        for lst in lists:
-            for entry in (lst.get("entries") or []):
-                media = entry.get("media") or {}
-                titulo = (media.get("title") or {}).get("english") or (media.get("title") or {}).get("romaji") or ""
-                if not titulo: continue
-                desc = re.sub(r"<[^>]+>", "", (media.get("description") or ""))[:500]
-                anime_data = {
-                    "nombre": titulo, "fuente": "anilist",
-                    "capitulos": media.get("episodes") or "?",
-                    "imagen": (media.get("coverImage") or {}).get("large") or "",
-                    "genero": media.get("genres") or [],
-                    "sinopsis": desc,
-                    "estado_anime": {"RELEASING":"En emisión","FINISHED":"Finalizado","NOT_YET_RELEASED":"Próximamente"}.get(media.get("status",""),""),
-                    "estado_usuario": status_map.get(entry.get("status",""), "pendiente"),
-                    "puntuacion": (entry.get("score") or 0) if entry.get("score") else None,
-                    "episodios_vistos": entry.get("progress") or 0,
-                }
-                ok, msg = db.guardar_anime(anime_data)
-                if ok: added += 1
-                else: skipped += 1
-        return {"ok": True, "añadidos": added, "omitidos": skipped, "username": username}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
 
 
 # ── Perfil compartible ────────────────────────────────────────────────────────
 
-@app.get("/api/perfil/compartir")
-async def perfil_compartible():
-    animes = db.listar_animes()
-    scored = [a for a in animes if a.get("puntuacion")]
-    top5 = sorted(scored, key=lambda x: -(x.get("puntuacion") or 0))[:5]
-    genre_cnt: Counter = Counter()
-    for a in animes:
-        for g in (a.get("genero") or "").split(","):
-            g = g.strip()
-            if g: genre_cnt[g] += 1
-    return {
-        "stats": {
-            "total": len(animes),
-            "completados": len([a for a in animes if a.get("estado_usuario") in ("completado","completed")]),
-            "viendo": len([a for a in animes if a.get("estado_usuario") in ("viendo","watching")]),
-            "episodios": sum(int(a.get("episodios_vistos") or 0) for a in animes),
-            "horas": round(sum(int(a.get("episodios_vistos") or 0) for a in animes) * 24 / 60, 1),
-            "puntuacion_media": round(sum(a.get("puntuacion") or 0 for a in scored) / max(1, len(scored)), 1),
-        },
-        "top5": [{"nombre":a["nombre"],"puntuacion":a.get("puntuacion"),"imagen":a.get("imagen","")} for a in top5],
-        "generos": [g for g, _ in genre_cnt.most_common(5)],
-    }
-
-
-@app.get("/api/perfil/compartir/html")
-async def perfil_compartible_html():
-    """Genera una página HTML autocontenida y bonita con tu perfil de anime,
-    lista para compartir o guardar como archivo."""
-    data = await perfil_compartible()
-    perfil = db.get_config_many(["perfil_nombre", "perfil_bio"])
-    nombre_usuario = perfil.get("perfil_nombre", "Otaku")
-    bio = perfil.get("perfil_bio", "")
-    animes = db.listar_animes()
-    # Agrupar por estado
-    grupos = {}
-    for a in animes:
-        est = a.get("estado_usuario", "pendiente")
-        grupos.setdefault(est, []).append(a)
-    # Generar secciones HTML de la lista
-    secciones_html = ""
-    estado_labels = {
-        "completado": "Completados", "completed": "Completados",
-        "viendo": "Viendo", "watching": "Viendo",
-        "pendiente": "Pendientes", "pending": "Pendientes",
-        "abandonado": "Abandonados", "dropped": "Abandonados",
-    }
-    estado_order = ["viendo", "watching", "completado", "completed", "pendiente", "pending", "abandonado", "dropped"]
-    vistos_estados = set()
-    for est in estado_order:
-        if est in grupos and est not in vistos_estados:
-            label = estado_labels.get(est, est.title())
-            vistos_estados.add(est)
-            # Dedup labels (viendo/watching, completado/completed)
-            items = grupos[est]
-            cards = ""
-            for a in items[:50]:  # limitar para no crear HTML gigante
-                img = a.get("imagen") or ""
-                punt = a.get("puntuacion") or ""
-                punt_html = f'<span class="score">{punt}</span>' if punt else ""
-                eps = ""
-                if a.get("episodios_vistos"):
-                    cap_t = a.get("capitulos") or "?"
-                    eps = f'<span class="eps">Ep {a["episodios_vistos"]}/{cap_t}</span>'
-                cards += f'''<div class="card">
-                  <img src="{img}" alt="" onerror="this.style.display='none'" loading="lazy"/>
-                  <div class="info"><span class="title">{a["nombre"]}</span>{eps}{punt_html}</div>
-                </div>\n'''
-            secciones_html += f'<h2>{label} <span class="count">({len(items)})</span></h2>\n<div class="grid">{cards}</div>\n'
-
-    stats = data["stats"]
-    top5_html = "".join(
-        f'<div class="top-card"><img src="{t["imagen"]}" alt="" onerror="this.style.display=\'none\'" />'
-        f'<span>{t["nombre"]}</span><span class="sc">{t["puntuacion"]}</span></div>'
-        for t in data["top5"]
-    )
-    generos_html = " · ".join(data["generos"])
-    html = f"""<!DOCTYPE html>
-<html lang="es"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Perfil de {nombre_usuario} — Miraru</title>
-<style>
-*{{box-sizing:border-box;margin:0;padding:0}}
-body{{background:#0f0f13;color:#e2e2e8;font-family:"Segoe UI",system-ui,sans-serif;padding:24px}}
-.container{{max-width:900px;margin:0 auto}}
-.header{{text-align:center;padding:32px 0;border-bottom:1px solid #2a2a38;margin-bottom:24px}}
-.header h1{{font-size:28px;color:#c4b5fd;margin-bottom:4px}}
-.header p{{color:#6b6b88;font-size:14px}}
-.stats{{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:20px 0}}
-.stat{{background:#1a1a24;border:1px solid #2a2a38;border-radius:12px;padding:16px 24px;text-align:center;min-width:120px}}
-.stat .n{{font-size:28px;font-weight:700;color:#a78bfa}}
-.stat .l{{font-size:11px;color:#6b6b88;text-transform:uppercase;letter-spacing:1px;margin-top:4px}}
-.top5{{margin:24px 0}}.top5 h2{{font-size:16px;color:#c4b5fd;margin-bottom:12px}}
-.top-card{{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#1a1a24;border-radius:8px;margin-bottom:6px}}
-.top-card img{{width:40px;height:56px;object-fit:cover;border-radius:4px;flex-shrink:0}}
-.top-card span{{font-size:13px;color:#e2e2e8}}.top-card .sc{{margin-left:auto;color:#fbbf24;font-weight:700}}
-.genres{{color:#6b6b88;font-size:13px;margin:12px 0 24px;text-align:center}}
-h2{{font-size:18px;color:#a78bfa;margin:28px 0 12px}}.count{{color:#6b6b88;font-weight:400;font-size:14px}}
-.grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}}
-.card{{background:#1a1a24;border:1px solid #2a2a38;border-radius:10px;overflow:hidden}}
-.card img{{width:100%;height:180px;object-fit:cover}}
-.info{{padding:8px 10px}}.title{{font-size:12px;font-weight:600;display:block;line-height:1.3;margin-bottom:4px}}
-.eps{{font-size:11px;color:#6b6b88;display:block}}.score{{font-size:11px;color:#fbbf24;font-weight:600}}
-.footer{{text-align:center;color:#3a3a4a;font-size:11px;margin-top:40px;padding-top:20px;border-top:1px solid #1a1a24}}
-</style></head><body>
-<div class="container">
-<div class="header">
-  <h1>{nombre_usuario}</h1>
-  {'<p>'+bio+'</p>' if bio else ''}
-</div>
-<div class="stats">
-  <div class="stat"><div class="n">{stats['total']}</div><div class="l">Animes</div></div>
-  <div class="stat"><div class="n">{stats['completados']}</div><div class="l">Completados</div></div>
-  <div class="stat"><div class="n">{stats['viendo']}</div><div class="l">Viendo</div></div>
-  <div class="stat"><div class="n">{stats['episodios']}</div><div class="l">Episodios</div></div>
-  <div class="stat"><div class="n">{stats['horas']}h</div><div class="l">Horas</div></div>
-  <div class="stat"><div class="n">{stats['puntuacion_media']}</div><div class="l">Nota media</div></div>
-</div>
-<div class="genres">Géneros favoritos: {generos_html}</div>
-<div class="top5"><h2>Top 5 mejor valorados</h2>{top5_html}</div>
-{secciones_html}
-<div class="footer">Generado con Miraru · {datetime.datetime.now().strftime('%d/%m/%Y')}</div>
-</div></body></html>"""
-    return HTMLResponse(content=html)
-
 
 # ── Historial timeline ────────────────────────────────────────────────────────
 
-@app.get("/api/historial/timeline")
-async def historial_timeline():
-    with db.get_conn() as conn:
-        rows = conn.execute("SELECT * FROM historial ORDER BY fecha DESC LIMIT 200").fetchall()
-    return {"eventos": [dict(r) for r in rows], "total": len(rows)}
 
 # ── Exportar JSON completo ────────────────────────────────────────────────────
 
@@ -5344,13 +4819,6 @@ async def export_csv():
         headers={"Content-Disposition": "attachment; filename=anime_tracker.csv"},
     )
 
-@app.get("/api/media/export/json")
-async def export_media_json():
-    """v2.6: exporta la colección de pelis/series como JSON."""
-    return JSONResponse(
-        content={"media": db.listar_media()},
-        headers={"Content-Disposition": "attachment; filename=peliculas_series.json"},
-    )
 
 @app.get("/api/media/export/csv")
 async def export_media_csv():

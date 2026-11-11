@@ -1,5 +1,26 @@
 # Changelog
 
+## v2.17.0 — El manga estrena apartado y tu lista entra de golpe
+
+- **Apartado de manga** (`/manga`), como «No Anime»: la biblioteca ya no mezcla anime y manga ni
+  tiene pestañas. Es la misma página en «modo manga»: solo enseña y añade manga, con su
+  vocabulario (leyendo, capítulos) y sin lo que es solo de anime (calendario, avisos, AnimeAV1…).
+  El enlace «Manga» de la cabecera dice cuántos tienes.
+- **Manga en publicación**: las tarjetas sin total (One Piece, Berserk) no tenían «+1» ni
+  progreso y decían «? caps». Ahora «En publicación · Cap 1050» y «+1».
+- **Trae tu lista entera** (Importar): con el nombre de usuario de AniList (lista pública) o el
+  .xml de MyAnimeList. Entra anime y manga con estado, nota y progreso, en lotes de 50 fichas.
+  Los dos servicios existían en el servidor pero ninguna pantalla los usaba.
+- **Cambiar de idioma recarga la página**: antes solo cambiaba parte del texto y el resto se
+  quedaba en el idioma anterior hasta recargar. Más textos traducidos (extensión, copia en la
+  nube, atajos, estadísticas, acceso móvil).
+- Un anime y su manga con el mismo nombre ya no enseñan la coletilla «(Anime)»/«(Manga)».
+- El historial de la ficha dice «Viendo», «Completado»… (salía en minúsculas y sin traducir).
+- «Tiempo hasta completar» ya no cuenta capítulos de manga.
+- **Limpieza**: fuera los avisos por correo y Discord (no había forma de configurarlos desde la
+  app), 17 rutas de la API que nadie llamaba, funciones y traducciones sin uso
+  (unas 1.100 líneas menos) y la dependencia `pypresence`.
+
 ## v2.16.4 — Mejor en tu idioma
 
 - **«Mi año en anime»** en inglés, francés y alemán: meses (con `Intl`), frases y etiquetas de

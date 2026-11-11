@@ -136,8 +136,7 @@ class TestNotasEpisodio:
         })
         db.guardar_nota_episodio("Test", 1, "Primera impresión")
         db.guardar_nota_episodio("Test", 1, "Actualizada")
-        nota = db.obtener_nota_episodio("Test", 1)
-        assert nota == "Actualizada"
+        assert [n["nota"] for n in db.obtener_notas_episodio("Test")] == ["Actualizada"]
 
     def test_borrar_nota(self, db):
         db.guardar_anime({
@@ -146,7 +145,7 @@ class TestNotasEpisodio:
         })
         db.guardar_nota_episodio("Test", 5, "Borrame")
         assert db.borrar_nota_episodio("Test", 5)
-        assert db.obtener_nota_episodio("Test", 5) is None
+        assert db.obtener_notas_episodio("Test") == []
 
     def test_nota_vacia_no_aparece(self, db):
         db.guardar_anime({
@@ -187,8 +186,7 @@ class TestNotasEpisodio:
         })
         r = client.post("/api/animes/Plus1 Nota/plus1?nota=Primer%20ep%20genial")
         assert r.status_code == 200
-        nota = db.obtener_nota_episodio("Plus1 Nota", 1)
-        assert nota == "Primer ep genial"
+        assert [n["nota"] for n in db.obtener_notas_episodio("Plus1 Nota")] == ["Primer ep genial"]
 
 
 # ── Watch folder parser ──────────────────────────────────────────────────────
@@ -251,39 +249,6 @@ class TestWatchFolderParser:
         animes = [{"nombre": "Naruto"}]
         match = watch_folder._buscar_coincidencia("algo completamente diferente", animes)
         assert match is None
-
-
-# ── Página compartible ───────────────────────────────────────────────────────
-
-class TestPaginaCompartible:
-    def test_genera_html(self, client, db):
-        db.guardar_anime({
-            "nombre": "Compartir Test", "fuente": "test", "capitulos": "12",
-            "imagen": "", "genero": "Action", "sinopsis": "",
-            "estado_anime": "Finalizado",
-        })
-        r = client.get("/api/perfil/compartir/html")
-        assert r.status_code == 200
-        assert "text/html" in r.headers["content-type"]
-        body = r.text
-        assert "Compartir Test" in body
-        assert "Miraru" in body
-
-    def test_html_vacio_no_crashea(self, client, db):
-        r = client.get("/api/perfil/compartir/html")
-        assert r.status_code == 200
-
-    def test_json_compartir_sigue_funcionando(self, client, db):
-        db.guardar_anime({
-            "nombre": "JSON Test", "fuente": "test", "capitulos": "12",
-            "imagen": "", "genero": "Comedy", "sinopsis": "",
-            "estado_anime": "Finalizado",
-        })
-        r = client.get("/api/perfil/compartir")
-        assert r.status_code == 200
-        d = r.json()
-        assert "stats" in d
-        assert "top5" in d
 
 
 # ── Watch folder API ─────────────────────────────────────────────────────────

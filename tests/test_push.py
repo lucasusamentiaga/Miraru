@@ -1,6 +1,6 @@
 """
 Web Push (push_web.py + routers/push.py), Service Worker con alcance "/" y
-daemon de notificaciones (email y/o push, sin repetir avisos tras reiniciar).
+daemon de notificaciones (push, sin repetir avisos tras reiniciar).
 """
 from __future__ import annotations
 
@@ -104,34 +104,30 @@ def test_service_worker_en_raiz_con_alcance(client):
 
 # ── Daemon de notificaciones ─────────────────────────────────────────────────
 
-def test_daemon_push_sin_email_y_sin_repetir(db, monkeypatch):
+def test_daemon_push_sin_repetir(db, monkeypatch):
     import main
     import push_web
     monkeypatch.setattr(push_web, "db", db)
     db.guardar_anime({"nombre": "Frieren", "capitulos": "28", "episodios_vistos": 10,
                       "notif_activa": 1, "estado_usuario": "viendo"})
-    db.set_config("email_notif", "")
     push_web.suscribir(SUB)
     enviados = []
     monkeypatch.setattr(push_web, "enviar", lambda *a, **k: enviados.append((a, k)) or (1, 0))
     monkeypatch.setattr(main, "_fetch_ultimos_episodios",
                         lambda animes: {"Frieren": {"total": 28, "next_ep": 0, "next_at": 0}})
-    emails = []
-    monkeypatch.setattr(main, "_notif_enviar_nuevo_disponible", lambda *a: emails.append(a))
     assert main._comprobar_nuevos_episodios() == [("Frieren", 28)]
-    assert len(enviados) == 1 and emails == []
+    assert len(enviados) == 1
     assert "18 episodios" in enviados[0][0][1]
     # "reinicio": lo avisado está en config, no en memoria → no se repite
     assert main._comprobar_nuevos_episodios() == []
     assert len(enviados) == 1
 
 
-def test_daemon_sin_email_ni_push_no_consulta(db, monkeypatch):
+def test_daemon_sin_push_no_consulta(db, monkeypatch):
     import main
     import push_web
     monkeypatch.setattr(push_web, "db", db)
     db.guardar_anime({"nombre": "X", "notif_activa": 1})
-    db.set_config("email_notif", "")
     monkeypatch.setattr(main, "_fetch_ultimos_episodios",
                         lambda a: (_ for _ in ()).throw(AssertionError("no debía consultar")))
     assert main._comprobar_nuevos_episodios() == []

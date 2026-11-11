@@ -70,30 +70,6 @@ def _base_name(nombre: str) -> str:
     return base if base else nombre
 
 
-def _season_order(nombre: str) -> int:
-    """Extrae un número de orden de temporada para sorting. "The Final Season"
-    (y sus "Part 2") van después de las temporadas numeradas."""
-    final = 90 if re.search(r"\bfinal\b", nombre, re.I) else 0
-    return final + _numero_temporada(nombre)
-
-
-def _numero_temporada(nombre: str) -> int:
-    m = _ORDER_RE.search(nombre)
-    if not m:
-        return 0
-    for g in m.groups():
-        if g is None:
-            continue
-        g = g.strip()
-        if g in _ROMAN:
-            return _ROMAN[g]
-        if g.isdigit():
-            return int(g)
-        # Roman numeral uppercase
-        upper = g.upper()
-        if upper in _ROMAN:
-            return _ROMAN[upper]
-    return 0
 
 
 # ── Agrupación ──────────────────────────────────────────────────────────────
