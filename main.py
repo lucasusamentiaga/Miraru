@@ -1160,6 +1160,7 @@ class ActualizarRequest(BaseModel):
     notif_activa:        Optional[int]   = Field(default=None, ge=0, le=1)
     notas:               Optional[str]   = Field(default=None, max_length=5000)
     volumenes_leidos:    Optional[int]   = Field(default=None, ge=0)
+    revisionados:        Optional[int]   = Field(default=None, ge=0, le=99)
     grupo:               Optional[str]   = Field(default=None, max_length=120)
 
     @field_validator("grupo")
@@ -3379,7 +3380,117 @@ async def notif_activas():
     return {"animes": db.listar_con_notif()}
 
 
+# ── Temporadas nuevas de lo que ya completaste (v2.17) ────────────────────────
+# Usa las relaciones de saga que ya están guardadas (se piden al añadir cada
+# anime): lo relacionado que NO está en tu lista y sigue en emisión o sin
+# estrenar es una temporada (o película) nueva. Nada de red salvo para poner
+# nombre y portada a los candidatos, y como mucho una vez al día.
+
+_SECUELAS_TTL = 24 * 3600
+
+
+def _secuelas_ignoradas() -> set[int]:
+    try:
+        return {int(x) for x in json.loads(db.get_config("secuelas_ignoradas") or "[]")}
+    except Exception:
+        return set()
+
+
+def _calcular_secuelas() -> list[dict]:
+    animes = db.listar_animes()
+    en_lista = {int(a.get("anilist_id") or 0) for a in animes} - {0}
+    rel = _relaciones_guardadas()
+    fuera = en_lista | _secuelas_ignoradas()
+    candidatos: dict[int, str] = {}      # id → de qué anime tuyo sale
+    for a in animes:
+        if (a.get("tipo") or "anime") == "manga":
+            continue
+        if a.get("estado_usuario") not in ("completado", "completed"):
+            continue
+        for rid in rel.get(str(a.get("anilist_id") or 0), []):
+            rid = int(rid)
+            if rid not in fuera and rid not in candidatos:
+                candidatos[rid] = a["nombre"]
+    if not candidatos:
+        return []
+    anilist = SCRAPERS.get("anilist")
+    if not anilist:
+        return []
+    items: list[dict] = []
+    ids = list(candidatos)[:100]
+    for i in range(0, len(ids), 50):
+        for aid, ficha in anilist.buscar_por_ids(ids[i:i + 50]).items():
+            if int(aid) not in candidatos:
+                continue
+            aid = int(aid)
+            # Solo lo que viene: una precuela vieja (Finalizado) no es noticia.
+            if ficha.estado_anime not in ("En emisión", "Sin estrenar"):
+                continue
+            if adulto.es_adulto(ficha):
+                continue
+            items.append({"anilist_id": aid, "nombre": ficha.nombre,
+                          "imagen": ficha.imagen, "capitulos": ficha.capitulos,
+                          "estado_anime": ficha.estado_anime, "genero": ficha.genero,
+                          "sinopsis": ficha.sinopsis, "fuente": "anilist",
+                          "de": candidatos[aid]})
+    items.sort(key=lambda x: (x["estado_anime"] != "En emisión", x["nombre"]))
+    return items[:12]
+
+
+@app.get("/api/secuelas")
+async def secuelas_nuevas(refrescar: int = 0):
+    """Temporadas nuevas (o próximas) de animes que completaste."""
+    try:
+        cache = json.loads(db.get_config("secuelas_cache") or "{}")
+    except Exception:
+        cache = {}
+    if not refrescar and cache.get("t", 0) > _time.time() - _SECUELAS_TTL:
+        ign = _secuelas_ignoradas()
+        return {"items": [x for x in cache.get("items", []) if x.get("anilist_id") not in ign]}
+    loop = asyncio.get_running_loop()
+    items = await loop.run_in_executor(executor, _calcular_secuelas)
+    db.set_config("secuelas_cache", json.dumps({"t": _time.time(), "items": items},
+                                               separators=(",", ":"), ensure_ascii=False))
+    return {"items": items}
+
+
+class SecuelaIgnorarRequest(BaseModel):
+    anilist_id: int = Field(ge=1)
+
+
+@app.post("/api/secuelas/ignorar")
+async def secuela_ignorar(req: SecuelaIgnorarRequest):
+    """«No me interesa»: no se vuelve a sugerir."""
+    ign = _secuelas_ignoradas() | {req.anilist_id}
+    db.set_config("secuelas_ignoradas", json.dumps(sorted(ign)))
+    return {"ok": True}
+
+
 # ── ep_log endpoints (v2.2) ───────────────────────────────────────────────────
+
+class FechaEpisodioRequest(BaseModel):
+    episodio: int = Field(ge=1, le=100000)
+    fecha: str
+
+
+@app.get("/api/animes/{nombre:path}/episodios-vistos")
+async def episodios_vistos(nombre: str):
+    """v2.17: los episodios apuntados de un anime, con su fecha."""
+    return {"episodios": db.episodios_vistos_log(nombre)}
+
+
+@app.post("/api/animes/{nombre:path}/episodios-vistos")
+async def cambiar_fecha_episodio(nombre: str, req: FechaEpisodioRequest):
+    """v2.17: corrige el día en que viste un episodio (cuenta para el mapa de
+    actividad, la racha y «Mi año en anime»)."""
+    if not db.obtener_anime(nombre):
+        raise HTTPException(404, "No encontrado")
+    try:
+        fecha = validar_fecha_vista(req.fecha)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+    db.cambiar_fecha_episodio(nombre, req.episodio, fecha)
+    return {"ok": True}
 
 @app.get("/api/heatmap")
 async def heatmap(dias: int = 365):

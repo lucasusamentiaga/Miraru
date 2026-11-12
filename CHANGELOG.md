@@ -11,6 +11,19 @@
 - **Trae tu lista entera** (Importar): con el nombre de usuario de AniList (lista pública) o el
   .xml de MyAnimeList. Entra anime y manga con estado, nota y progreso, en lotes de 50 fichas.
   Los dos servicios existían en el servidor pero ninguna pantalla los usaba.
+- **Temporadas nuevas de lo que viste**: si algo que completaste tiene una temporada nueva en
+  emisión o anunciada (según las relaciones de saga de AniList), sale una franja arriba de la
+  lista con «Añadir» y «No me interesa». Se calcula como mucho una vez al día.
+- **Cabecera despejada**: a la vista solo las pantallas, Avisos y «⋯ Más». Importar, exportar,
+  Sync, aleatorio, AniList, AnimeAV1, copia en la nube, carpeta, móvil, tema, idioma y ajustes van
+  en el menú «Más» (el mismo en PC y móvil; sustituye al «☰»).
+- **«No Anime» pasa a llamarse «Series y pelis».**
+- **Primer arranque**: con la lista vacía, lo primero es «¿Ya llevas tu lista en AniList o
+  MyAnimeList?» → Importar.
+- **Ficha**: fechas, notas, temporada, lista y grupo, plegados en «Más opciones» (se abre solo si
+  hay algo dentro o si lo dejaste abierto). Nuevo **contador de revisionados** (🔁×N en la
+  tarjeta) y **fecha de cada episodio visto**, editable (cuenta para el mapa de actividad, la
+  racha y «Mi año en anime»). La cabecera de cada saga dice la media de tus notas.
 - **Cambiar de idioma recarga la página**: antes solo cambiaba parte del texto y el resto se
   quedaba en el idioma anterior hasta recargar. Más textos traducidos (extensión, copia en la
   nube, atajos, estadísticas, acceso móvil).

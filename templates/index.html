@@ -76,7 +76,6 @@
 [data-theme=light] .toast-inner.warn{background:#fffbeb;color:#d97706;border-color:#fde047}
 [data-theme=light] .dmenu-item{color:#1e1e2e;border-color:#f0eef8}
 [data-theme=light] .dmenu-item:hover{background:rgba(79,70,229,.06);color:#4338ca}
-[data-theme=light] #export-menu{background:#fff !important;border-color:#d4d0ec !important}
 [data-theme=light] .count-label{color:#64648c}
 [data-theme=light] #empty-msg{color:#64648c}
 
@@ -335,23 +334,21 @@ header{
 }
 [data-theme=light] .header-sep{background:#d4d0ec}
 
-/* Utils & settings clusters */
-.header-utils,.header-settings{display:flex;gap:2px;align-items:center;flex-wrap:wrap;min-width:0;max-width:100%}
-/* La fila de acciones ocupa todo el ancho y los ajustes van a la derecha; en
-   pantallas anchas los iconos llevan su nombre (antes sobraba media fila). */
-@media (min-width:1100px){
-  .header-actions{flex:1 1 100%}
-  .header-settings{margin-left:auto}
-}
-.header-settings .lbl{display:none}
-@media (min-width:1100px){
-  .header-settings .lbl{display:inline;margin-left:5px;font-weight:600}
-  /* v2.16: cuando los ajustes caen a su propia fila, la llenan entera (antes
-     quedaban 8 iconos en una esquina y el resto de la fila vacía). */
-  .header-settings.fila{flex:1 1 100%;gap:6px;margin-top:4px}
-  .header-settings.fila>*{flex:1 1 0;justify-content:center;min-width:0}
-  .header-settings.fila>.lang-select,.header-settings.fila>.msel{flex:0 0 auto}
-}
+/* v2.17: cabecera despejada — lo secundario vive en el menú «Más» */
+#mas-wrap{position:relative}
+#menu-mas{display:none;position:absolute;top:calc(100% + 8px);right:0;z-index:60;min-width:238px;
+  background:var(--card);border:1px solid var(--border);border-radius:14px;padding:8px;
+  box-shadow:0 14px 38px rgba(0,0,0,.5);max-height:min(76vh,620px);overflow-y:auto}
+header.mas-abierto #menu-mas{display:block}
+header.mas-abierto #btn-mas{background:var(--accent);color:#fff}
+#menu-mas .btn{display:flex;width:100%;justify-content:flex-start;gap:9px;padding:8px 10px;font-size:13px;text-align:left}
+#menu-mas .lbl{display:inline;font-weight:600}
+#menu-mas .grupo{font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);font-weight:700;margin:10px 8px 4px}
+#menu-mas .grupo:first-child{margin-top:2px}
+#menu-mas .fila-idioma{display:flex;align-items:center;gap:9px;padding:4px 10px;font-size:13px}
+#menu-mas .fila-idioma .lang-select{flex:1}
+#menu-mas .btn-sync{margin:2px 0}
+[data-theme=light] #menu-mas{background:#fff;border-color:#d4d0ec}
 #btn-copia.copia-mal{padding-right:14px}
 /* El buscador de la lista se salía de su hueco y quedaba debajo de «⚙ Filtros» en el móvil. */
 #f-nombre{width:100%;min-width:0;box-sizing:border-box}
@@ -363,15 +360,13 @@ header{
 }
 
 
-/* v2.14.1: en el móvil (la app se puede abrir desde el móvil en la red de casa)
-   la cabecera y los filtros ocupaban media pantalla y los botones flotantes de
-   redes tapaban la lista. Ahora lo secundario va tras «☰» y «⚙ Filtros». */
+/* v2.14.1/v2.17: en el móvil los filtros van tras «⚙ Filtros»; lo secundario
+   de la cabecera vive en «Más» en todas las pantallas. */
 .solo-movil{display:none!important}
 @media (max-width:640px){
   .solo-movil{display:inline-flex!important}
-  header:not(.menu-abierto) .header-utils,
-  header:not(.menu-abierto) .header-settings,
-  header:not(.menu-abierto) .header-sep{display:none!important}
+  .header-sep{display:none!important}
+  #menu-mas{position:fixed;top:auto;left:12px;right:12px;min-width:0}
   .toolbar{padding:8px 12px}
   #tb2:not(.filtros-abiertos) > :not(.tb2-fija){display:none!important}
   #to-top{right:14px!important;bottom:64px!important}
@@ -520,6 +515,15 @@ body.sel-mode .ac .salir{display:none}
 #mg-portadas .mas{width:38px;height:54px;border-radius:6px;background:var(--card2);color:var(--muted);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
 #mg-sug{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 16px}
 #mg-sug:empty{display:none}
+/* v2.17: ficha con lo avanzado plegado */
+#edit-avanzado{margin:2px 0 10px;border:1px solid var(--border);border-radius:10px;padding:0 12px}
+#edit-avanzado[open]{padding-bottom:10px}
+#edit-avanzado>summary{cursor:pointer;list-style:none;font-size:12px;color:var(--muted);font-weight:600;padding:9px 0;user-select:none}
+#edit-avanzado>summary::before{content:'▸';display:inline-block;margin-right:7px;transition:transform .15s}
+#edit-avanzado[open]>summary::before{transform:rotate(90deg)}
+#edit-avanzado>summary::-webkit-details-marker{display:none}
+#edit-avanzado>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){#edit-avanzado>summary::before{transition:none}}
 #mg-sug .chip{background:var(--card2);border:1px solid var(--border);color:var(--fg);border-radius:99px;padding:4px 10px;font-size:11px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #mg-sug .chip:hover,#mg-sug .chip:focus-visible{border-color:var(--accent2);outline:none}
 #mg-sug .chip-lbl{width:100%;font-size:11px;color:var(--muted)}
@@ -815,6 +819,10 @@ fetch('/api/version').then(r => r.json()).then(d => {
         <label id="lbl-vol-total" style="font-size:12px;color:var(--muted)"></label>
       </div>
     </div>
+    <!-- v2.17: lo que se toca a diario queda a la vista; el resto, plegado.
+         Los campos siguen existiendo siempre: guardarEdicion() los lee igual. -->
+    <details id="edit-avanzado" ontoggle="if(window._fichaAvAuto){window._fichaAvAuto=false}else{try{localStorage.setItem('miraru_ficha_avanzado',this.open?'1':'0')}catch(_){}}">
+      <summary id="edit-avanzado-tit">Más opciones — fechas, notas, lista, grupo</summary>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="field">
         <label id="lbl-start">Fecha inicio</label>
@@ -853,6 +861,12 @@ fetch('/api/version').then(r => r.json()).then(d => {
         Mostrarlo siempre suelto (fuera de cualquier grupo)
       </label>
     </div>
+    <!-- v2.17: corregir el día en que viste cada episodio -->
+    <div class="field" id="edit-fechas-eps-wrap">
+      <label>📅 <span id="lbl-fechas-eps">Cuándo viste cada episodio</span></label>
+      <div id="edit-fechas-eps" style="max-height:170px;overflow-y:auto;display:flex;flex-direction:column;gap:4px"></div>
+    </div>
+    </details>
     <div style="display:flex;gap:16px;margin-bottom:8px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;user-select:none">
         <input type="checkbox" id="edit-favorito" style="accent-color:var(--accent);width:15px;height:15px">
@@ -861,6 +875,11 @@ fetch('/api/version').then(r => r.json()).then(d => {
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;user-select:none">
         <input type="checkbox" id="edit-notif" style="accent-color:var(--accent);width:15px;height:15px">
         🔔 Notificar nuevos eps
+      </label>
+      <!-- v2.17: cuántas veces lo has vuelto a ver entero -->
+      <label id="edit-rewatch-wrap" style="display:none;align-items:center;gap:6px;font-size:13px;user-select:none" title="Veces que lo has vuelto a ver entero">
+        🔁 <span id="lbl-rewatch">Revisionados</span>
+        <input type="number" id="edit-rewatch" min="0" max="99" style="width:56px;padding:4px 6px">
       </label>
     </div>
     <!-- v2.9: puntuaciones externas -->
@@ -1185,45 +1204,41 @@ fetch('/api/version').then(r => r.json()).then(d => {
       <a href="/recomendaciones" class="nav-link" data-solo="anime" title="Recomendaciones"><span class="nav-icon">💡</span><span id="nav-recos">Recomendados</span></a>
       <a href="/manga" class="nav-link nav-link--accent" data-solo="anime" id="nav-manga" title="Tu manga, aparte del anime"><span class="nav-icon">📖</span><span>Manga</span><span class="nav-n" id="nav-n-manga"></span></a>
       <a href="/app" class="nav-link nav-link--accent" data-solo="manga" id="nav-anime" title="Volver a tu anime"><span class="nav-icon">🎌</span><span>Anime</span></a>
-      <a href="/peliculas" class="nav-link nav-link--accent" title="Películas y series que no son anime"><span class="nav-icon">🎬</span><span>No Anime</span></a>
+      <a href="/peliculas" class="nav-link nav-link--accent" title="Tus películas y series que no son anime"><span class="nav-icon">🎬</span><span>Series y pelis</span></a>
     </nav>
-    <button class="btn btn-ghost btn-sm solo-movil" id="btn-menu-movil" type="button" onclick="toggleMenuMovil()" aria-expanded="false" aria-label="Más opciones">☰</button>
     <!-- Separador visual -->
     <span class="header-sep" aria-hidden="true"></span>
-    <!-- Acciones rápidas — botones funcionales -->
-    <div class="header-utils">
-      <button class="btn btn-sync" id="btn-sync" onclick="sincronizar()">↑ Sync</button>
-      <a href="/import" class="btn btn-ghost btn-sm" title="Importar animes"><span id="nav-import">📥 Importar</span></a>
-      <div style="position:relative;display:inline-block" id="export-wrap">
-        <button class="btn btn-ghost btn-sm" onclick="toggleExportMenu()" title="Exportar datos"><span id="nav-export">⬇ Exportar</span></button>
-        <div id="export-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;
-             background:var(--card);border:1px solid var(--border);border-radius:10px;
-             min-width:170px;z-index:30;box-shadow:0 8px 24px rgba(0,0,0,.4);overflow:hidden">
-          <div class="dmenu-item" onclick="exportarCSV();closeExportMenu()">📊 Exportar CSV</div>
-          <div class="dmenu-item" onclick="exportarJSON();closeExportMenu()">📄 Exportar JSON</div>
+    <!-- v2.17: a la vista solo lo de cada día; el resto, en «Más» -->
+    <button class="btn btn-ghost btn-sm" id="btn-notif-perm" data-solo="anime" onclick="pedirPermiso()" title="Notificaciones del navegador">🔔</button>
+    <div id="mas-wrap">
+      <button class="btn btn-ghost btn-sm" id="btn-mas" type="button" onclick="toggleMenuMas()"
+              aria-expanded="false" aria-haspopup="true" aria-controls="menu-mas">⋯ <span id="lbl-mas">Más</span></button>
+      <div id="menu-mas" role="menu" aria-label="Más opciones">
+        <div class="grupo">Tu lista</div>
+        <a href="/import" class="btn btn-ghost btn-sm" role="menuitem" title="Traer tu lista o importar animes">📥<span class="lbl" id="nav-import">Importar</span></a>
+        <button class="btn btn-ghost btn-sm" role="menuitem" onclick="exportarCSV();toggleMenuMas(false)">📊 <span class="lbl">Exportar CSV</span></button>
+        <button class="btn btn-ghost btn-sm" role="menuitem" onclick="exportarJSON();toggleMenuMas(false)">📄 <span class="lbl">Exportar JSON</span></button>
+        <button class="btn btn-sync" id="btn-sync" role="menuitem" onclick="sincronizar()">↑ Sync</button>
+        <button class="btn btn-ghost btn-sm" id="btn-random" role="menuitem" onclick="animeAleatorio();toggleMenuMas(false)">🎲<span class="lbl" id="lbl-random">Aleatorio</span></button>
+        <div class="grupo">Conectar</div>
+        <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirAniList();toggleMenuMas(false)" title="Sincronizar con AniList" id="btn-anilist">🔗<span class="lbl">AniList</span></button>
+        <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirExtension();toggleMenuMas(false)" title="Extensión de AnimeAV1: apunta solo cada episodio que marcas" id="btn-extension" data-solo="anime">🧩<span class="lbl">Extensión de AnimeAV1</span></button>
+        <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirCopia();toggleMenuMas(false)" title="Copia en la nube" id="btn-copia">☁<span class="lbl">Copia en la nube</span></button>
+        <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirWatchFolder();toggleMenuMas(false)" title="Auto-detección episodios" id="btn-watchfolder" data-solo="anime">📂<span class="lbl">Carpeta vigilada</span></button>
+        <a href="/mobile" class="btn btn-ghost btn-sm" role="menuitem" title="Acceso móvil">📱<span class="lbl">Móvil</span></a>
+        <div class="grupo">Aplicación</div>
+        <button class="btn btn-ghost btn-sm" id="btn-theme" role="menuitem" onclick="toggleTheme()" title="Cambiar tema"><span id="nav-theme">🌙</span></button>
+        <div class="fila-idioma">🌐
+          <select class="lang-select" id="lang-sel" onchange="cambiarIdioma(this.value)" aria-label="Idioma">
+            <option value="es">ES</option>
+            <option value="en">EN</option>
+            <option value="fr">FR</option>
+            <option value="de">DE</option>
+          </select>
         </div>
+        <a href="/setup" class="btn btn-ghost btn-sm" role="menuitem" title="Configuración">⚙<span class="lbl">Ajustes</span></a>
+        <a href="/" class="btn btn-ghost btn-sm" role="menuitem" title="Menú inicio">⌂<span class="lbl">Menú de inicio</span></a>
       </div>
-      <button class="btn btn-ghost btn-sm" id="btn-random" onclick="animeAleatorio()" title="Anime aleatorio"><span id="nav-random">🎲</span></button>
-      <button class="btn btn-ghost btn-sm" id="btn-notif-perm" data-solo="anime" onclick="pedirPermiso()" title="Notificaciones del navegador">🔔</button>
-    </div>
-    <!-- Separador visual -->
-    <span class="header-sep" aria-hidden="true"></span>
-    <!-- Settings — secundario -->
-    <div class="header-settings">
-      <select class="lang-select" id="lang-sel" onchange="cambiarIdioma(this.value)" aria-label="Idioma">
-        <option value="es">ES</option>
-        <option value="en">EN</option>
-        <option value="fr">FR</option>
-        <option value="de">DE</option>
-      </select>
-      <button class="btn btn-ghost btn-sm" id="btn-theme" onclick="toggleTheme()" title="Cambiar tema"><span id="nav-theme">🌙</span></button>
-      <a href="/mobile" class="btn btn-ghost btn-sm" title="Acceso móvil">📱<span class="lbl">Móvil</span></a>
-      <button class="btn btn-ghost btn-sm" onclick="abrirAniList()" title="Sincronizar con AniList y AnimeAV1" id="btn-anilist">🔗<span class="lbl">AniList</span></button>
-      <button class="btn btn-ghost btn-sm" onclick="abrirExtension()" title="Extensión de AnimeAV1: apunta solo cada episodio que marcas" id="btn-extension" data-solo="anime">🧩<span class="lbl">AnimeAV1</span></button>
-      <button class="btn btn-ghost btn-sm" onclick="abrirCopia()" title="Copia en la nube" id="btn-copia">☁<span class="lbl">Copia</span></button>
-      <button class="btn btn-ghost btn-sm" onclick="abrirWatchFolder()" title="Auto-detección episodios" id="btn-watchfolder" data-solo="anime">📂<span class="lbl">Carpeta</span></button>
-      <a href="/setup" class="btn btn-ghost btn-sm" title="Configuración">⚙<span class="lbl">Ajustes</span></a>
-      <a href="/" class="btn btn-ghost btn-sm" title="Menú inicio">⌂<span class="lbl">Inicio</span></a>
     </div>
   </div>
 </header>
@@ -1307,6 +1322,11 @@ fetch('/api/version').then(r => r.json()).then(d => {
       <span id="continuar-count" style="font-size:11px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400"></span>
     </h2>
     <div id="continuar-strip" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin"></div>
+  </section>
+  <!-- v2.17: temporadas nuevas (o próximas) de lo que ya completaste -->
+  <section id="secuelas-wrap" data-solo="anime" style="display:none;margin-bottom:18px">
+    <h2 style="font-size:13px;font-weight:700;color:var(--light);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">🆕 <span id="secuelas-tit">Temporadas nuevas de lo que viste</span></h2>
+    <div id="secuelas-strip" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin"></div>
   </section>
   <div id="copia-aviso" class="copia-aviso" style="display:none"></div>
   <div id="lista"></div>
@@ -1411,8 +1431,6 @@ function aplicarTraducciones() {
     ['nav-import',    'Importar'],
     ['nav-stats',     'Estadísticas'],
     ['nav-novedades', 'Novedades'],
-    ['nav-export',    'Exportar'],
-    ['nav-random',    'Aleatorio'],
     ['nav-mobile',    'Móvil'],
     ['nav-config',    'Config'],
     ['nav-home',      'Inicio'],
@@ -1872,13 +1890,22 @@ function _debouncedRender() {
 
 // ── Render ────────────────────────────────────────────────────────────────────
 
-// v2.14.1: menú y filtros plegables en pantallas estrechas (móvil).
-function toggleMenuMovil() {
+// v2.17: menú «Más» de la cabecera (sustituye al «☰» del móvil: ahora es el
+// mismo menú en todas las pantallas). forzar=false lo cierra siempre.
+function toggleMenuMas(forzar) {
   const h = document.querySelector('header');
-  const abierto = h.classList.toggle('menu-abierto');
-  const b = document.getElementById('btn-menu-movil');
+  const abierto = forzar === false ? (h.classList.remove('mas-abierto'), false)
+                                   : h.classList.toggle('mas-abierto');
+  const b = document.getElementById('btn-mas');
   if (b) b.setAttribute('aria-expanded', abierto ? 'true' : 'false');
 }
+document.addEventListener('click', e => {
+  if (!document.querySelector('header.mas-abierto')) return;
+  if (!e.target.closest || !e.target.closest('#mas-wrap')) toggleMenuMas(false);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.querySelector('header.mas-abierto')) toggleMenuMas(false);
+});
 function toggleFiltrosMovil() {
   const t = document.getElementById('tb2');
   const abierto = t.classList.toggle('filtros-abiertos');
@@ -1961,8 +1988,28 @@ function render() {
         + '<p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:28px">'
         + (T('welcome_sub') || 'Elige una forma rápida de empezar:')
         + '</p>';
+      // v2.17: lo primero es la pregunta clave — ¿ya llevas la lista en otro
+      // sitio? Traerla entera es el mejor primer minuto posible con Miraru.
+      const traer = document.createElement('div');
+      traer.style.cssText = 'background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(124,58,237,.06));border:1px solid rgba(168,85,247,.45);border-radius:16px;padding:18px;margin-bottom:16px;text-align:left';
+      const tTit = document.createElement('div');
+      tTit.style.cssText = 'font-size:14.5px;font-weight:800;margin-bottom:5px';
+      tTit.textContent = _tr('¿Ya llevas tu lista en AniList o MyAnimeList?');
+      const tSub = document.createElement('div');
+      tSub.style.cssText = 'font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px';
+      tSub.textContent = _tr('Tráela entera en un minuto: entra con tus estados, tus notas y por dónde vas.');
+      const tBtn = document.createElement('a');
+      tBtn.className = 'btn btn-primary'; tBtn.href = '/import';
+      tBtn.textContent = '📥 ' + _tr('Sí, traer mi lista');
+      tBtn.style.cssText = 'display:inline-flex;text-decoration:none';
+      traer.append(tTit, tSub, tBtn);
+      wrap.appendChild(traer);
+      const oBien = document.createElement('p');
+      oBien.style.cssText = 'font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:10px';
+      oBien.textContent = _tr('O empieza de cero');
+      wrap.appendChild(oBien);
       const grid = document.createElement('div');
-      grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:18px';
+      grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px';
       const ctaCard = (icon, title, sub, onClick) => {
         const c = document.createElement('div');
         c.style.cssText = 'position:relative;background:linear-gradient(160deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:16px;padding:18px;cursor:pointer;text-align:left;transition:border-color .18s ease,box-shadow .18s ease;overflow:hidden';
@@ -1974,22 +2021,19 @@ function render() {
           + '<div style="font-size:11px;color:var(--muted);line-height:1.45">' + sub + '</div>';
         return c;
       };
-      grid.appendChild(ctaCard('🔍', 'Buscar un anime',
-        'Escribe el nombre o pega una URL de AniList/MAL',
+      grid.appendChild(ctaCard('🔍', _tr('Buscar un anime'),
+        _tr('Escribe el nombre arriba o pega un enlace de AniList o MyAnimeList'),
         () => { const i = document.getElementById('inp-nombre'); if (i) i.focus(); }));
-      grid.appendChild(ctaCard('📥', 'Importar desde MAL/AniList',
-        'Sube tu XML de MyAnimeList o tu username de AniList',
-        () => window.location.href = '/import'));
-      grid.appendChild(ctaCard('💡', 'Ver recomendaciones',
-        'Animes en tendencia para empezar a explorar',
+      grid.appendChild(ctaCard('💡', _tr('Ver recomendaciones'),
+        _tr('Animes en tendencia para empezar a explorar'),
         () => window.location.href = '/recomendaciones'));
-      grid.appendChild(ctaCard('🎬', 'Ver novedades',
-        'Lo que se está emitiendo ahora',
+      grid.appendChild(ctaCard('🎬', _tr('Ver novedades'),
+        _tr('Lo que se está emitiendo ahora'),
         () => window.location.href = '/novedades'));
       wrap.appendChild(grid);
       const hint = document.createElement('p');
       hint.style.cssText = 'font-size:11px;color:var(--muted);margin-top:14px';
-      hint.textContent = 'Atajo: pulsa N para crear, / para buscar, ? para ver todos los atajos';
+      hint.textContent = _tr('Atajo: pulsa N para añadir, / para buscar y ? para ver todos los atajos');
       wrap.appendChild(hint);
       empty.appendChild(wrap);
     } else {
@@ -2065,6 +2109,7 @@ function render() {
         (a.favorito ? `<div style="position:absolute;top:5px;left:${favLeft};font-size:12px;text-shadow:0 1px 3px rgba(0,0,0,.8);z-index:2">⭐</div>` : '') +
         (isManga ? `<div style="position:absolute;top:5px;right:${a.notif_activa ? '52px' : '32px'};font-size:11px;opacity:0.9;z-index:2;background:rgba(0,0,0,.5);padding:1px 4px;border-radius:4px">📖</div>` : '') +
         (a.notif_activa ? `<div style="position:absolute;top:5px;right:32px;font-size:11px;opacity:0.9;z-index:2">🔔</div>` : '') +
+        (a.revisionados > 0 ? `<div style="position:absolute;bottom:26px;right:5px;font-size:10px;font-weight:700;z-index:2;background:rgba(0,0,0,.55);color:#fff;padding:1px 5px;border-radius:5px" title="${_esc(_tr('Visto') + ' ' + (a.revisionados + 1) + ' ' + _tr('veces'))}">🔁×${a.revisionados + 1}</div>` : '') +
         `<img data-src="${thumbSrc}" src="${_esc(BLANK_IMG)}" alt="" decoding="async">` +
         `<div class="overlay">` +
           (IMDB[a.nombre] ? `<span class="imdb" title="Nota en IMDb">IMDb <b>${_esc(Number(IMDB[a.nombre]).toFixed(1))}</b></span>` : '') +
@@ -2203,6 +2248,17 @@ function render() {
     const spanMeta = document.createElement('span');
     spanMeta.textContent = partesMeta.join(' · ');
     hMeta.appendChild(spanMeta);
+    // v2.17: nota de la saga = media de lo que has puntuado (cada temporada se
+    // puntúa en su tarjeta o en su ficha).
+    const notas = fq.animes.map(a => +a.puntuacion || 0).filter(n => n > 0);
+    if (notas.length) {
+      const nm = document.createElement('span');
+      nm.style.color = '#fbbf24';
+      const media = notas.reduce((x, y) => x + y, 0) / notas.length;
+      nm.textContent = '★ ' + (Math.round(media * 10) / 10) + (notas.length > 1 ? ' · ' + _tr('media de') + ' ' + notas.length : '');
+      nm.title = _tr('Media de tus notas en esta saga');
+      hMeta.appendChild(nm);
+    }
     const siguiente = fq.animes.find(a => a.estado_usuario === 'viendo')
       || fq.animes.find(a => !['completado', 'abandonado'].includes(a.estado_usuario));
     if (siguiente && fq.animes.some(a => a.estado_usuario === 'completado' || (a.episodios_vistos || 0) > 0)) {
@@ -2675,6 +2731,20 @@ function abrirModal(enc) {
   _rellenarGruposEditor(a);
   const nEl = document.getElementById('edit-notif');
   if (nEl) nEl.checked = !!a.notif_activa;
+  // v2.17: revisionados (solo tiene sentido con algo ya completado o relleno)
+  const rwWrap = document.getElementById('edit-rewatch-wrap');
+  const rwEl = document.getElementById('edit-rewatch');
+  const esCompleto = (a.estado_usuario === 'completado' || a.estado_usuario === 'completed');
+  if (rwWrap) rwWrap.style.display = (esCompleto || a.revisionados > 0) ? 'inline-flex' : 'none';
+  if (rwEl) rwEl.value = a.revisionados || 0;
+  // Lo avanzado, plegado — salvo que lo dejaras abierto o haya algo ahí dentro.
+  const av = document.getElementById('edit-avanzado');
+  if (av) {
+    let abierto = null; try { abierto = localStorage.getItem('miraru_ficha_avanzado'); } catch (_) {}
+    const abrirAv = abierto === '1' || !!(a.fecha_inicio || a.fecha_fin || a.notas || a.temporada ||
+                    (a.lista_personalizada && a.lista_personalizada !== 'principal') || a.grupo);
+    if (av.open !== abrirAv) { window._fichaAvAuto = true; av.open = abrirAv; }
+  }
 
   document.getElementById('btn-save-edit').textContent = T('save');
   // v2.3: cargar timeline del historial (cambios de estado)
@@ -2685,11 +2755,50 @@ function abrirModal(enc) {
   cargarScoresModal(nombre);
   // v2.9: diario de notas por episodio
   cargarDiarioModal(nombre);
+  // v2.17: fechas de cada episodio visto
+  cargarFechasEpisodios(nombre);
   // Openings y endings (AnimeThemes) — independiente, por si esa API falla
   cargarTemasModal(nombre);
   // Personajes y seiyuus (Jikan) — también independiente
   cargarPersonajesModal(nombre);
   abrirModalEl('modal-edit');
+}
+
+// v2.17: «lo vi el sábado, no hoy». Corrige el día de cada episodio apuntado
+// (cuenta para el mapa de actividad, la racha y «Mi año en anime»).
+async function cargarFechasEpisodios(nombre) {
+  const cont = document.getElementById('edit-fechas-eps');
+  const wrap = document.getElementById('edit-fechas-eps-wrap');
+  if (!cont || !wrap) return;
+  cont.innerHTML = '';
+  let eps = [];
+  try { eps = (await (await fetch('/api/animes/' + encodeURIComponent(nombre) + '/episodios-vistos')).json()).episodios || []; } catch (_) {}
+  if (document.getElementById('edit-nombre').value !== nombre) return;
+  wrap.style.display = eps.length ? '' : 'none';
+  const hoy = new Date().toISOString().slice(0, 10);
+  eps.slice(0, 60).forEach(e => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:12px';
+    const n = document.createElement('span');
+    n.style.cssText = 'min-width:64px;color:var(--muted)';
+    n.textContent = (MODO_MANGA ? _tr('Cap') : 'Ep') + ' ' + e.episodio;
+    const inp = document.createElement('input');
+    inp.type = 'date'; inp.value = (e.fecha || '').slice(0, 10); inp.min = '1917-01-01'; inp.max = hoy;
+    inp.style.cssText = 'padding:4px 6px;font-size:12px;flex:1';
+    inp.setAttribute('aria-label', n.textContent);
+    inp.onchange = async () => {
+      if (!inp.value) return;
+      try {
+        const r = await fetch('/api/animes/' + encodeURIComponent(nombre) + '/episodios-vistos', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({episodio: e.episodio, fecha: inp.value})});
+        if (!r.ok) throw 0;
+        toast('📅 ' + n.textContent + ' · ' + inp.value);
+      } catch (_) { toast(T('error'), 'err'); }
+    };
+    row.append(n, inp);
+    cont.appendChild(row);
+  });
 }
 
 // Personajes y actores de voz (Jikan). Independiente del resto de la ficha.
@@ -3127,6 +3236,7 @@ async function guardarEdicion() {
     favorito:         document.getElementById('edit-favorito')?.checked ? 1 : 0,
     notif_activa:     document.getElementById('edit-notif')?.checked ? 1 : 0,
     volumenes_leidos: parseInt(document.getElementById('edit-vol-leidos')?.value) || null,
+    revisionados:     parseInt(document.getElementById('edit-rewatch')?.value) || 0,
     grupo:            _grupoDelEditor(),
   };
   // Si activa notificación, pedir permiso del navegador
@@ -3633,6 +3743,75 @@ async function checkNotificaciones() {
   } catch(_) {}
 }
 
+// ── v2.17: temporadas nuevas de animes que completaste ──────────────────────
+// Sale de las relaciones de saga ya guardadas: lo relacionado que no está en
+// tu lista y sigue en emisión (o sin estrenar) se ofrece aquí, una tarjeta por
+// título, con «Añadir» y «No me interesa».
+async function cargarSecuelas() {
+  if (MODO_MANGA) return;
+  const wrap = document.getElementById('secuelas-wrap'), strip = document.getElementById('secuelas-strip');
+  if (!wrap || !strip) return;
+  let items = [];
+  try {
+    const r = await fetch('/api/secuelas');
+    if (!r.ok) return;
+    items = (await r.json()).items || [];
+  } catch (_) { return; }
+  const ids = new Set(ANIMES.map(a => a.anilist_id).filter(Boolean));
+  items = items.filter(x => !ids.has(x.anilist_id)).slice(0, 6);
+  if (!items.length) { wrap.style.display = 'none'; return; }
+  strip.innerHTML = '';
+  items.forEach(x => {
+    const card = document.createElement('div');
+    card.style.cssText = 'flex:0 0 300px;display:flex;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px;align-items:center;min-width:0';
+    const img = document.createElement('img');
+    miraruPortada(img, x.imagen);
+    img.style.cssText = 'width:44px;height:62px;object-fit:cover;border-radius:6px;flex-shrink:0;background:var(--card2)';
+    img.alt = '';
+    const info = document.createElement('div');
+    info.style.cssText = 'min-width:0;flex:1';
+    const nom = document.createElement('div');
+    nom.style.cssText = 'font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+    nom.textContent = x.nombre; nom.title = x.nombre; nom.setAttribute('data-no-i18n', '');
+    const de = document.createElement('div');
+    de.style.cssText = 'font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px';
+    de.textContent = (x.estado_anime === 'Sin estrenar' ? _tr('Próximamente') : _tr('En emisión')) + ' · ' + _tr('sigue a') + ' ' + x.de;
+    const acc = document.createElement('div');
+    acc.style.cssText = 'display:flex;gap:6px;margin-top:6px';
+    const add = document.createElement('button');
+    add.className = 'btn btn-p btn-sm'; add.textContent = '+ ' + _tr('Añadir');
+    add.onclick = async () => {
+      add.disabled = true;
+      try {
+        const r = await fetch('/api/animes/restore', {method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({nombre: x.nombre, fuente: x.fuente || 'anilist', capitulos: x.capitulos,
+                                imagen: x.imagen, genero: x.genero, sinopsis: x.sinopsis,
+                                estado_anime: x.estado_anime, anilist_id: x.anilist_id,
+                                estado_usuario: 'pendiente'})});
+        if (!r.ok) throw 0;
+        toast('🎬 ' + x.nombre + ' · ' + (T('pending') || 'Pendiente'));
+        card.remove();
+        if (!strip.children.length) wrap.style.display = 'none';
+        await cargar();
+      } catch (_) { toast(T('error'), 'err'); add.disabled = false; }
+    };
+    const no = document.createElement('button');
+    no.className = 'btn btn-ghost btn-sm'; no.textContent = '✕';
+    no.title = _tr('No me interesa: no volver a sugerirlo');
+    no.onclick = () => {
+      fetch('/api/secuelas/ignorar', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({anilist_id: x.anilist_id})}).catch(() => {});
+      card.remove();
+      if (!strip.children.length) wrap.style.display = 'none';
+    };
+    acc.append(add, no);
+    info.append(nom, de, acc);
+    card.append(img, info);
+    strip.appendChild(card);
+  });
+  wrap.style.display = 'block';
+}
+
 // v2.4: rating rápido inline desde la tarjeta (sin abrir modal)
 async function setRating(enc, score) {
   const nombre = decodeURIComponent(enc);
@@ -3810,17 +3989,6 @@ async function sincronizar() {
 }
 
 // ── Exportar ────────────────────────────────────────────────────────────────
-function toggleExportMenu() {
-  const m = document.getElementById('export-menu');
-  m.style.display = m.style.display === 'none' ? 'block' : 'none';
-}
-function closeExportMenu() {
-  const m = document.getElementById('export-menu');
-  if (m) m.style.display = 'none';
-}
-document.addEventListener('click', e => {
-  if (!document.getElementById('export-wrap')?.contains(e.target)) closeExportMenu();
-});
 async function exportarCSV() {
   window.location.href = '/api/export/csv';
   setTimeout(() => toast(T('export_ok')), 500);
@@ -4497,7 +4665,7 @@ function _paletteCommands() {
     }},
     MODO_MANGA ? {icon: '🎌', label: 'Anime', run: () => location.href = '/app'}
                : {icon: '📖', label: 'Manga', run: () => location.href = '/manga'},
-    {icon: '🎬', label: 'No Anime', run: () => location.href = '/peliculas'},
+    {icon: '🎬', label: 'Series y pelis', run: () => location.href = '/peliculas'},
     {icon: '📊', label: 'Estadísticas',  run: () => location.href = '/stats'},
     {icon: '📅', label: 'Calendario',    run: () => location.href = '/calendario'},
     {icon: '🎬', label: 'Novedades',     run: () => location.href = '/novedades'},
@@ -5250,6 +5418,8 @@ function selectAllVisible() {
   comprobarActualizacion();
   // v2.2: strip "Continuar viendo"
   cargarContinuar();
+  // v2.17: temporadas nuevas de lo que completaste (tras pintar lo demás)
+  setTimeout(cargarSecuelas, 2500);
 })();
 </script>
 
@@ -5610,16 +5780,7 @@ async function _ofrecerRecuperar() {
 }
 setTimeout(_ofrecerRecuperar, 600);
 
-// v2.16: ¿los ajustes de la cabecera han caído a su propia fila? → la llenan.
-function _ajustarCabecera() {
-  const st = document.querySelector('.header-settings'), nav = document.querySelector('.header-nav');
-  if (!st || !nav) return;
-  st.classList.remove('fila');
-  const propia = innerWidth >= 1100 && st.getBoundingClientRect().top >= nav.getBoundingClientRect().bottom - 2;
-  st.classList.toggle('fila', propia);
-}
-window.addEventListener('resize', () => requestAnimationFrame(() => { _ajustarCabecera(); const sp = document.getElementById('search-preview'); if (sp && sp.style.display === 'block') _anclarPreview(sp); }));
-setTimeout(_ajustarCabecera, 50); setTimeout(_ajustarCabecera, 900);
+window.addEventListener('resize', () => requestAnimationFrame(() => { const sp = document.getElementById('search-preview'); if (sp && sp.style.display === 'block') _anclarPreview(sp); }));
 
 // Novedades de cada versión: /static/novedades.js (también sale en el menú).
 // Enlaces directos (desde Novedades, el menú o el recorrido): /app#copia, /app#animeav1…

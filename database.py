@@ -237,6 +237,8 @@ def init_db():
             ("volumenes_totales",  "INTEGER DEFAULT 0"),
             # v2.13: grupo elegido por el usuario ("" automático, "-" suelto)
             ("grupo",              "TEXT DEFAULT ''"),
+            # v2.17: cuántas veces lo has vuelto a ver entero
+            ("revisionados",       "INTEGER DEFAULT 0"),
         ]:
             if col not in existing:
                 conn.execute(f"ALTER TABLE animes ADD COLUMN {col} {definition}")
@@ -326,7 +328,7 @@ _SLIM_COLS = (
     "id, nombre, fuente, capitulos, imagen, genero, estado_anime, "
     "estado_usuario, puntuacion, episodios_vistos, temporada, "
     "lista_personalizada, favorito, notif_activa, fecha_inicio, fecha_fin, "
-    "anilist_id, tipo, volumenes_leidos, volumenes_totales, grupo"
+    "anilist_id, tipo, volumenes_leidos, volumenes_totales, grupo, revisionados"
 )
 _slim_cache: Optional[list[dict]] = None
 
@@ -531,7 +533,7 @@ def guardar_anime(data: dict) -> tuple[bool, str]:
 
 
 def actualizar_anime(nombre: str, campos: dict) -> tuple[bool, str]:
-    allowed = {"estado_usuario","puntuacion","fecha_inicio","fecha_fin","episodios_vistos","notas","temporada","lista_personalizada","favorito","notif_activa","anilist_id","tipo","volumenes_leidos","volumenes_totales","grupo"}
+    allowed = {"estado_usuario","puntuacion","fecha_inicio","fecha_fin","episodios_vistos","notas","temporada","lista_personalizada","favorito","notif_activa","anilist_id","tipo","volumenes_leidos","volumenes_totales","grupo","revisionados"}
     campos  = {k: v for k, v in campos.items() if k in allowed}
     if not campos:
         return False, "sin campos válidos"
@@ -717,6 +719,27 @@ def log_episode(nombre: str, episodio: int):
             )
     except Exception:
         pass  # no crashear por logs
+
+
+def episodios_vistos_log(nombre: str) -> list[dict]:
+    """v2.17: qué episodios tienes apuntados y cuándo (para corregir fechas)."""
+    with get_conn() as conn:
+        rows = conn.execute("SELECT episodio, fecha FROM ep_log WHERE nombre=? ORDER BY episodio DESC",
+                            (nombre,)).fetchall()
+    return [{"episodio": r["episodio"], "fecha": r["fecha"]} for r in rows]
+
+
+def cambiar_fecha_episodio(nombre: str, episodio: int, fecha: str) -> bool:
+    """v2.17: corrige el día en que viste un episodio («lo vi el sábado, no hoy»).
+    Si no estaba apuntado, se apunta con esa fecha. `fecha` es YYYY-MM-DD."""
+    with get_conn() as conn:
+        cur = conn.execute("UPDATE ep_log SET fecha=? || substr(fecha, 11) WHERE nombre=? AND episodio=?",
+                           (fecha, nombre, int(episodio)))
+        if cur.rowcount:
+            return True
+        conn.execute("INSERT OR IGNORE INTO ep_log(nombre, episodio, fecha) VALUES(?, ?, ? || ' 12:00:00')",
+                     (nombre, int(episodio), fecha))
+        return True
 
 
 def quitar_eps_recientes(nombre: str, mayor_que: int, horas: int = 24) -> int:
