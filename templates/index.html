@@ -191,9 +191,21 @@ body.sel-mode .ac.selected{opacity:1}
 #aviso-sin-servidor{position:sticky;top:0;z-index:60;padding:10px 16px;font-size:13px;line-height:1.45;
   background:rgba(251,191,36,.14);border-bottom:1px solid rgba(251,191,36,.45);color:var(--fg)}
 #aviso-sin-servidor strong{color:var(--warn)}
-#panel-progreso{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:9000;
-  width:min(440px,calc(100vw - 32px));background:var(--card);border:1px solid var(--border);
-  border-radius:14px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+/* v2.17: tarjeta pequeña en la esquina de abajo a la izquierda: antes iba en
+   el centro y tapaba las ventanas (p. ej. «Subiendo a AniList…»). */
+#panel-progreso{position:fixed;left:16px;bottom:16px;z-index:9000;
+  width:min(290px,calc(100vw - 32px));background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:8px 11px;box-shadow:0 6px 20px rgba(0,0,0,.4);font-size:12px;pointer-events:auto}
+#panel-progreso .pp-titulo{font-size:12.5px!important}
+#panel-progreso .pp-barra{height:5px!important;margin:6px 0!important}
+#panel-progreso .pp-cancelar{padding:2px 8px;font-size:11px}
+@media (max-width:640px){#panel-progreso{bottom:84px}}
+.ext-ruta{display:block;margin-top:8px;padding:6px 9px;border-radius:8px;background:var(--card2);border:1px solid var(--border);
+  font:12px/1.4 ui-monospace,Consolas,monospace;word-break:break-all;user-select:all}
+.ext-ruta[hidden]{display:none}
+.ext-nota{font-size:12px;color:var(--muted);margin:10px 0 6px}
+.ext-otra{font-size:12.5px;margin:4px 0 12px;color:var(--muted)}
+.ext-otra summary{cursor:pointer}
 #panel-progreso .pp-cab,#panel-progreso .pp-pie{display:flex;justify-content:space-between;align-items:center;gap:10px}
 #panel-progreso .pp-titulo{font-weight:700;font-size:14px}
 #panel-progreso .pp-num{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -1013,12 +1025,20 @@ fetch('/api/version').then(r => r.json()).then(d => {
       <li><b>Netflix</b> y <b>Crunchyroll</b> — al llegar casi al final del episodio (80 %). Lo que no es anime no se apunta.</li>
     </ul>
     <ol class="ext-pasos">
-      <li><span class="n">1</span><div><strong>Descárgala</strong><small>Y descomprime el .zip (clic derecho → «Extraer todo»).</small>
-        <a class="btn btn-p btn-sm" href="/api/animeav1/extension.zip" download>⬇ Descargar extensión</a></div></li>
-      <li><span class="n">2</span><div><strong>Abre las extensiones del navegador</strong><small>Pega esto en la barra de direcciones de Chrome o Edge y activa «Modo de desarrollador».</small>
-        <button class="btn btn-g btn-sm" type="button" onclick="_av1CopiarExtensiones()">📋 Copiar chrome://extensions</button></div></li>
-      <li><span class="n">3</span><div><strong>Cárgala</strong><small>Pulsa «Cargar descomprimida» y elige la carpeta <b>miraru-animeav1</b>. Se abrirá una guía que se pone en verde sola. Si ya la tenías, pulsa ↻ en su tarjeta para que coja la versión nueva.</small></div></li>
+      <li><span class="n">1</span><div><strong>Pulsa este botón</strong><small>Miraru deja la extensión lista en una carpeta, copia su ruta y abre las extensiones de Chrome (o Edge).</small>
+        <button class="btn btn-p btn-sm" type="button" id="ext-preparar" onclick="extPreparar()">🧩 Preparar y abrir el navegador</button>
+        <small id="ext-ruta" class="ext-ruta" hidden></small></div></li>
+      <li><span class="n">2</span><div><strong>Activa «Modo de desarrollador»</strong><small>Es el interruptor de arriba a la derecha. Luego pulsa <b>«Cargar descomprimida»</b>.</small></div></li>
+      <li><span class="n">3</span><div><strong>Pega con Ctrl+V y pulsa «Seleccionar carpeta»</strong><small>La ruta ya está copiada: pégala en la casilla «Carpeta» de la ventana que se abre. Se abrirá una guía que se pone en verde sola.</small></div></li>
     </ol>
+    <p class="ext-nota">Las actualizaciones llegan solas a esa carpeta al abrir Miraru: solo tendrás que pulsar ↻ en la tarjeta de la extensión.</p>
+    <details class="ext-otra"><summary>¿No se abre el navegador? Descárgala</summary>
+      <small>Descomprime el .zip (clic derecho → «Extraer todo»), abre <b>chrome://extensions</b> y carga la carpeta <b>miraru-animeav1</b>.</small>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <a class="btn btn-g btn-sm" href="/api/animeav1/extension.zip" download>⬇ Descargar extensión</a>
+        <button class="btn btn-g btn-sm" type="button" onclick="_av1CopiarExtensiones()">📋 Copiar chrome://extensions</button>
+      </div>
+    </details>
     <div id="av1-ext-estado" class="av1-ext-estado">⏳ Todavía no ha llegado nada de la extensión. Cuando marques tu primer episodio, aparecerá aquí.</div>
   </div>
 </div>
@@ -5876,6 +5896,32 @@ function abrirExtension() {
   }, 3000);
 }
 
+// v2.17: instalar sin descargar ni descomprimir: Miraru deja la carpeta lista,
+// copia la ruta y abre la página de extensiones del navegador.
+async function extPreparar() {
+  const btn = document.getElementById('ext-preparar');
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> ' + _tr('Preparando…');
+  try {
+    const r = await fetch('/api/extension/preparar', {method: 'POST'});
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(typeof d.detail === 'string' ? d.detail : 'Error');
+    if (!d.portapapeles) { try { await navigator.clipboard.writeText(d.ruta); d.portapapeles = true; } catch (_) {} }
+    const el = document.getElementById('ext-ruta');
+    el.hidden = false;
+    el.textContent = '📁 ' + d.ruta;
+    el.title = d.ruta;
+    toast(d.navegador
+      ? '✅ ' + _tr('Ruta copiada. Abierto en') + ' ' + d.navegador
+      : '✅ ' + _tr('Ruta copiada. Abre chrome://extensions en tu navegador'));
+  } catch (e) {
+    toast(_tr(e.message), 'err');
+  }
+  btn.disabled = false;
+  btn.textContent = orig;
+}
+
 async function _av1CopiarExtensiones() {
   try { await navigator.clipboard.writeText('chrome://extensions'); toast(_tr('Copiado: pégalo en la barra de direcciones')); }
   catch (_) { toast('chrome://extensions'); }
@@ -6075,7 +6121,7 @@ async function anilistPush() {
     if (!r.ok) throw new Error(j.detail || 'Error');
     const d = await seguirTrabajo(j.trabajo, 'Subiendo a AniList…');
     const res = document.getElementById('al-result');
-    res.innerHTML = `📤 <strong>Subida completada</strong><br>${d.pushed} subidos` + (d.errors ? ` · ${d.errors} errores` : '');
+    res.innerHTML = `📤 <strong>${_tr('Subida completada')}</strong><br>${d.pushed} ${_tr('subidos')}` + (d.sin_cambios ? ` · ${d.sin_cambios} ${_tr('ya estaban igual')}` : '') + (d.errors ? ` · ${d.errors} ${_tr('errores')}` : '');
     res.style.display = 'block';
     toast('📤 AniList: ' + d.pushed + ' subidos');
   } catch(e) {

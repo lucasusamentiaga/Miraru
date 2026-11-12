@@ -142,6 +142,11 @@ async def _lifespan(app: FastAPI):
     _start_enrich_unknown_eps()
     _start_notif_daemon_once()
     _start_imdb_once()
+    try:   # v2.17: la extensión instalada con «Preparar» se pone al día sola
+        import extension_local
+        extension_local.actualizar_si_existe(STATIC_DIR / "extension-animeav1")
+    except Exception:  # noqa: BLE001
+        pass
     # Auto-detección de episodios: arranca si hay carpeta configurada
     try:
         import watch_folder
@@ -4890,6 +4895,26 @@ def animeav1_extension_zip():
                 z.write(f, "miraru-animeav1/" + f.relative_to(carpeta).as_posix())
     return Response(buf.getvalue(), media_type="application/zip",
                     headers={"Content-Disposition": 'attachment; filename="miraru-animeav1.zip"'})
+
+
+@app.post("/api/extension/preparar")
+def extension_preparar(request: Request):
+    """Instalar la extensión sin descargar ni descomprimir nada (v2.17): la deja
+    en una carpeta fija, copia su ruta al portapapeles y abre la página de
+    extensiones del navegador. Solo desde este ordenador."""
+    import extension_local
+    if _client_ip(request) not in ("127.0.0.1", "::1", "localhost"):
+        raise HTTPException(403, "Esto solo se puede hacer desde el ordenador donde está Miraru.")
+    origen = STATIC_DIR / "extension-animeav1"
+    if not origen.is_dir():
+        raise HTTPException(404, "Esta instalación no trae la extensión")
+    try:
+        ruta = extension_local.copiar(origen)
+    except OSError as e:
+        raise HTTPException(500, f"No se pudo preparar la carpeta: {e}") from e
+    return {"ok": True, "ruta": str(ruta),
+            "portapapeles": extension_local.al_portapapeles(str(ruta)),
+            "navegador": extension_local.abrir_extensiones()}
 
 
 @app.get("/api/biblioteca/version")

@@ -343,27 +343,114 @@ def pull_all(progreso: Progreso = NULO) -> dict:
 
 # ── Push masivo (sync completo local → AniList) ─────────────────────────────
 
-def push_all(progreso: Progreso = NULO) -> dict:
-    """Sube TODOS los animes con anilist_id a AniList."""
+# v2.17: subir todo era una petición por anime con 2 s de espera entre cada
+# una (332 animes ≈ 12 minutos). Ahora:
+#   1. Se lee tu lista de AniList de golpe (1 petición por anime y manga) y
+#      solo se sube lo que es DISTINTO (estado, progreso o nota).
+#   2. Lo que hay que subir va en lotes: varias «SaveMediaListEntry» en una
+#      sola petición (alias de GraphQL). Si un lote falla, se sube de uno en uno.
+_LOTE_PUSH = 10
+
+_MI_LISTA = """
+query ($userId: Int!, $type: MediaType!) {
+  MediaListCollection(userId: $userId, type: $type) {
+    lists { entries { mediaId status progress score(format: POINT_100) } }
+  }
+}
+"""
+
+
+def _post_token(query: str, variables: dict | None, token: str, timeout: int = 20) -> dict:
+    """POST a AniList con tu token. Si AniList pide esperar (429), espera y
+    reintenta una vez."""
+    for intento in range(2):
+        resp = requests.post(ANILIST_API, json={"query": query, "variables": variables or {}},
+                             headers={"Authorization": f"Bearer {token}", "Accept": "application/json",
+                                      "Accept-Encoding": "identity"},
+                             timeout=timeout)
+        if resp.status_code == 429 and intento == 0:
+            _time.sleep(min(65, int(resp.headers.get("Retry-After") or 60)))
+            continue
+        resp.raise_for_status()
+        return resp.json() or {}
+    return {}
+
+
+def _deseado(anime: dict) -> tuple[str, int, int]:
+    """(estado, progreso, nota 0-100) tal como quedaría en AniList."""
+    return (_STATUS_TO_ANILIST.get(anime.get("estado_usuario", ""), "PLANNING"),
+            int(anime.get("episodios_vistos") or 0),
+            int(round(float(anime.get("puntuacion") or 0) * 10)))
+
+
+def lista_en_anilist(token: str, userid: int, post=_post_token) -> dict[int, tuple]:
+    """{mediaId: (estado, progreso, nota 0-100)} de lo que ya tienes en AniList."""
+    out: dict[int, tuple] = {}
+    for tipo in ("ANIME", "MANGA"):
+        data = (post(_MI_LISTA, {"userId": int(userid), "type": tipo}, token).get("data") or {})
+        for lista in ((data.get("MediaListCollection") or {}).get("lists") or []):
+            for e in lista.get("entries") or []:
+                if e and e.get("mediaId"):
+                    out[int(e["mediaId"])] = (e.get("status") or "", int(e.get("progress") or 0),
+                                              int(round(float(e.get("score") or 0))))
+    return out
+
+
+def _mutacion_lote(animes: list[dict]) -> str:
+    """Una petición con varias SaveMediaListEntry. Todos los valores son
+    números o estados de una lista fija (nada de texto del usuario)."""
+    partes = []
+    for i, a in enumerate(animes):
+        st, prog, nota = _deseado(a)
+        partes.append(f"m{i}: SaveMediaListEntry(mediaId: {int(a['anilist_id'])}, status: {st}, "
+                      f"scoreRaw: {nota}, progress: {prog}) {{ mediaId }}")
+    return "mutation {\n  " + "\n  ".join(partes) + "\n}"
+
+
+def push_all(progreso: Progreso = NULO, post=_post_token, sleep=_time.sleep) -> dict:
+    """Sube a AniList lo que tienes en Miraru y allí está distinto."""
     token = get_token()
     if not token:
         return {"pushed": 0, "errors": 0, "error": "no conectado"}
-
     animes = [a for a in db.listar_animes() if a.get("anilist_id")]
-    pushed = errors = 0
     progreso.total(len(animes))
-
-    for a in animes:
-        progreso.avanzar(1, a.get("nombre") or "")
-        result = push_anime(a)
-        if result:
-            pushed += 1
-        else:
-            errors += 1
-        _time.sleep(ANILIST_MIN_INTERVAL)  # rate limit: AniList 30 req/min
-
-    log.info("Push all: %d subidos, %d errores", pushed, errors)
-    return {"pushed": pushed, "errors": errors}
+    remota: dict[int, tuple] | None = None
+    userid = (get_connection_info() or {}).get("userid")
+    if userid:
+        try:
+            remota = lista_en_anilist(token, int(userid), post)
+        except Exception as e:  # noqa: BLE001
+            log.warning("No se pudo leer tu lista de AniList (se sube todo): %s", e)
+    if remota is None:
+        pendientes = animes
+    else:
+        pendientes = [a for a in animes if remota.get(int(a["anilist_id"])) != _deseado(a)]
+    iguales = len(animes) - len(pendientes)
+    if iguales:
+        progreso.avanzar(iguales, f"{iguales} ya estaban igual en AniList")
+    pushed = errors = 0
+    for i in range(0, len(pendientes), _LOTE_PUSH):
+        lote = pendientes[i:i + _LOTE_PUSH]
+        if i:
+            sleep(ANILIST_MIN_INTERVAL)
+        ok_ids: set[int] = set()
+        try:
+            d = post(_mutacion_lote(lote), None, token)
+            ok_ids = {int(v["mediaId"]) for v in (d.get("data") or {}).values() if v and v.get("mediaId")}
+        except Exception as e:  # noqa: BLE001
+            log.warning("Lote de AniList falló (%s): se sube de uno en uno", e)
+        for a in lote:
+            if int(a["anilist_id"]) in ok_ids:
+                pushed += 1
+            else:
+                sleep(ANILIST_MIN_INTERVAL)
+                if push_anime(a):
+                    pushed += 1
+                else:
+                    errors += 1
+            progreso.avanzar(1, a.get("nombre") or "")
+    log.info("Push all: %d subidos, %d iguales, %d errores", pushed, iguales, errors)
+    return {"pushed": pushed, "errors": errors, "sin_cambios": iguales}
 
 
 # ── Resolución de anilist_id para animes existentes ──────────────────────────
