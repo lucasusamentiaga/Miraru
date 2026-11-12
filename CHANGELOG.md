@@ -1,7 +1,22 @@
 # Changelog
 
-## v2.17.0 — El manga estrena apartado y tu lista entra de golpe
+## v2.17.0 — Manga aparte, el móvil con un toque y tu lista entra de golpe
 
+- **El móvil con un toque**: en «Más → Móvil», «Conectar el móvil» abre Miraru a tu WiFi en el
+  momento (un segundo servidor en la IP de la red, sin reiniciar) y enseña un QR que ya lleva un
+  código de un solo uso: lo escaneas con la cámara y entras. A mano: la dirección y un código de 6
+  cifras (caduca a los 10 min). El PIN de antes sigue valiendo. Las sesiones se guardan (solo su
+  huella) y el móvil sigue conectado aunque reinicies el PC; si el PC está apagado ya no borra la
+  sesión, ofrece «Reintentar». En el móvil se abre en «Viendo», el «+1» vuelve a salir en lo que
+  está en emisión y se puede añadir a la pantalla de inicio.
+- **Subir a AniList, mucho más rápido**: se lee tu lista de AniList una vez y solo se sube lo que
+  es distinto, en lotes de 10 por petición (antes, un anime cada 2 s: 12 minutos para 330).
+- **Extensión en dos clics**: «Preparar y abrir el navegador» deja la extensión en una carpeta
+  fija, copia la ruta y abre las extensiones de Chrome o Edge; las actualizaciones llegan solas a
+  esa carpeta. Extensión 1.5.1: la ventana ya no sale estrecha.
+- La barra de progreso de las tareas largas va en una esquina y ya no tapa las ventanas.
+- Términos de uso y política de privacidad actualizados (extensión en Netflix y Crunchyroll,
+  acceso móvil, conexión con AniList, IMDb).
 - **Apartado de manga** (`/manga`), como «No Anime»: la biblioteca ya no mezcla anime y manga ni
   tiene pestañas. Es la misma página en «modo manga»: solo enseña y añade manga, con su
   vocabulario (leyendo, capítulos) y sin lo que es solo de anime (calendario, avisos, AnimeAV1…).

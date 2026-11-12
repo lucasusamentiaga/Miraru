@@ -1,6 +1,6 @@
 # Términos de uso de Miraru / Miraru terms of use
 
-*Última actualización / Last updated: 1 de noviembre de 2026*
+*Última actualización / Last updated: 12 de noviembre de 2026*
 
 ## Español
 
@@ -13,9 +13,9 @@
    la nube, en tu propia nube (OneDrive, Google Drive, Dropbox o iCloud Drive). Cómo se
    tratan se explica en la [política de privacidad](PRIVACY.md).
 4. **Servicios de terceros.** Miraru muestra información pública de AniList,
-   MyAnimeList/Jikan, Kitsu, AnimeFLV, AnimeAV1, Anime-Planet, Crunchyroll, AnimeThemes y
-   TMDB, y puede conectarse a tus cuentas de AniList, AnimeAV1 o Google
-   si tú lo configuras. Esos servicios tienen sus propias condiciones, que debes
+   MyAnimeList/Jikan, Kitsu, AnimeFLV, AnimeAV1, Anime-Planet, Crunchyroll, AnimeThemes,
+   TMDB e IMDb, y puede conectarse a tus cuentas de AniList, AnimeAV1 o Google
+   si tú lo configuras. Netflix y Crunchyroll solo se usan a través de la extensión. Esos servicios tienen sus propias condiciones, que debes
    respetar, y Miraru no está afiliado ni respaldado por ninguno de ellos. Los títulos,
    portadas y textos pertenecen a sus titulares.
 5. **Sin contenido para adultos.** Miraru oculta el contenido que las fuentes marcan como
@@ -23,8 +23,11 @@
 6. **Miraru no aloja ni reproduce vídeos.** Solo guarda tu progreso y enlaza a las webs
    oficiales o a las que tú elijas; lo que veas en ellas es responsabilidad tuya y de esas
    webs.
-7. **Extensión del navegador.** La extensión opcional «Miraru × AnimeAV1» solo comunica a
-   Miraru, en tu propio ordenador, los episodios que marcas como vistos en animeav1.com.
+7. **Extensión del navegador y móvil.** La extensión opcional de Miraru solo comunica a
+   Miraru, en tu propio ordenador, los episodios que marcas como vistos en animeav1.com o
+   que terminas en Netflix o Crunchyroll; la instalas tú y puedes quitarla cuando quieras.
+   El acceso desde el móvil solo funciona en tu red local: úsalo en redes de confianza y
+   no compartas el código de acceso.
 8. **Sin garantía.** Miraru se ofrece «tal cual», sin garantía de ningún tipo. Las
    fuentes externas pueden cambiar o dejar de funcionar. Haz copias de seguridad (la
    copia en la nube ayuda) y, en la medida en que la ley lo permita, el autor no responde
@@ -47,9 +50,9 @@ código, que siguen aplicándose.
    backup, in your own cloud (OneDrive, Google Drive, Dropbox or iCloud Drive). How it is
    handled is explained in the [privacy policy](PRIVACY.md).
 4. **Third-party services.** Miraru shows public information from AniList,
-   MyAnimeList/Jikan, Kitsu, AnimeFLV, AnimeAV1, Anime-Planet, Crunchyroll, AnimeThemes and
-   TMDB, and can connect to your AniList, AnimeAV1 or Google accounts if you
-   set them up. Those services have their own terms, which you must respect; Miraru is not
+   MyAnimeList/Jikan, Kitsu, AnimeFLV, AnimeAV1, Anime-Planet, Crunchyroll, AnimeThemes,
+   TMDB and IMDb, and can connect to your AniList, AnimeAV1 or Google accounts if you
+   set them up. Netflix and Crunchyroll are only used through the extension. Those services have their own terms, which you must respect; Miraru is not
    affiliated with or endorsed by any of them. Titles, covers and texts belong to their
    owners.
 5. **No adult content.** Miraru hides content that sources flag as adults-only. Do not try
@@ -57,8 +60,11 @@ código, que siguen aplicándose.
 6. **Miraru does not host or stream video.** It only stores your progress and links to the
    official sites or the ones you choose; what you watch there is your and those sites'
    responsibility.
-7. **Browser extension.** The optional "Miraru × AnimeAV1" extension only tells Miraru, on
-   your own computer, which episodes you mark as watched on animeav1.com.
+7. **Browser extension and phone.** The optional Miraru extension only tells Miraru, on
+   your own computer, which episodes you mark as watched on animeav1.com or finish on
+   Netflix or Crunchyroll; you install it yourself and can remove it at any time. Phone
+   access only works on your local network: use it on trusted networks and do not share
+   the access code.
 8. **No warranty.** Miraru is provided "as is", without warranty of any kind. External
    sources may change or stop working. Keep backups (cloud backup helps) and, to the
    extent permitted by law, the author is not liable for data loss or other damages
