@@ -4531,6 +4531,58 @@ async def anilist_connect(req: Request):
         raise HTTPException(500, str(e))
 
 
+@app.get("/api/anilist/app")
+async def anilist_app():
+    """v2.17: si Miraru tiene su propia app en AniList, el enlace para conectar
+    con un botón (sin Client ID ni Secret)."""
+    return {"url": anilist_sync.url_conectar()}
+
+
+class AniListTokenRequest(BaseModel):
+    token: str = Field(..., min_length=20, max_length=4000)
+
+
+@app.post("/api/anilist/token")
+def anilist_token(req: AniListTokenRequest):
+    """La página /anilist/conectado manda aquí el token que AniList pone en la
+    URL tras pulsar «Authorize». Se comprueba con AniList antes de guardarlo."""
+    try:
+        viewer = anilist_sync.fetch_viewer(req.token.strip())
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(400, "AniList no ha aceptado la conexión. Vuelve a intentarlo.") from e
+    if not viewer or not viewer.get("id"):
+        raise HTTPException(400, "AniList no ha aceptado la conexión. Vuelve a intentarlo.")
+    anilist_sync.save_token(req.token.strip(), viewer["name"], viewer["id"])
+    return {"ok": True, "username": viewer["name"], "userid": viewer["id"]}
+
+
+@app.get("/anilist/conectado", response_class=HTMLResponse)
+async def anilist_conectado():
+    """A donde vuelve AniList tras «Authorize». El token va tras el # de la URL
+    (el navegador no lo manda al servidor): la página lo lee y lo envía."""
+    return HTMLResponse("""<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Miraru · AniList</title>
+<style>body{background:#0f0f13;color:#e2e2e8;font-family:system-ui,sans-serif;display:flex;align-items:center;
+justify-content:center;min-height:100vh;margin:0}.box{text-align:center;padding:36px;background:#1a1a24;
+border-radius:16px;border:1px solid #2a2a38;max-width:400px}h2{color:#a78bfa;margin:0 0 10px}
+p{color:#9a9ab0;font-size:14px;line-height:1.5}a{color:#a78bfa}</style></head>
+<body><div class="box"><h2 id="t">Conectando con AniList…</h2><p id="p">Un momento.</p></div>
+<script>
+const p = new URLSearchParams(location.hash.slice(1));
+const token = p.get('access_token');
+history.replaceState(null, '', location.pathname);
+const t = document.getElementById('t'), x = document.getElementById('p');
+if (!token) { t.textContent = 'No se ha conectado'; x.textContent = 'AniList no ha devuelto la autorización. Cierra esta pestaña y vuelve a intentarlo desde Miraru.'; }
+else fetch('/api/anilist/token', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({token})})
+  .then(r => r.json().then(d => ({ok: r.ok, d})))
+  .then(({ok, d}) => {
+    if (ok) { t.textContent = '✅ Conectado con AniList'; x.textContent = 'Como ' + d.username + '. Ya puedes cerrar esta pestaña.'; setTimeout(() => window.close(), 2500); }
+    else { t.textContent = 'No se ha conectado'; x.textContent = d.detail || 'Vuelve a intentarlo.'; }
+  })
+  .catch(() => { t.textContent = 'No se ha conectado'; x.textContent = 'Miraru no responde. ¿Sigue abierto?'; });
+</script></body></html>""")
+
+
 @app.post("/api/anilist/disconnect")
 async def anilist_disconnect():
     anilist_sync.disconnect()
@@ -4694,6 +4746,76 @@ async def animeav1_evento(req: AnimeAV1EventoRequest, request: Request):
     return {"ok": True, "accion": "actualizado" if cambios else "sin cambios", "nombre": nombre,
             "episodios_vistos": final.get("episodios_vistos"), "estado": final.get("estado_usuario"),
             "imagen": final.get("imagen") or "", "capitulos": str(final.get("capitulos") or "")}
+
+
+# ── v2.17: Netflix y Crunchyroll (la misma extensión) ─────────────────────────
+class StreamingEventoRequest(BaseModel):
+    servicio: Literal["netflix", "crunchyroll"]
+    serie: str = Field(..., min_length=1, max_length=300)
+    temporada: Optional[int] = Field(default=None, ge=0, le=100)
+    episodio: Optional[int] = Field(default=None, ge=0, le=100000)
+    temporada_nombre: str = Field("", max_length=300)
+    titulo_ep: str = Field("", max_length=300)
+
+
+@app.post("/api/streaming/evento")
+async def streaming_evento(req: StreamingEventoRequest, request: Request):
+    """Has terminado un episodio en Netflix o Crunchyroll: se apunta en Miraru.
+
+    Solo cuenta si el nombre casa ENTERO con un anime de AniList (o con uno de
+    tu lista): lo que no es anime no se apunta nunca. Como la de AnimeAV1,
+    exige la cabecera X-Miraru-Extension (ninguna web puede mandarla)."""
+    if request.headers.get("X-Miraru-Extension") != "1":
+        raise HTTPException(403, "Solo la extensión de Miraru puede usar esta ruta")
+    import streaming
+    loop = asyncio.get_running_loop()
+    try:
+        r = await asyncio.wait_for(loop.run_in_executor(
+            executor, streaming.resolver, req.serie, req.temporada, req.episodio, req.temporada_nombre), timeout=40)
+    except Exception as e:  # noqa: BLE001
+        _sync_log.warning("Streaming (extensión): %s", e)
+        raise HTTPException(502, "Ahora mismo no se puede identificar el anime. Se reintentará.") from e
+    local, media, ep = r["local"], r["media"], int(r["episodio"] or 0)
+    etiqueta = req.serie + (f" · T{req.temporada}:E{req.episodio}" if req.episodio else "")
+    if local is None and media is None:
+        raise HTTPException(404, f"«{req.serie}» no parece un anime (no está en AniList con ese nombre)")
+    if local is None:
+        ficha = streaming.a_ficha(media)
+        if ficha is None:
+            raise HTTPException(422, "Miraru no guarda contenido para adultos")
+        datos = dict(ficha.__dict__)
+        datos.pop("adulto", None)
+        total = str(datos.get("capitulos") or "").strip()
+        es_peli = total == "película"
+        completo = es_peli or (total.isdigit() and int(total) > 0 and ep >= int(total))
+        datos.update({"tipo": "anime", "estado_usuario": "completado" if completo else "viendo",
+                      "episodios_vistos": 0 if es_peli else ep})
+        ok, msg = db.guardar_anime(datos)
+        if not ok and msg != "duplicado":
+            raise HTTPException(500, msg)
+        if ok:
+            if ep and not es_peli:
+                db.log_episode(datos["nombre"], ep)
+            animeav1_sync.guardar_ultimo_evento(datos["nombre"], ep, "añadido")
+            return {"ok": True, "accion": "añadido", "nombre": datos["nombre"], "episodios_vistos": ep,
+                    "estado": datos["estado_usuario"], "imagen": datos.get("imagen") or "",
+                    "capitulos": total, "origen": etiqueta}
+        local = db.obtener_anime(datos["nombre"]) or db.obtener_anime(db.buscar_por_clave(datos["nombre"]) or "")
+        if local is None:
+            raise HTTPException(409, "duplicado")
+    nombre = local["nombre"]
+    if str(local.get("capitulos") or "") == "película":
+        cambios = {} if local.get("estado_usuario") == "completado" else {"estado_usuario": "completado"}
+    else:
+        cambios = animeav1_sync.cambios_por_evento(local, ep, None, "marcar")
+    if cambios:
+        await actualizar_anime(nombre, ActualizarRequest(**cambios))
+    animeav1_sync.guardar_ultimo_evento(nombre, ep, "actualizado" if cambios else "sin cambios")
+    final = db.obtener_anime(nombre) or local
+    return {"ok": True, "accion": "actualizado" if cambios else "sin cambios", "nombre": nombre,
+            "episodios_vistos": final.get("episodios_vistos"), "estado": final.get("estado_usuario"),
+            "imagen": final.get("imagen") or "", "capitulos": str(final.get("capitulos") or ""),
+            "origen": etiqueta}
 
 
 # ── v2.16.1: la extensión trae tus listas de AnimeAV1 («Mis Listas») ─────────

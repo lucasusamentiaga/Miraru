@@ -1,5 +1,10 @@
-// Miraru × AnimeAV1 — copia a Miraru, al momento, los episodios que marcas
-// como vistos en animeav1.com.
+// Miraru — copia a Miraru, al momento, los episodios que ves en AnimeAV1,
+// Netflix y Crunchyroll.
+//
+// Netflix y Crunchyroll (v1.5): streaming.js avisa al terminar un episodio
+// (pasado el 80 %) con el nombre de la serie, la temporada y el episodio, y
+// aquí se manda a Miraru (/api/streaming/evento), que mira en AniList qué
+// anime es. Va por la misma cola: si Miraru está cerrado, se manda después.
 //
 // Cómo: la web de AnimeAV1, al pulsar «Marcar como visto», hace
 //   POST https://animeav1.com/api/user/library  {"mediaId": 123, "episode": 5}
@@ -90,13 +95,19 @@ function enOrden(fn) {
 }
 
 function encolar(ev) { return enOrden(() => _encolar(ev)); }
+// Netflix/Crunchyroll no tienen mediaId: cada episodio es un evento distinto.
+function claveEv(e) {
+  if (e.ruta === '/api/streaming/evento') return 'st|' + e.servicio + '|' + e.serie + '|' + e.temporada + '|' + e.episodio;
+  return 'av1|' + e.mediaId;
+}
 async function _encolar(ev) {
   const {cola = []} = await chrome.storage.local.get('cola');
   ev.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   ev.cuando = Date.now();
   ev.intentos = 0;
   // Del mismo anime solo importa lo último que hiciste.
-  const nueva = cola.filter(e => e.mediaId !== ev.mediaId || ('status' in e) !== ('status' in ev));
+  const k = claveEv(ev);
+  const nueva = cola.filter(e => claveEv(e) !== k || ('status' in e) !== ('status' in ev));
   nueva.push(ev);
   await chrome.storage.local.set({cola: nueva.slice(-200)});
 }
@@ -113,8 +124,8 @@ async function _quitarDeCola(ids, reintentar) {
 
 async function apuntarFallo(ev, motivo) {
   const {fallos = []} = await chrome.storage.local.get('fallos');
-  fallos.unshift({cuando: Date.now(), titulo: ev.titulo || ev.slug || ('#' + ev.mediaId),
-                  episodio: ev.episode, motivo});
+  fallos.unshift({cuando: Date.now(), titulo: ev.titulo || ev.serie || ev.slug || ('#' + ev.mediaId),
+                  episodio: ev.episode != null ? ev.episode : ev.episodio, motivo});
   await chrome.storage.local.set({fallos: fallos.slice(0, 5)});
 }
 
@@ -131,10 +142,10 @@ async function enviarUnaVez() {
   const base = `http://127.0.0.1:${await puerto()}`;
   const hechos = new Set(), reintentar = [];
   for (const ev of cola) {
-    const {id, cuando, intentos, ...cuerpo} = ev;
+    const {id, cuando, intentos, ruta, ...cuerpo} = ev;
     let r;
     try {
-      r = await fetch(base + '/api/animeav1/evento', {
+      r = await fetch(base + (ruta || '/api/animeav1/evento'), {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Miraru-Extension': '1'},
         body: JSON.stringify(cuerpo),
@@ -147,7 +158,8 @@ async function enviarUnaVez() {
     const d = await r.json().catch(() => ({}));
     if (r.ok) {
       const ultimo = {cuando: Date.now(), nombre: d.nombre || '', episodio: d.episodios_vistos,
-        accion: d.accion || '', estado: d.estado || '', imagen: d.imagen || '', capitulos: d.capitulos || ''};
+        accion: d.accion || '', estado: d.estado || '', imagen: d.imagen || '', capitulos: d.capitulos || '',
+        servicio: ev.servicio || 'animeav1'};
       const {historial = []} = await chrome.storage.local.get('historial');
       await chrome.storage.local.set({ultimo, historial: [ultimo, ...historial.filter(h =>
         !(h.nombre === ultimo.nombre && h.episodio === ultimo.episodio))].slice(0, 8)});
@@ -169,7 +181,7 @@ async function marcar(texto, color, titulo) {
   try {
     await chrome.action.setBadgeBackgroundColor({color});
     await chrome.action.setBadgeText({text: texto});
-    await chrome.action.setTitle({title: 'Miraru × AnimeAV1 — ' + titulo});
+    await chrome.action.setTitle({title: 'Miraru — ' + titulo});
     // El ✓ se borra solo; un aviso posterior (! o ?) no lo borra este temporizador.
     if (texto === '✓') setTimeout(() => { if (yo === ultimaMarca) chrome.action.setBadgeText({text: ''}); }, 4000);
   } catch (_) { /* nada */ }
@@ -234,7 +246,37 @@ chrome.alarms.onAlarm.addListener(a => {
   if (a.name === 'listas') sincronizarListas();
 });
 chrome.runtime.onStartup.addListener(() => { enviarCola(); sincronizarListas(); });
-chrome.runtime.onMessage.addListener((msg, _s, responder) => {
+// ── v1.5: Netflix y Crunchyroll ────────────────────────────────────────────
+async function apuntarStreaming(d) {
+  if (!d || !d.serie) return;
+  const ev = {ruta: '/api/streaming/evento', servicio: d.servicio, serie: String(d.serie).slice(0, 300)};
+  if (d.temporada) ev.temporada = Number(d.temporada);
+  if (d.episodio) ev.episodio = Number(d.episodio);
+  if (d.temporada_nombre) ev.temporada_nombre = String(d.temporada_nombre).slice(0, 300);
+  if (d.titulo_ep) ev.titulo_ep = String(d.titulo_ep).slice(0, 300);
+  ev.titulo = ev.serie + (ev.episodio ? ` · T${ev.temporada || 1}:E${ev.episodio}` : '');
+  await encolar(ev);
+  await enviarCola();
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, responder) => {
+  if (msg && msg.tipo === 'streaming-visto') { apuntarStreaming(msg.datos); return false; }
+  if (msg && msg.tipo === 'streaming-visto-marco') {
+    // El vídeo de Crunchyroll vive en un marco: el nombre lo tiene la página.
+    const tab = sender.tab && sender.tab.id;
+    if (tab != null) {
+      chrome.tabs.sendMessage(tab, {tipo: 'streaming-datos'}, {frameId: 0})
+        .then(apuntarStreaming)
+        .catch(() => marcar('?', '#d97706', 'No pude leer qué episodio era'));
+    }
+    return false;
+  }
+  if (msg && msg.tipo === 'streaming-sin-datos') {
+    apuntarFallo({titulo: msg.servicio === 'netflix' ? 'Netflix' : 'Crunchyroll'},
+                 'No pude leer el nombre del episodio en la página').then(() =>
+      marcar('?', '#d97706', 'No pude leer qué episodio era'));
+    return false;
+  }
   if (msg === 'reintentar') enviarCola().then(() => responder(true));
   else if (msg === 'listas') sincronizarListas(true).then(responder);
   return true;

@@ -77,3 +77,19 @@ def test_cabecera_con_menu_mas_y_series_y_pelis(db):
     for id_ in ("btn-sync", "btn-anilist", "btn-copia", "btn-extension", "btn-watchfolder", "lang-sel", "btn-theme", "btn-random"):
         assert f'id="{id_}"' in menu, id_
     assert "Series y pelis" in html and "¿Ya llevas tu lista en AniList o MyAnimeList?" in html
+
+
+def test_conectar_anilist_con_la_app_de_miraru(db, monkeypatch):
+    import anilist_sync
+    main, c = _cliente()
+    monkeypatch.setattr(anilist_sync, "MIRARU_CLIENT_ID", 0)
+    assert c.get("/api/anilist/app").json() == {"url": ""}          # sin app: método antiguo
+    monkeypatch.setattr(anilist_sync, "MIRARU_CLIENT_ID", 12345)
+    assert c.get("/api/anilist/app").json()["url"] == (
+        "https://anilist.co/api/v2/oauth/authorize?client_id=12345&response_type=token")
+    pagina = c.get("/anilist/conectado").text
+    assert "access_token" in pagina and "/api/anilist/token" in pagina
+    monkeypatch.setattr(anilist_sync, "fetch_viewer", lambda t: {"id": 7, "name": "lucas"} if t == "x" * 30 else {})
+    assert c.post("/api/anilist/token", json={"token": "y" * 30}).status_code == 400
+    r = c.post("/api/anilist/token", json={"token": "x" * 30}).json()
+    assert r["username"] == "lucas" and anilist_sync.get_connection_info()["connected"]

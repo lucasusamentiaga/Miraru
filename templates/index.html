@@ -515,6 +515,9 @@ body.sel-mode .ac .salir{display:none}
 #mg-portadas .mas{width:38px;height:54px;border-radius:6px;background:var(--card2);color:var(--muted);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
 #mg-sug{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 16px}
 #mg-sug:empty{display:none}
+.ext-donde{margin:0 0 14px 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--muted);line-height:1.5;text-align:left}
+.ext-donde li{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+.ext-donde b{color:var(--fg)}
 /* v2.17: ficha con lo avanzado plegado */
 #edit-avanzado{margin:2px 0 10px;border:1px solid var(--border);border-radius:10px;padding:0 12px}
 #edit-avanzado[open]{padding-bottom:10px}
@@ -1003,14 +1006,18 @@ fetch('/api/version').then(r => r.json()).then(d => {
   <div class="modal ext" role="dialog" aria-modal="true" aria-labelledby="ext-tit">
     <button class="ext-x" type="button" aria-label="Cerrar" onclick="cerrarModal('modal-extension')">×</button>
     <div class="ext-hero" aria-hidden="true"><span class="ext-av1">AV1</span><span class="ext-ola"><i></i><i></i><i></i></span><img src="/static/logo.svg" alt=""></div>
-    <h3 id="ext-tit">Conecta AnimeAV1 con Miraru</h3>
-    <p class="ext-sub">Cuando pulses <strong>«Marcar como visto» 👁</strong> en un episodio de AnimeAV1, se apunta en Miraru en ese mismo momento. Si no tenías el anime, se añade solo.</p>
+    <h3 id="ext-tit">Lo que ves, apuntado solo</h3>
+    <p class="ext-sub">Con la extensión del navegador, cada episodio se apunta en Miraru en ese mismo momento. Si no tenías el anime, se añade solo.</p>
+    <ul class="ext-donde">
+      <li><b>AnimeAV1</b> — al pulsar <strong>«Marcar como visto» 👁</strong>. También trae tus listas.</li>
+      <li><b>Netflix</b> y <b>Crunchyroll</b> — al llegar casi al final del episodio (80 %). Lo que no es anime no se apunta.</li>
+    </ul>
     <ol class="ext-pasos">
       <li><span class="n">1</span><div><strong>Descárgala</strong><small>Y descomprime el .zip (clic derecho → «Extraer todo»).</small>
         <a class="btn btn-p btn-sm" href="/api/animeav1/extension.zip" download>⬇ Descargar extensión</a></div></li>
       <li><span class="n">2</span><div><strong>Abre las extensiones del navegador</strong><small>Pega esto en la barra de direcciones de Chrome o Edge y activa «Modo de desarrollador».</small>
         <button class="btn btn-g btn-sm" type="button" onclick="_av1CopiarExtensiones()">📋 Copiar chrome://extensions</button></div></li>
-      <li><span class="n">3</span><div><strong>Cárgala</strong><small>Pulsa «Cargar descomprimida» y elige la carpeta <b>miraru-animeav1</b>. Se abrirá una guía que se pone en verde sola.</small></div></li>
+      <li><span class="n">3</span><div><strong>Cárgala</strong><small>Pulsa «Cargar descomprimida» y elige la carpeta <b>miraru-animeav1</b>. Se abrirá una guía que se pone en verde sola. Si ya la tenías, pulsa ↻ en su tarjeta para que coja la versión nueva.</small></div></li>
     </ol>
     <div id="av1-ext-estado" class="av1-ext-estado">⏳ Todavía no ha llegado nada de la extensión. Cuando marques tu primer episodio, aparecerá aquí.</div>
   </div>
@@ -1048,8 +1055,19 @@ fetch('/api/version').then(r => r.json()).then(d => {
     <!-- Estado: no conectado -->
     <div id="al-disconnected">
       <p class="sync-nota" style="margin-bottom:12px">¿Solo quieres traer tu lista? No hace falta nada de esto: <a href="/import" style="color:var(--light);font-weight:600">tráela con tu nombre de usuario</a>.</p>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">
-        Conecta tu cuenta de AniList para sincronizar tu lista de anime bidireccionalmente.
+      <!-- v2.17: con la app de Miraru en AniList, un botón y «Authorize» -->
+      <div id="al-facil" hidden>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">
+          Conecta tu cuenta de AniList y tu lista se mantiene igual en los dos sitios: lo que marques aquí sube a AniList y lo de AniList baja a Miraru.
+        </p>
+        <div class="modal-actions" style="justify-content:flex-start">
+          <button class="btn btn-p" type="button" onclick="anilistConectarFacil()">Conectar con AniList →</button>
+        </div>
+        <p class="sync-nota" style="margin-top:8px">Se abre AniList: inicia sesión si hace falta y pulsa «Authorize». La conexión dura un año.</p>
+      </div>
+      <details id="al-avanzado" style="margin-top:10px">
+        <summary style="cursor:pointer;font-size:12px;color:var(--muted)">Con tu propia app de desarrollador (avanzado)</summary>
+      <p style="font-size:13px;color:var(--muted);margin:10px 0 14px;line-height:1.6">
         Necesitas crear una app en <a href="https://anilist.co/settings/developer" target="_blank" rel="noopener" style="color:var(--light)">anilist.co/settings/developer</a>.
       </p>
       <div class="field">
@@ -1066,6 +1084,7 @@ fetch('/api/version').then(r => r.json()).then(d => {
       <div class="modal-actions">
         <button class="btn btn-p" id="al-connect-btn" onclick="anilistConnect()">Conectar con AniList →</button>
       </div>
+      </details>
     </div>
     <!-- Estado: conectado -->
     <div id="al-connected" style="display:none">
@@ -1222,7 +1241,7 @@ fetch('/api/version').then(r => r.json()).then(d => {
         <button class="btn btn-ghost btn-sm" id="btn-random" role="menuitem" onclick="animeAleatorio();toggleMenuMas(false)">🎲<span class="lbl" id="lbl-random">Aleatorio</span></button>
         <div class="grupo">Conectar</div>
         <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirAniList();toggleMenuMas(false)" title="Sincronizar con AniList" id="btn-anilist">🔗<span class="lbl">AniList</span></button>
-        <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirExtension();toggleMenuMas(false)" title="Extensión de AnimeAV1: apunta solo cada episodio que marcas" id="btn-extension" data-solo="anime">🧩<span class="lbl">Extensión de AnimeAV1</span></button>
+        <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirExtension();toggleMenuMas(false)" title="Extensión del navegador: apunta sola lo que ves en AnimeAV1, Netflix y Crunchyroll" id="btn-extension" data-solo="anime">🧩<span class="lbl">Extensión del navegador</span></button>
         <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirCopia();toggleMenuMas(false)" title="Copia en la nube" id="btn-copia">☁<span class="lbl">Copia en la nube</span></button>
         <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirWatchFolder();toggleMenuMas(false)" title="Auto-detección episodios" id="btn-watchfolder" data-solo="anime">📂<span class="lbl">Carpeta vigilada</span></button>
         <a href="/mobile" class="btn btn-ghost btn-sm" role="menuitem" title="Acceso móvil">📱<span class="lbl">Móvil</span></a>
@@ -5593,6 +5612,12 @@ async function abrirAniList() {
   } catch(_) {
     _alShowDisconnected();
   }
+  // v2.17: si Miraru tiene su app en AniList, el botón fácil y lo antiguo plegado.
+  try {
+    const facil = !!((await (await fetch('/api/anilist/app')).json()).url);
+    document.getElementById('al-facil').hidden = !facil;
+    document.getElementById('al-avanzado').open = !facil;
+  } catch (_) {}
   await _av1Estado();
   abrirModalEl('modal-anilist');
 }
@@ -5984,6 +6009,28 @@ function anilistConnect() {
         toast('✅ Conectado a AniList como ' + s.username);
       }
     } catch(_){}
+  }, 2000);
+}
+
+// v2.17: conectar con la app de Miraru (sin Client ID ni Secret).
+async function anilistConectarFacil() {
+  let url = '';
+  try { url = (await (await fetch('/api/anilist/app')).json()).url || ''; } catch (_) {}
+  if (!url) { toast(T('error'), 'err'); return; }
+  window.open(url, '_blank', 'width=520,height=760');
+  if (window._alPoll) clearInterval(window._alPoll);
+  let n = 0;
+  window._alPoll = setInterval(async () => {
+    if (++n > 90) { clearInterval(window._alPoll); window._alPoll = null; return; }
+    try {
+      const s = await (await fetch('/api/anilist/status')).json();
+      if (s.connected) {
+        clearInterval(window._alPoll); window._alPoll = null;
+        _alShowConnected(s.username, s.userid);
+        _alUpdateIndicator(s);
+        toast('✅ ' + _tr('Conectado a AniList como') + ' ' + s.username);
+      }
+    } catch (_) {}
   }, 2000);
 }
 

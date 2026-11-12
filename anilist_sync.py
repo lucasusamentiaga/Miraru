@@ -74,6 +74,20 @@ def save_token(token: str, username: str, userid: int):
     db.set_config("anilist_userid", str(userid))
 
 
+# v2.17: la aplicación de Miraru registrada en AniList (una sola, para todos).
+# Con ella, conectar es un botón y «Authorize» (implicit grant: el token vuelve
+# en la URL, sin Client Secret). 0 = sin registrar: se usa el método antiguo
+# (cada usuario con su propia app de desarrollador).
+MIRARU_CLIENT_ID = 0
+REDIRECT_MIRARU = "http://127.0.0.1:8765/anilist/conectado"
+
+
+def url_conectar() -> str:
+    if not MIRARU_CLIENT_ID:
+        return ""
+    return f"https://anilist.co/api/v2/oauth/authorize?client_id={MIRARU_CLIENT_ID}&response_type=token"
+
+
 def disconnect():
     db.set_config("anilist_token", "")
     db.set_config("anilist_username", "")

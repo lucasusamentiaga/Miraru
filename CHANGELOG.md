@@ -24,6 +24,16 @@
   hay algo dentro o si lo dejaste abierto). Nuevo **contador de revisionados** (🔁×N en la
   tarjeta) y **fecha de cada episodio visto**, editable (cuenta para el mapa de actividad, la
   racha y «Mi año en anime»). La cabecera de cada saga dice la media de tus notas.
+- **Extensión 1.5: Netflix y Crunchyroll.** Al llegar al 80 % de un episodio se apunta solo
+  (añade el anime si no lo tenías y nunca baja tu progreso). Miraru busca la serie en AniList y
+  solo vale si el título casa ENTERO (inglés, romaji, nativo o un sinónimo: «Ataque a los
+  titanes» sirve), así que lo que no es anime no se apunta nunca. Las temporadas del servicio se
+  reparten entre las entradas de AniList («Season 3» + «Season 3 Part 2»), también con
+  numeración seguida. En Crunchyroll el vídeo va en un marco de otro dominio: el marco avisa y la
+  página pone el nombre (JSON-LD). Probado de punta a punta con Chromium y la extensión cargada.
+- **AniList con un botón** (preparado): con la app de Miraru registrada en AniList, «Conectar»
+  abre AniList, pulsas «Authorize» y listo (implicit grant, sin Client Secret). Lo de crear tu
+  propia app queda plegado como «avanzado».
 - **Cambiar de idioma recarga la página**: antes solo cambiaba parte del texto y el resto se
   quedaba en el idioma anterior hasta recargar. Más textos traducidos (extensión, copia en la
   nube, atajos, estadísticas, acceso móvil).

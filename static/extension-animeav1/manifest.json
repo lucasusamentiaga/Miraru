@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Miraru × AnimeAV1",
-  "short_name": "Miraru AV1",
-  "version": "1.4.1",
-  "description": "Lo que marcas como visto en AnimeAV1 y tus listas («Mis Listas») se apuntan solos en tu Miraru.",
+  "name": "Miraru — episodios vistos",
+  "short_name": "Miraru",
+  "version": "1.5.0",
+  "description": "Lo que ves en AnimeAV1, Netflix y Crunchyroll se apunta solo en tu Miraru. Tus listas de AnimeAV1 también.",
   "icons": {
     "16": "iconos/16.png",
     "32": "iconos/32.png",
@@ -11,7 +11,7 @@
     "128": "iconos/128.png"
   },
   "action": {
-    "default_title": "Miraru × AnimeAV1",
+    "default_title": "Miraru",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "iconos/16.png",
@@ -28,7 +28,32 @@
   ],
   "host_permissions": [
     "https://*.animeav1.com/*",
+    "https://www.netflix.com/*",
+    "https://www.crunchyroll.com/*",
+    "https://static.crunchyroll.com/*",
     "http://127.0.0.1/*",
     "http://localhost/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.netflix.com/*"
+      ],
+      "js": [
+        "streaming.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.crunchyroll.com/*",
+        "https://static.crunchyroll.com/*"
+      ],
+      "js": [
+        "streaming.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
   ]
 }
