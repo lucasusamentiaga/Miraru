@@ -78,7 +78,7 @@ def save_token(token: str, username: str, userid: int):
 # Con ella, conectar es un botón y «Authorize» (implicit grant: el token vuelve
 # en la URL, sin Client Secret). 0 = sin registrar: se usa el método antiguo
 # (cada usuario con su propia app de desarrollador).
-MIRARU_CLIENT_ID = 0
+MIRARU_CLIENT_ID = 56721
 REDIRECT_MIRARU = "http://127.0.0.1:8765/anilist/conectado"
 
 

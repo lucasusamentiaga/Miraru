@@ -31,7 +31,7 @@
   reparten entre las entradas de AniList («Season 3» + «Season 3 Part 2»), también con
   numeración seguida. En Crunchyroll el vídeo va en un marco de otro dominio: el marco avisa y la
   página pone el nombre (JSON-LD). Probado de punta a punta con Chromium y la extensión cargada.
-- **AniList con un botón** (preparado): con la app de Miraru registrada en AniList, «Conectar»
+- **AniList con un botón**: con la app de Miraru registrada en AniList (id 56721), «Conectar»
   abre AniList, pulsas «Authorize» y listo (implicit grant, sin Client Secret). Lo de crear tu
   propia app queda plegado como «avanzado».
 - **Cambiar de idioma recarga la página**: antes solo cambiaba parte del texto y el resto se
