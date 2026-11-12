@@ -58,6 +58,15 @@ input:focus{outline:2px solid var(--accent);border-color:transparent}
 .status-warn{background:#1e1708;border:1px solid #7a4a00;color:#fbbf24}
 #qr-img{border-radius:10px;border:2px solid var(--border)}
 .err{color:var(--danger);font-size:13px;margin-top:6px;display:none}
+.btn-grande{width:100%;justify-content:center;padding:14px 20px;font-size:15px;border-radius:12px}
+.nota{font-size:12px!important;color:var(--muted);margin:10px 0 0!important}
+.manual{margin:6px 0 10px;font-size:13px;color:var(--muted)}
+.manual summary{cursor:pointer;text-align:center;padding:6px}
+.manual p{margin:8px 0 2px!important;text-align:center}
+.manual .btn{display:flex;margin:8px auto 0}
+.ip-box.codigo{font-size:26px;letter-spacing:6px}
+.consejos{margin-top:8px}
+[hidden]{display:none!important}
 .spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;
       border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -93,72 +102,44 @@ input:focus{outline:2px solid var(--accent);border-color:transparent}
 </header>
 
 <main>
+  <!-- v2.17: un botón. Sin PIN, sin reiniciar: el QR ya lleva el código. -->
+  <div class="card" id="card-off">
+    <h2>Usa Miraru en el móvil</h2>
+    <p>Tu lista en el navegador del móvil, sin instalar nada. Funciona con el móvil en la <strong>misma WiFi</strong> que este PC.</p>
+    <button class="btn btn-p btn-grande" id="btn-conectar" onclick="conectar()">📱 Conectar el móvil</button>
+    <p class="nota">Solo se abre a tu red de casa y cada móvil entra con un código que solo ves aquí.</p>
+    <p class="err" id="err-off"></p>
+  </div>
 
-  <!-- Estado actual -->
-  <div class="card">
-    <h2>Estado del acceso móvil</h2>
-    <div id="status-box" class="status-box status-off">Cargando…</div>
-    <div id="ip-section" style="display:none">
-      <div id="qr-wrap">
-        <div class="qr" id="qr-img" role="img" aria-label="Código QR para abrir Miraru en el móvil"></div>
-        <small>Escanéalo con la cámara del móvil</small>
-      </div>
-      <p style="margin:12px 0 4px;font-size:12px;color:var(--muted);text-align:center">o escribe esta dirección en el navegador del móvil:</p>
+  <div class="card" id="card-on" hidden>
+    <div id="estado" class="status-box status-on">✅ Listo</div>
+    <div id="qr-wrap">
+      <div class="qr" id="qr-img" role="img" aria-label="Código QR para abrir Miraru en el móvil"></div>
+      <small><strong>Abre la cámara del móvil y apunta al código</strong></small>
+    </div>
+    <details class="manual">
+      <summary>¿No puedes escanear? Escríbelo a mano</summary>
+      <p>En el navegador del móvil, abre:</p>
       <div class="ip-box" id="ip-display">—</div>
+      <p>y escribe el código:</p>
+      <div class="ip-box codigo" id="codigo-display">— — —</div>
+      <p class="nota" id="caduca"></p>
+      <button class="btn btn-g" onclick="codigoNuevo()">↻ Nuevo código</button>
+    </details>
+    <div class="consejos">
+      <div class="step"><div class="n">!</div><p>Si Windows pregunta por el <strong>firewall</strong>, pulsa <strong>Permitir</strong>. Sin eso el móvil no llega al PC.</p></div>
+      <div class="step"><div class="n">★</div><p>En el móvil, menú del navegador → <strong>«Añadir a pantalla de inicio»</strong> y lo tendrás como una app. No vuelve a pedir el código.</p></div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn btn-d" onclick="desactivar()">Desconectar los móviles</button>
     </div>
   </div>
-
-  <!-- Activar -->
-  <div class="card" id="card-enable">
-    <h2>Activar acceso móvil</h2>
-    <p>Define un PIN de 4–8 dígitos. La app móvil lo necesitará para conectarse la primera vez.</p>
-
-    <div class="warn-box">
-      ⚠️ Esto expone la app a tu red WiFi local. Úsalo solo en redes de confianza (tu casa).
-      Cualquier dispositivo en la misma red que conozca el PIN podrá acceder a tu lista.
-    </div>
-
-    <div style="margin-top:16px">
-      <label>PIN (4–8 dígitos)</label>
-      <input type="password" id="pin-input" maxlength="8" placeholder="••••"
-             inputmode="numeric" pattern="[0-9]*"
-             onkeydown="if(event.key==='Enter')activar()">
-      <p class="err" id="err-pin"></p>
-      <div class="row">
-        <button class="btn btn-p" id="btn-activar" onclick="activar()">✓ Activar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Desactivar -->
-  <div class="card" id="card-disable" style="display:none">
-    <h2>Gestionar acceso</h2>
-    <p>Puedes cambiar el PIN o desactivar completamente el acceso móvil.</p>
-    <div style="margin-top:4px">
-      <label>Nuevo PIN</label>
-      <input type="password" id="pin-change" maxlength="8" placeholder="••••" inputmode="numeric">
-      <p class="err" id="err-change"></p>
-      <div class="row">
-        <button class="btn btn-p" onclick="cambiarPin()">Cambiar PIN</button>
-        <button class="btn btn-d" onclick="desactivar()">Desactivar acceso</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- v2.16: sin instalar nada: el navegador del móvil basta -->
-  <div class="card">
-    <h2>Cómo usarlo en el móvil</h2>
-    <p>No hace falta instalar ninguna app: se abre en el navegador del móvil.</p>
-    <div class="step"><div class="n">1</div><p>Pon un <strong>PIN</strong> arriba y pulsa <strong>Activar</strong>.</p></div>
-    <div class="step"><div class="n">2</div><p><strong>Cierra Miraru</strong> (botón «Salir» del menú) y <strong>vuelve a abrirlo</strong>. Si Windows pregunta por el firewall, pulsa <strong>Permitir</strong> en «Redes privadas».</p></div>
-    <div class="step"><div class="n">3</div><p>Con el móvil en la <strong>misma WiFi</strong> que el PC, <strong>escanea el QR</strong> y escribe tu PIN.</p></div>
-    <div class="step"><div class="n">4</div><p>Consejo: en el menú del navegador del móvil, «Añadir a pantalla de inicio» y lo tendrás como una app.</p></div>
-  </div>
-
 </main>
-
 <script>
+let _ultimoQR = '', _moviles = -1, _timer = 0;
 function _pintarQR(url) {
+  if (url === _ultimoQR) return;
+  _ultimoQR = url;
   const cont = document.getElementById('qr-img');
   cont.innerHTML = '';
   try {
@@ -168,99 +149,59 @@ function _pintarQR(url) {
     cont.innerHTML = qr.createSvgTag({cellSize: 5, margin: 0, scalable: true});
   } catch (e) { cont.textContent = url; }
 }
-
+function _pintar(d) {
+  const off = document.getElementById('card-off'), on = document.getElementById('card-on');
+  const errOff = document.getElementById('err-off');
+  if (!d.activado || !d.escuchando) {
+    off.hidden = false; on.hidden = true;
+    errOff.style.display = d.error ? 'block' : 'none';
+    errOff.textContent = d.error || '';
+    return;
+  }
+  off.hidden = true; on.hidden = false;
+  _pintarQR(d.url_qr);
+  document.getElementById('ip-display').textContent = d.url;
+  document.getElementById('codigo-display').textContent = String(d.codigo).replace(/(\d{3})(\d{3})/, '$1 $2');
+  const min = Math.max(1, Math.round((d.expira * 1000 - Date.now()) / 60000));
+  document.getElementById('caduca').textContent = 'El código cambia en ' + min + ' min.';
+  const est = document.getElementById('estado');
+  est.textContent = d.moviles
+    ? '✅ Conectado · móviles con Miraru: ' + d.moviles
+    : '📱 Escanea el código con el móvil';
+  _moviles = d.moviles;
+}
 async function cargarEstado() {
   try {
-    const r = await fetch('/api/mobile/status', {cache: 'no-store'});
-    const d = await r.json();
-    const box   = document.getElementById('status-box');
-    const ipSec = document.getElementById('ip-section');
-    const cardEn = document.getElementById('card-enable');
-    const cardDis = document.getElementById('card-disable');
-
-    if (d.pin_configurado && d.activado !== false) {
-      box.textContent = '';
-      const strong = document.createElement('strong');
-      const txt = document.createElement('div');
-      txt.style.cssText = 'margin-top:4px;font-size:12.5px;opacity:.9';
-      cardEn.style.display = 'none';
-      cardDis.style.display = 'block';
-      if (d.en_red) {
-        box.className = 'status-box status-on';
-        strong.textContent = '✅ Listo: ya puedes entrar desde el móvil';
-        txt.textContent = (d.tokens_activos | 0) ? 'Móviles conectados ahora: ' + (d.tokens_activos | 0) : 'Escanea el QR con el móvil (misma WiFi).';
-        ipSec.style.display = 'block';
-        document.getElementById('ip-display').textContent = d.url_movil;
-        _pintarQR(d.url_movil);
-      } else {
-        box.className = 'status-box status-warn';
-        strong.textContent = '⏳ Falta un paso: cierra Miraru y vuelve a abrirlo';
-        txt.textContent = 'El acceso está activado, pero Miraru solo empieza a escuchar en tu WiFi al abrirse de nuevo.';
-        ipSec.style.display = 'none';
-      }
-      box.append(strong, txt);
-    } else {
-      box.className = 'status-box status-off';
-      box.textContent = '○ Acceso móvil desactivado.';
-      ipSec.style.display = 'none';
-      cardEn.style.display = 'block';
-      cardDis.style.display = 'none';
-    }
-  } catch(e) { console.error(e); }
+    const r = await fetch('/api/mobile/estado', {cache: 'no-store'});
+    if (r.ok) _pintar(await r.json());
+  } catch (e) { console.error(e); }
 }
-
-async function activar() {
-  const pin = document.getElementById('pin-input').value.trim();
-  const err = document.getElementById('err-pin');
-  err.style.display = 'none';
-  if (!/^\d{4,8}$/.test(pin)) {
-    err.textContent = 'El PIN debe tener entre 4 y 8 dígitos numéricos.';
-    err.style.display = 'block'; return;
-  }
-  const btn = document.getElementById('btn-activar');
+async function conectar() {
+  const btn = document.getElementById('btn-conectar');
+  const orig = btn.textContent;
   btn.disabled = true;
-  btn.innerHTML = '<span class="spin"></span>';
+  btn.innerHTML = '<span class="spin"></span> Preparando…';
   try {
-    const r = await fetch('/api/mobile/enable', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({pin})
-    });
+    const r = await fetch('/api/mobile/conectar', {method: 'POST'});
     const d = await r.json();
-    if (!r.ok) { err.textContent = d.detail; err.style.display='block'; return; }
-    document.getElementById('pin-input').value = '';
-    await cargarEstado();
-  } catch(e) { err.textContent = 'Error de conexión'; err.style.display='block'; }
-  finally { btn.disabled = false; btn.textContent = '✓ Activar'; }
-}
-
-async function cambiarPin() {
-  const pin = document.getElementById('pin-change').value.trim();
-  const err = document.getElementById('err-change');
-  err.style.display = 'none';
-  if (!/^\d{4,8}$/.test(pin)) {
-    err.textContent = 'El PIN debe tener entre 4 y 8 dígitos numéricos.'; err.style.display = 'block'; return;
+    if (!r.ok) throw new Error(d.detail || 'Error');
+    _pintar(d);
+  } catch (e) {
+    const err = document.getElementById('err-off');
+    err.textContent = e.message; err.style.display = 'block';
   }
-  try {
-    const r = await fetch('/api/mobile/enable', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({pin})
-    });
-    const d = await r.json();
-    if (!r.ok) { err.textContent = d.detail; err.style.display='block'; return; }
-    document.getElementById('pin-change').value = '';
-    await cargarEstado();
-  } catch(e) { err.textContent = 'Error de conexión'; err.style.display='block'; }
+  btn.disabled = false; btn.textContent = orig;
 }
-
+async function codigoNuevo() {
+  try { const r = await fetch('/api/mobile/codigo-nuevo', {method: 'POST'}); if (r.ok) _pintar(await r.json()); } catch (_) {}
+}
 async function desactivar() {
-  if (!(await miraruConfirmar('¿Desactivar el acceso móvil? Se cerrarán todas las sesiones activas.', {ok: 'Desactivar', peligro: true}))) return;
-  try {
-    await fetch('/api/mobile/disable', {method: 'POST'});
-    await cargarEstado();
-  } catch(e) { console.error('desactivar:', e); }
+  if (!(await miraruConfirmar('¿Desconectar los móviles? Tendrán que volver a escanear el código para entrar.', {ok: 'Desconectar', peligro: true}))) return;
+  try { await fetch('/api/mobile/disable', {method: 'POST'}); _moviles = -1; _ultimoQR = ''; await cargarEstado(); }
+  catch (e) { console.error('desactivar:', e); }
 }
-
 cargarEstado();
+_timer = setInterval(() => { if (!document.hidden) cargarEstado(); }, 3000);
 </script>
 <script>
 try{if(localStorage.getItem('theme')==='light')document.documentElement.dataset.theme='light';}catch(_){}

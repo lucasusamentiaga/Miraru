@@ -423,29 +423,13 @@ def main():
         _abrir_navegador()
         return
 
-    # Actualizar HOST según configuración antes de arrancar
-    HOST = _get_host()
-    if HOST == HOST_NETWORK:
-        # Detectar IP local para mostrarla en el log y guardarla para la APK
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.connect(("8.8.8.8", 80))
-            local_ip = s.getsockname()[0]
-            s.close()
-            log(f"Modo red activado — IP local: {local_ip}:{PORT}")
-            # Guardar IP en BD para que la UI la muestre al usuario
-            try:
-                con = _sqlite3.connect(str(APP_DIR / "anime_tracker.db"), timeout=3)
-                con.execute("INSERT INTO config(key,value) VALUES('network_host',?) "
-                            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-                            (f"{local_ip}:{PORT}",))
-                con.commit(); con.close()
-            except Exception:
-                pass
-        except Exception:
-            log("No se pudo detectar IP local")
-    else:
-        log("Modo local (solo PC)")
+    # v2.17: el servidor principal escucha siempre solo en este PC. Si el
+    # acceso móvil está activado, main.py abre además la IP de la WiFi (y se
+    # puede activar sin reiniciar): ver acceso_movil.py.
+    HOST = HOST_LOCAL
+    os.environ["MIRARU_PUERTO"] = str(PORT)
+    log("Acceso móvil activado: se abrirá también en la WiFi" if _get_host() == HOST_NETWORK
+        else "Modo local (solo PC)")
 
     hilo = iniciar_servidor_hilo()
 

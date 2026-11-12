@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Miraru</title>
+<link rel="manifest" href="/static/manifest-movil.json">
+<link rel="apple-touch-icon" href="/static/logo.png">
 <style>
 :root{
   /* Paleta alineada con el sistema visual de Miraru (theme.css) */
@@ -58,6 +60,9 @@ input,select,textarea,button{font-family:inherit}
 .c-err{color:var(--danger);font-size:13px;text-align:center;margin-top:10px;min-height:18px;line-height:1.4}
 .c-hint{font-size:12px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5}
 .c-hint a{color:var(--light);text-decoration:none}
+.logo-m{width:100%;height:100%;object-fit:contain;padding:14%}
+.c-btn.sec{background:transparent;border:1px solid var(--border);box-shadow:none;color:var(--fg);margin-top:10px}
+#inp-pin{text-align:center;font-size:22px;letter-spacing:6px;font-weight:700}
 
 /* ═══════════════════════════════════════════════════════
    APP PRINCIPAL
@@ -119,7 +124,7 @@ input,select,textarea,button{font-family:inherit}
             transition:border-color .1s;position:relative}
 .anime-card:active{border-color:var(--accent);background:#1e1e2c}
 .anime-card .ac-img{width:48px;height:66px;border-radius:6px;object-fit:cover;flex-shrink:0}
-.anime-card .ac-body{flex:1;min-width:0}
+.anime-card .ac-body{flex:1;min-width:0;padding-right:46px}
 .ac-name{font-size:14px;font-weight:600;margin-bottom:2px;
          white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ac-info{font-size:11px;color:var(--muted);margin-bottom:4px}
@@ -240,9 +245,9 @@ input,select,textarea,button{font-family:inherit}
 
 <!-- ══ PANTALLA CONEXIÓN ════════════════════════════════════ -->
 <div class="screen" id="s-connect">
-  <div class="c-logo-placeholder" id="conn-logo-ph">🎌</div>
+  <div class="c-logo-placeholder" id="conn-logo-ph"><img class="logo-m" src="/static/logo.svg" alt="" onerror="this.replaceWith('🎌')"></div>
   <div class="c-title">Miraru</div>
-  <div class="c-sub">Conéctate al servidor de tu PC<br>en la misma red WiFi</div>
+  <div class="c-sub">Escanea con la cámara el código QR<br>de «📱 Móvil» en Miraru del PC</div>
 
   <div class="form-g" id="fg-ip">
     <label>IP del PC (ejemplo: 192.168.1.5:8765)</label>
@@ -251,17 +256,18 @@ input,select,textarea,button{font-family:inherit}
            onkeydown="if(event.key==='Enter')conectar()">
   </div>
   <div class="form-g">
-    <label>PIN de acceso</label>
-    <input type="password" id="inp-pin" placeholder="••••"
-           inputmode="numeric" maxlength="8"
+    <label>O escribe el código de 6 cifras</label>
+    <input type="text" id="inp-pin" placeholder="000 000" autocomplete="one-time-code"
+           inputmode="numeric" maxlength="9"
            onkeydown="if(event.key==='Enter')conectar()">
   </div>
 
-  <button class="c-btn" id="btn-conn" onclick="conectar()">Conectar</button>
+  <button class="c-btn" id="btn-conn" onclick="conectar()">Entrar</button>
+  <button class="c-btn sec" id="btn-reint" onclick="reintentar()" hidden>↻ Reintentar</button>
   <div class="c-err" id="conn-err"></div>
   <div class="c-hint">
-    Activa el acceso móvil en la app de PC<br>
-    (botón 📱 en la cabecera)
+    Tu móvil y tu PC tienen que estar en la misma WiFi<br>
+    y Miraru abierto en el PC.
   </div>
 </div>
 
@@ -270,13 +276,12 @@ input,select,textarea,button{font-family:inherit}
 
   <div class="app-header">
     <div id="h-avatar-wrap">
-      <div id="h-avatar-ph" class="c-logo-placeholder" style="width:34px;height:34px;font-size:16px;margin:0;cursor:pointer" onclick="switchTab('perfil')">🎌</div>
+      <div id="h-avatar-ph" class="c-logo-placeholder" style="width:34px;height:34px;font-size:16px;margin:0;cursor:pointer" onclick="switchTab('perfil')"><img class="logo-m" src="/static/logo.svg" alt=""></div>
     </div>
     <div style="flex:1;min-width:0">
       <div class="h-user" id="h-username">Miraru</div>
     </div>
     <button class="hbtn" onclick="recargar()" title="Actualizar">⟳</button>
-    <button class="hbtn" onclick="desconectar()" title="Desconectar" style="margin-left:4px">✕</button>
   </div>
 
   <div class="content-area">
@@ -401,6 +406,7 @@ function api(path, opts={}) {
   return fetch(`http://${CFG.host}${path}`, {...opts, headers:{...h,...(opts.headers||{})}});
 }
 
+function _url(path) { return (CFG.host ? `http://${CFG.host}` : '') + path; }
 function imgUrl(url) {
   if(!url) return BLANK;
   if(url.startsWith('http')) return url;
@@ -408,52 +414,45 @@ function imgUrl(url) {
 }
 
 // ── Conexión ──────────────────────────────────────────────────────────────────
-async function conectar() {
-  const host = $('inp-ip').value.trim().replace(/^https?:\/\//,'');
-  const pin  = $('inp-pin').value.trim();
+async function conectar(codigoQR) {
+  const host = $('inp-ip').value.trim().replace(/^https?:\/\//,'').replace(/\/.*$/,'');
+  const codigo = (codigoQR || $('inp-pin').value).replace(/\s+/g,'');
   const err  = $('conn-err');
   err.textContent='';
-  if(!host||!pin){err.textContent='Introduce la IP y el PIN.';return;}
+  if(!host){err.textContent='Escanea el código QR del PC.';return;}
+  if(!codigo){err.textContent='Escanea el QR o escribe el código de 6 cifras.';$('inp-pin').focus();return;}
 
   const btn=$('btn-conn');
-  btn.disabled=true; btn.textContent='Conectando…';
+  btn.disabled=true; btn.textContent='Entrando…';
 
   try {
     const ctrl = new AbortController();
-    setTimeout(()=>ctrl.abort(), 6000);
-
-    const ping = await fetch(`http://${host}/api/mobile/ping`, {signal:ctrl.signal});
-    if(!ping.ok) throw new Error('El servidor no responde');
-    const pd = await ping.json();
-    // Acepta el identificador histórico y el nuevo (rebrand a Miraru)
-    if(pd.app !== 'AnimeTracker' && pd.app !== 'Miraru') throw new Error('Servidor no reconocido');
-    // Solo rechazamos servidores realmente antiguos (v1): el contrato de auth y
-    // el salt del PIN cambiaron en la v2. Antes se exigía "2." y esto habría
-    // rechazado por error cualquier versión futura (3.x, 4.x…).
-    if(pd.version && String(pd.version).startsWith('1.')) {
-      err.textContent='El PC corre una versión antigua de Miraru. Actualízalo.';
-      btn.disabled=false; btn.textContent='Conectar';
-      return;
-    }
-
-    const auth = await fetch(`http://${host}/api/mobile/auth`, {
-      method:'POST',
+    setTimeout(()=>ctrl.abort(), 8000);
+    const r = await fetch(`http://${host}/api/mobile/emparejar`, {
+      method:'POST', signal:ctrl.signal,
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({pin}),
+      body:JSON.stringify({codigo}),
     });
-    const ad = await auth.json();
-    if(!auth.ok){err.textContent=ad.detail||'PIN incorrecto';return;}
+    const d = await r.json().catch(()=>({}));
+    if(r.status===404||r.status===405){
+      // PC con una versión antigua de Miraru: solo sabe de PIN.
+      const a2 = await fetch(`http://${host}/api/mobile/auth`, {method:'POST',
+        headers:{'Content-Type':'application/json'}, body:JSON.stringify({pin:codigo})});
+      const d2 = await a2.json().catch(()=>({}));
+      if(!a2.ok){err.textContent=d2.detail||'Código incorrecto';return;}
+      d.token=d2.token;
+    } else if(!r.ok){ err.textContent=d.detail||'Código incorrecto'; return; }
 
-    CFG={host, token:ad.token};
-    localStorage.setItem(SK, JSON.stringify(CFG));
+    CFG={host, token:d.token};
+    try { localStorage.setItem(SK, JSON.stringify(CFG)); } catch(_){}
+    $('inp-pin').value='';
     await arrancarApp();
-
   } catch(e) {
     err.textContent = e.name==='AbortError'||e.name==='TimeoutError'
-      ? 'Tiempo agotado. ¿PC encendido y misma WiFi?'
+      ? 'No llego al PC. ¿Está Miraru abierto y el móvil en la misma WiFi?'
       : 'No se pudo conectar: '+(e.message||'error');
   } finally {
-    btn.disabled=false; btn.textContent='Conectar';
+    btn.disabled=false; btn.textContent='Entrar';
   }
 }
 
@@ -461,6 +460,20 @@ async function arrancarApp() {
   $('s-connect').classList.add('hidden');
   $('s-app').classList.remove('hidden');
   await Promise.all([cargarAnimes(), cargarPerfil()]);
+  _filtroInicial();
+  renderLista();
+}
+
+// v2.17: en el móvil lo normal es apuntar el episodio de lo que estás viendo:
+// se abre en «Viendo» si hay algo.
+let _filtroPuesto = false;
+function _filtroInicial() {
+  if (_filtroPuesto) return;
+  _filtroPuesto = true;
+  if (ANIMES.some(a => a.estado_usuario === 'viendo')) {
+    fEstado = 'viendo';
+    document.querySelectorAll('.fb').forEach(b => b.classList.toggle('on', b.dataset.f === 'viendo'));
+  }
 }
 
 function desconectar() {
@@ -473,22 +486,34 @@ function desconectar() {
 
 async function intentarAutoconect() {
   if(!CFG.host||!CFG.token) return;
+  $('btn-reint').hidden=true;
   try {
     const ctrl=new AbortController();
-    setTimeout(()=>ctrl.abort(),4000);
+    setTimeout(()=>ctrl.abort(),6000);
     const r=await fetch(`http://${CFG.host}/api/mobile/animes`,
       {headers:{'X-Mobile-Token':CFG.token},signal:ctrl.signal});
-    if(r.status===401){CFG={};localStorage.removeItem(SK);return;}
+    if(r.status===401){
+      CFG={host:CFG.host}; try{localStorage.setItem(SK, JSON.stringify(CFG));}catch(_){}
+      $('conn-err').textContent='Tu sesión se cerró en el PC. Vuelve a escanear el código.';
+      return;
+    }
     if(r.ok){
       const d=await r.json();
       ANIMES=d.animes||[];
+      _filtroInicial();
       await cargarPerfil();
       $('s-connect').classList.add('hidden');
       $('s-app').classList.remove('hidden');
       renderLista();
     }
-  } catch(_){CFG={};localStorage.removeItem(SK);}
+  } catch(_){
+    // v2.17: antes esto borraba la sesión y había que volver a escribir el
+    // PIN solo porque el PC estaba apagado. Ahora se queda y se reintenta.
+    $('conn-err').textContent='No llego a Miraru del PC. ¿Está encendido, con Miraru abierto y en la misma WiFi?';
+    $('btn-reint').hidden=false;
+  }
 }
+function reintentar(){ $('conn-err').textContent=''; intentarAutoconect(); }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 function switchTab(tab) {
@@ -550,6 +575,7 @@ function renderLista() {
   lista.forEach(a=>{
     const cap  = parseInt(a.capitulos)||0;
     const vis  = a.episodios_vistos||0;
+    const enEmision = /\+/.test(String(a.capitulos||'')) || a.estado === 'emision' || vis > cap;
     const pct  = cap>0 ? Math.min(100,Math.round(vis/cap*100)) : 0;
     const cls  = ESTADO_CLS[a.estado_usuario]||'bp';
     const lbl  = ESTADO_LABEL[a.estado_usuario]||a.estado_usuario;
@@ -560,7 +586,7 @@ function renderLista() {
     card.addEventListener('click',()=>abrirModal(a));
     // v2.3: swipe gestures — derecha = +1 ep, izquierda = abrir detalle
     _addSwipe(card, {
-      onRight: () => { if (cap > 0) plus1(enc, a); },
+      onRight: () => { if (enEmision || !cap || vis < cap) plus1(enc, a); },
       onLeft:  () => abrirModal(a),
     });
 
@@ -596,7 +622,9 @@ function renderLista() {
     card.appendChild(img); card.appendChild(body);
 
     // v2.16: sin +1 cuando ya has visto todos los episodios (antes dejaba 27/26).
-    if(cap>0 && vis<cap){
+    // v2.17: en emisión («4+») el total crece: se puede seguir sumando (antes
+    // un anime en emisión con más vistos que el total conocido se quedaba sin +1).
+    if(enEmision || !cap || vis<cap){
       const p1=document.createElement('button');
       p1.className='p1-btn'; p1.textContent='+1';
       p1.addEventListener('click',e=>{e.stopPropagation();plus1(enc,a);});
@@ -725,7 +753,7 @@ function actualizarHeaderPerfil() {
     if(PERFIL.tiene_avatar){
       const aImg=document.createElement('img');
       aImg.className='h-avatar';
-      aImg.src='http://'+CFG.host+'/api/perfil/avatar?t='+Date.now();
+      aImg.src=_url('/api/perfil/avatar?t='+Date.now()+'&token='+encodeURIComponent(CFG.token||''));
       aImg.onerror=function(){
         wrap.innerHTML='';
         const ph=_makeAvatarPh(); wrap.appendChild(ph);
@@ -742,7 +770,8 @@ function _makeAvatarPh(){
   const ph=document.createElement('div');
   ph.id='h-avatar-ph'; ph.className='c-logo-placeholder';
   ph.style.cssText='width:34px;height:34px;font-size:16px;margin:0;cursor:pointer';
-  ph.textContent='🎌';
+  const li=document.createElement('img'); li.className='logo-m'; li.alt=''; li.src=_url('/static/logo.svg');
+  li.onerror=()=>{ph.textContent='🎌';}; ph.appendChild(li);
   ph.addEventListener('click',()=>switchTab('perfil'));
   return ph;
 }
@@ -750,7 +779,7 @@ function _makeAvatarPh(){
 function renderPerfil() {
   const cont=$('perfil-cont');
   const avatarSrc = PERFIL.tiene_avatar
-    ? `http://${CFG.host}/api/perfil/avatar?t=${Date.now()}`
+    ? _url(`/api/perfil/avatar?t=${Date.now()}&token=${encodeURIComponent(CFG.token||'')}`)
     : '';
 
   const avatarHtml = PERFIL.tiene_avatar
@@ -904,17 +933,21 @@ setTimeout(_setupPullToRefresh, 500);
 // v2.16: abierta desde el propio PC (http://IP:8765/m, escaneando el QR):
 // la dirección ya es esta, solo hace falta el PIN.
 const MISMO_ORIGEN = /^https?:$/.test(location.protocol) && location.pathname.replace(/\/+$/, '') === '/m';
+// v2.17: el QR del PC lleva el código detrás de «#c=»: se entra solo.
+const CODIGO_QR = (location.hash.match(/[#&]c=([\w-]+)/) || [])[1] || '';
+if (CODIGO_QR) { try { history.replaceState(null, '', location.pathname); } catch(_){} }
 if (MISMO_ORIGEN) {
   $('inp-ip').value = location.host;
   $('fg-ip').style.display = 'none';
   if (CFG.host && CFG.host !== location.host) { CFG = {}; try { localStorage.removeItem(SK); } catch(_){} }
+} else {
   const sub = document.querySelector('#s-connect .c-sub');
-  if (sub) sub.innerHTML = 'Escribe el PIN que pusiste en<br>«Acceso móvil» del PC';
-  const hint = document.querySelector('#s-connect .c-hint');
-  if (hint) hint.textContent = 'Tu móvil y tu PC tienen que estar en la misma WiFi.';
-  setTimeout(() => { try { $('inp-pin').focus(); } catch(_){} }, 300);
+  if (sub) sub.innerHTML = 'Escribe la dirección y el código<br>de «📱 Móvil» en Miraru del PC';
+  const lab = document.querySelector('#fg-ip label');
+  if (lab) lab.textContent = 'Dirección del PC (ejemplo: 192.168.1.5:8765)';
 }
-intentarAutoconect();
+if (CODIGO_QR && MISMO_ORIGEN) conectar(CODIGO_QR);
+else intentarAutoconect();
 </script>
 </body>
 </html>

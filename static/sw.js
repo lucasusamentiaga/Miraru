@@ -43,7 +43,8 @@
 //       la página distinga «Miraru cerrado» de «lista vacía».
 // v46 = aviso emergente de versión nueva para instalaciones de Microsoft Store.
 // v53 = el manga tiene su apartado (/manga).
-const CACHE_NAME = 'miraru-v53';
+// v54 = móvil con un botón (QR con código, sin PIN ni reinicio).
+const CACHE_NAME = 'miraru-v54';
 const STATIC_ASSETS = [
   '/',
   '/app',

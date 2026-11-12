@@ -74,6 +74,7 @@ except ImportError:  # Pydantic 1 (Python puro): el que usa install.ps1, sin DLL
             return _validator(*campos, allow_reuse=True)(f)
         return deco
 
+import acceso_movil
 import anilist_sync
 import animeav1_sync
 import copia_nube
@@ -142,6 +143,11 @@ async def _lifespan(app: FastAPI):
     _start_enrich_unknown_eps()
     _start_notif_daemon_once()
     _start_imdb_once()
+    # v2.17: si el acceso móvil estaba activado, se vuelve a abrir en la WiFi
+    # (solo con el lanzador de verdad, que pone MIRARU_PUERTO; nunca en tests).
+    if os.environ.get("MIRARU_PUERTO") and _mobile_mode_active():
+        threading.Thread(target=acceso_movil.arrancar, args=(app, int(os.environ["MIRARU_PUERTO"])),
+                         daemon=True, name="miraru-red-arranque").start()
     try:   # v2.17: la extensión instalada con «Preparar» se pone al día sola
         import extension_local
         extension_local.actualizar_si_existe(STATIC_DIR / "extension-animeav1")
@@ -1014,7 +1020,9 @@ def _token_valido(token: str) -> bool:
     for stored, exp in snapshot:  # noqa: SIM110
         if hmac.compare_digest(stored, token) and now <= exp:
             return True
-    return False
+    # v2.17: sesiones guardadas en la BD: el móvil sigue conectado aunque se
+    # reinicie el PC (antes había que volver a escribir el PIN cada vez).
+    return acceso_movil.sesion_valida(token)
 
 # ── Salt persistente para hashing del PIN ────────────────────────────────────
 def _pin_salt() -> bytes:
@@ -1056,6 +1064,7 @@ _PUBLIC_LAN_PATHS = {
     "/api/version",
     "/api/mobile/ping",
     "/api/mobile/auth",
+    "/api/mobile/emparejar",
     "/api/health",
 }
 
@@ -2801,9 +2810,77 @@ async def mobile_auth(req: PinRequest, request: Request):
         raise HTTPException(403, "PIN incorrecto.")
 
     _auth_record_ok(ip)
-    token = _gen_token()
-    _mobile_tokens[token] = _time.time() + _TOKEN_TTL
-    return {"ok": True, "token": token, "expira_en": int(_time.time() + _TOKEN_TTL)}
+    token = acceso_movil.nueva_sesion(acceso_movil.dispositivo_de(request.headers.get("user-agent", "")))
+    return {"ok": True, "token": token, "expira_en": int(_time.time() + acceso_movil.SESION_TTL)}
+
+
+class EmparejarRequest(BaseModel):
+    codigo: str = Field("", max_length=64)
+
+
+@app.post("/api/mobile/emparejar")
+async def mobile_emparejar(req: EmparejarRequest, request: Request):
+    """v2.17: el móvil entra con el código del QR (o el de 6 cifras, o el PIN
+    de antes). Mismo límite de intentos por IP que el PIN."""
+    ip = _client_ip(request)
+    ok, motivo = _auth_rate_check(ip)
+    if not ok:
+        raise HTTPException(429, motivo)
+    cod = (req.codigo or "").strip().replace(" ", "")
+    pin = db.get_config("mobile_pin")
+    if not (acceso_movil.codigo_valido(cod) or (pin and cod.isdigit() and _check_pin(cod, pin))):
+        _auth_record_fail(ip)
+        raise HTTPException(403, "Código incorrecto o caducado. Mira el que sale ahora en el PC.")
+    _auth_record_ok(ip)
+    token = acceso_movil.nueva_sesion(acceso_movil.dispositivo_de(request.headers.get("user-agent", "")))
+    return {"ok": True, "token": token}
+
+
+def _solo_este_pc(request: Request) -> None:
+    if not _is_loopback(_client_ip(request)):
+        raise HTTPException(403, "Esto solo se puede hacer desde el ordenador donde está Miraru.")
+
+
+def _puerto_de(request: Request) -> int:
+    return int(request.url.port or os.environ.get("MIRARU_PUERTO") or 8765)
+
+
+def _estado_movil(request: Request, nuevo_codigo: bool = False) -> dict:
+    activado = _mobile_mode_active()
+    dire = ""
+    if activado:
+        # También sirve para seguir a la IP si el router se la ha cambiado al PC.
+        dire = acceso_movil.arrancar(app, _puerto_de(request))
+    out = {"activado": activado, "escuchando": bool(dire), "direccion": dire,
+           "error": "" if dire or not activado else acceso_movil.ultimo_error(),
+           "moviles": acceso_movil.num_sesiones()}
+    if dire:
+        c = acceso_movil.codigo(nuevo=nuevo_codigo)
+        out.update(url=f"http://{dire}/m", url_qr=f"http://{dire}/m#c={c['largo']}",
+                   codigo=c["corto"], expira=c["expira"])
+    return out
+
+
+@app.get("/api/mobile/estado")
+def mobile_estado(request: Request):
+    """Para la pantalla «Móvil» del PC (solo desde este PC: lleva el código)."""
+    _solo_este_pc(request)
+    return _estado_movil(request)
+
+
+@app.post("/api/mobile/conectar")
+def mobile_conectar(request: Request):
+    """v2.17: un botón. Empieza a escuchar en la WiFi ya (sin reiniciar) y da
+    el QR con el código para entrar."""
+    _solo_este_pc(request)
+    db.set_config("mobile_enabled", "1")
+    return _estado_movil(request, nuevo_codigo=True)
+
+
+@app.post("/api/mobile/codigo-nuevo")
+def mobile_codigo_nuevo(request: Request):
+    _solo_este_pc(request)
+    return _estado_movil(request, nuevo_codigo=True)
 
 
 @app.get("/api/mobile/status")
@@ -2814,11 +2891,11 @@ async def mobile_status():
     return {
         "pin_configurado": pin_set,
         "activado":        _mobile_mode_active(),
-        "tokens_activos":  len(_mobile_tokens),
+        "tokens_activos":  len(_mobile_tokens) + acceso_movil.num_sesiones(),
         "network_host":    host,
         # ¿De verdad se puede entrar desde la WiFi? Solo si Miraru se abrió
         # con el acceso ya activado (escucha en la red, no solo en este PC).
-        "en_red":          bool(host) and await asyncio.get_running_loop().run_in_executor(None, _escucha_en, host),
+        "en_red":          acceso_movil.escuchando() or (bool(host) and await asyncio.get_running_loop().run_in_executor(None, _escucha_en, host)),
         "url_movil":       f"http://{host}/m" if host else "",
     }
 
@@ -2897,7 +2974,7 @@ async def mobile_stats(request: Request):
     }
 
 @app.post("/api/mobile/enable")
-async def enable_mobile(req: PinRequest):
+def enable_mobile(req: PinRequest, request: Request):
     """Activa el modo red y configura el PIN en un solo paso."""
     pin = req.pin.strip()
     if not (4 <= len(pin) <= 8) or not pin.isdigit():
@@ -2905,19 +2982,23 @@ async def enable_mobile(req: PinRequest):
     db.set_config("mobile_pin", _hash_pin(pin))
     db.set_config("mobile_enabled", "1")
     _mobile_tokens.clear()
+    dire = acceso_movil.arrancar(app, _puerto_de(request)) if _is_loopback(_client_ip(request)) else ""
     return {
         "ok": True,
-        "mensaje": "Reinicia la app para activar el acceso de red.",
-        "network_host": db.get_config("network_host") or "desconocido (reinicia primero)",
+        "mensaje": "Listo: ya puedes entrar desde el móvil." if dire else acceso_movil.ultimo_error(),
+        "network_host": dire or db.get_config("network_host") or "",
     }
 
 @app.post("/api/mobile/disable")
-async def disable_mobile():
-    """Desactiva el modo red y limpia tokens."""
+def disable_mobile(request: Request):
+    """Deja de escuchar en la WiFi y cierra la sesión de todos los móviles."""
+    _solo_este_pc(request)
     db.set_config("mobile_enabled", "0")
     db.set_config("mobile_pin", "")
     _mobile_tokens.clear()
-    return {"ok": True, "mensaje": "Acceso móvil desactivado. Reinicia la app."}
+    acceso_movil.borrar_sesiones()
+    acceso_movil.parar()
+    return {"ok": True, "mensaje": "Acceso móvil desactivado."}
 
 
 # ── Perfil de usuario ─────────────────────────────────────────────────────────
