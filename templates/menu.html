@@ -8,17 +8,17 @@
 <title>Miraru</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#080810;color:#e2e2e8;font-family:"Segoe UI",system-ui,sans-serif;height:100vh;overflow:hidden}
+body{background:#080810;color:#e2e2e8;font-family:"Segoe UI",system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
 #bg{position:fixed;inset:0;z-index:0}
 #glow{position:fixed;inset:0;z-index:1;pointer-events:none}
 
 /* UI central */
-.ui{position:relative;z-index:10;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.ui{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
 
 /* Logo más grande */
-.logo-wrap{margin-bottom:24px;opacity:0;animation:fadeUp 1s .1s cubic-bezier(.16,1,.3,1) forwards}
+.logo-wrap{margin-bottom:14px;opacity:0;animation:fadeUp 1s .1s cubic-bezier(.16,1,.3,1) forwards}
 .logo-wrap img{
-  width:160px;height:160px;
+  width:clamp(96px,16vh,150px);height:clamp(96px,16vh,150px);
   border-radius:50%;object-fit:cover;
   border:4px solid rgba(167,139,250,.85);
   box-shadow:0 0 0 0 rgba(124,58,237,.6);
@@ -39,24 +39,59 @@ body{background:#080810;color:#e2e2e8;font-family:"Segoe UI",system-ui,sans-seri
 #title-fill{font-family:"Segoe UI",system-ui,sans-serif;font-weight:800;font-size:76px;letter-spacing:-2px;fill:url(#tgf);opacity:0}
 
 /* Subtítulo */
-.subtitle-wrap{height:26px;overflow:hidden;margin-bottom:34px}
-.sw{display:inline-block;font-size:12px;letter-spacing:3.5px;text-transform:uppercase;color:rgba(167,139,250,.75);opacity:0;transform:translateY(100%)}
+.subtitle-wrap{height:26px;overflow:hidden;margin-bottom:26px}
+.sw{display:inline-block;font-size:12px;letter-spacing:3.5px;text-transform:uppercase;color:var(--light,#a78bfa);opacity:0;transform:translateY(100%)}
 
-/* Botón */
-.enter-btn{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;padding:13px 34px;border-radius:99px;font-size:15px;font-weight:700;letter-spacing:.5px;cursor:pointer;border:none;text-decoration:none;box-shadow:0 0 28px rgba(124,58,237,.4),0 4px 20px rgba(0,0,0,.5);transition:transform .2s,box-shadow .2s;opacity:0;animation:fadeUp .8s .95s cubic-bezier(.16,1,.3,1) forwards;position:relative;overflow:hidden}
-.enter-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.15),transparent);border-radius:99px}
-.enter-btn:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 0 50px rgba(124,58,237,.65),0 8px 30px rgba(0,0,0,.5)}
-.enter-btn:active{transform:scale(.97)}
-.arrow{font-size:18px;transition:transform .2s}.enter-btn:hover .arrow{transform:translateX(5px)}
+/* v2.17.1: puertas a los apartados (con el color del tema) */
+.puertas{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:10px;width:min(620px,94vw);
+  opacity:0;animation:fadeUp .8s .95s cubic-bezier(.16,1,.3,1) forwards}
+.puerta{display:flex;align-items:center;gap:11px;padding:13px 14px;border-radius:16px;text-decoration:none;text-align:left;
+  color:var(--fg,#edecf4);background:rgba(var(--accent-rgb,124,58,237),.08);border:1px solid rgba(var(--accent-rgb,124,58,237),.28);
+  backdrop-filter:blur(10px);transition:transform .25s cubic-bezier(.22,1,.36,1),border-color .2s,background .2s,box-shadow .25s}
+.puerta:hover{transform:translateY(-3px);border-color:rgba(var(--accent-rgb,124,58,237),.7);background:rgba(var(--accent-rgb,124,58,237),.14)}
+.puerta:focus-visible{outline:2px solid var(--light,#c4b1ff);outline-offset:3px}
+.puerta.principal{background:var(--grad-accent,linear-gradient(135deg,#7c3aed,#a855f7,#d946ef));border-color:transparent;color:#fff;
+  box-shadow:0 10px 34px rgba(var(--accent-rgb,124,58,237),.38)}
+.puerta.principal:hover{box-shadow:0 14px 44px rgba(var(--accent-rgb,124,58,237),.55)}
+.p-ico{width:38px;height:38px;flex-shrink:0;display:grid;place-items:center;border-radius:11px;font-size:18px;
+  background:rgba(var(--accent-rgb,124,58,237),.16)}
+.principal .p-ico{background:rgba(255,255,255,.2);font-size:15px}
+.p-txt{display:flex;flex-direction:column;min-width:0;flex:1}
+.p-txt b{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-txt small{font-size:11.5px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.p-ir{font-size:18px;transition:transform .2s}.puerta:hover .p-ir{transform:translateX(4px)}
+@media (max-width:560px){.puertas{grid-template-columns:1fr 1fr}.puerta.principal{grid-column:1/-1}.ui{padding-top:64px}.sw{font-size:10.5px;letter-spacing:2.5px}}
+@media (prefers-reduced-motion:reduce){.puerta,.hc,.p-ir{transition:none}}
 
 /* Stats */
-.stats-row{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap;justify-content:center;opacity:0;animation:fadeUp .8s 1.15s cubic-bezier(.16,1,.3,1) forwards}
-.stat-pill{background:rgba(26,26,36,.8);border:1px solid rgba(124,58,237,.3);border-radius:99px;padding:4px 13px;font-size:11px;color:#a78bfa;backdrop-filter:blur(8px)}
+.stats-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;justify-content:center;opacity:0;animation:fadeUp .8s 1.15s cubic-bezier(.16,1,.3,1) forwards}
+.stat-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(var(--accent-rgb,124,58,237),.08);border:1px solid rgba(var(--accent-rgb,124,58,237),.22);
+  border-radius:99px;padding:4px 12px;font-size:11.5px;color:var(--light,#c4b1ff);backdrop-filter:blur(8px);text-decoration:none}
+a.stat-pill:hover{border-color:rgba(var(--accent-rgb,124,58,237),.6)}
+
+/* Continuar */
+#home-continue{margin-top:22px;width:min(620px,94vw);display:none;opacity:0;transition:opacity .7s}
+.hc-cab{margin-bottom:10px;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--light,#c4b1ff);opacity:.8}
+.hc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:560px){.hc-grid{grid-template-columns:1fr}}
+.hc{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;cursor:pointer;text-align:left;
+  background:rgba(20,16,32,.72);border:1px solid rgba(var(--accent-rgb,124,58,237),.22);backdrop-filter:blur(8px);transition:border-color .2s,transform .2s}
+.hc:hover{border-color:rgba(var(--accent-rgb,124,58,237),.6);transform:translateY(-2px)}
+.hc img{width:34px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0;background:#1a1a24}
+.hc-i{flex:1;min-width:0}
+.hc-n{font-size:12.5px;font-weight:600;color:var(--fg,#edecf4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hc-s{font-size:10.5px;color:var(--light,#c4b1ff);margin-top:2px;display:flex;gap:6px;align-items:center}
+.hc-t{font-size:9px;font-weight:700;letter-spacing:.5px;padding:1px 5px;border-radius:5px;background:rgba(var(--accent-rgb,124,58,237),.18)}
+.hc-b{height:3px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:5px;overflow:hidden}
+.hc-b i{display:block;height:100%;background:var(--accent,#7c3aed);border-radius:99px}
+.hc button{background:var(--accent,#7c3aed);color:#fff;border:none;border-radius:8px;padding:6px 9px;font-size:11.5px;font-weight:700;cursor:pointer;flex-shrink:0}
+.hc button:hover{filter:brightness(1.12)}
+.hc button[hidden]{display:none}
 
 /* Lang */
 .lang-bar{position:fixed;top:18px;right:18px;z-index:20;display:flex;gap:5px;opacity:0;animation:fadeDown .8s .5s ease forwards}
-.lang-btn{background:rgba(15,15,20,.85);border:1px solid rgba(124,58,237,.3);border-radius:7px;color:#a78bfa;padding:5px 9px;font-size:11px;cursor:pointer;backdrop-filter:blur(10px);transition:all .15s}
-.lang-btn:hover,.lang-btn.active{background:rgba(124,58,237,.35);border-color:rgba(124,58,237,.7);color:#fff}
+.lang-btn{background:rgba(15,15,20,.85);border:1px solid rgba(var(--accent-rgb,124,58,237),.3);border-radius:7px;color:var(--light,#a78bfa);padding:5px 9px;font-size:11px;cursor:pointer;backdrop-filter:blur(10px);transition:all .15s}
+.lang-btn:hover,.lang-btn.active{background:rgba(var(--accent-rgb,124,58,237),.35);border-color:rgba(var(--accent-rgb,124,58,237),.7);color:#fff}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
@@ -64,9 +99,10 @@ body{background:#080810;color:#e2e2e8;font-family:"Segoe UI",system-ui,sans-seri
 /* ── Modo claro ─────────────────────────────────────────────────────────── */
 [data-theme=light] body{background:#f0eff8;color:#1e1b2e}
 [data-theme=light] .stat-pill{background:rgba(255,255,255,.9);border-color:rgba(79,70,229,.2);color:#1e1b2e}
+[data-theme=light] .puerta:not(.principal),[data-theme=light] .hc{background:rgba(255,255,255,.9);color:#1e1b2e}
+[data-theme=light] .hc-n{color:#1e1b2e}
 [data-theme=light] .lang-btn{background:rgba(255,255,255,.9);border-color:rgba(79,70,229,.2);color:#1e1b2e}
 [data-theme=light] .lang-btn:hover,[data-theme=light] .lang-btn.active{background:rgba(79,70,229,.12);border-color:rgba(79,70,229,.5)}
-[data-theme=light] .enter-btn{background:linear-gradient(135deg,#4f46e5,#7c3aed)}
 </style>
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
@@ -99,13 +135,13 @@ body{background:#080810;color:#e2e2e8;font-family:"Segoe UI",system-ui,sans-seri
     <defs>
       <linearGradient id="tg"  x1="0%" y1="0%" x2="100%" y2="0%">
         <stop offset="0%"   stop-color="#ffffff"/>
-        <stop offset="50%"  stop-color="#a78bfa"/>
-        <stop offset="100%" stop-color="#7c3aed"/>
+        <stop offset="50%"  style="stop-color:var(--light,#a78bfa)"/>
+        <stop offset="100%" style="stop-color:var(--accent,#7c3aed)"/>
       </linearGradient>
       <linearGradient id="tgf" x1="0%" y1="0%" x2="100%" y2="0%">
         <stop offset="0%"   stop-color="#ffffff"/>
-        <stop offset="50%"  stop-color="#a78bfa"/>
-        <stop offset="100%" stop-color="#7c3aed"/>
+        <stop offset="50%"  style="stop-color:var(--light,#a78bfa)"/>
+        <stop offset="100%" style="stop-color:var(--accent,#7c3aed)"/>
       </linearGradient>
     </defs>
     <text id="title-stroke" x="50%" y="76" text-anchor="middle">Miraru</text>
@@ -114,56 +150,38 @@ body{background:#080810;color:#e2e2e8;font-family:"Segoe UI",system-ui,sans-seri
 
   <div class="subtitle-wrap" id="sub-wrap"></div>
 
-  <a href="/app" class="enter-btn">
-    <span id="enter-txt">Entrar</span>
-    <span class="arrow">→</span>
-  </a>
+  <!-- v2.17.1: tres «puertas» (anime, manga, series y pelis) con lo que
+       llevas en cada una. Antes: un «Entrar» y dos botones sueltos en una
+       esquina, y las cifras mezclaban anime y manga. -->
+  <nav class="puertas" aria-label="Apartados">
+    <a href="/app" class="puerta principal" id="p-anime">
+      <span class="p-ico" aria-hidden="true">▶</span>
+      <span class="p-txt"><b id="enter-txt">Anime</b><small id="p-anime-sub">&nbsp;</small></span>
+      <span class="p-ir" aria-hidden="true">→</span>
+    </a>
+    <a href="/manga" class="puerta" id="p-manga">
+      <span class="p-ico" aria-hidden="true">📖</span>
+      <span class="p-txt"><b>Manga</b><small id="p-manga-sub">&nbsp;</small></span>
+    </a>
+    <a href="/peliculas" class="puerta" id="p-media">
+      <span class="p-ico" aria-hidden="true">🎬</span>
+      <span class="p-txt"><b>Series y pelis</b><small id="p-media-sub">&nbsp;</small></span>
+    </a>
+  </nav>
 
   <div class="stats-row" id="stats-row"></div>
-  <div style="margin-top:12px;opacity:0;animation:fadeUp .8s 1.3s cubic-bezier(.16,1,.3,1) forwards">
-    <a href="/novedades" style="display:inline-flex;align-items:center;gap:6px;color:var(--light);font-size:12px;text-decoration:none;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);padding:5px 14px;border-radius:99px">🎬 Ver novedades</a>
-  </div>
-  <!-- v2.4: widget "Continuar viendo" — gancho diario, solo si hay animes en curso -->
-  <div id="home-continue" style="margin-top:20px;width:min(540px,94vw);display:none;opacity:0;transition:opacity .7s"></div>
+  <!-- v2.4: widget «Continuar» — gancho diario, solo si hay algo a medias -->
+  <div id="home-continue"></div>
 </div>
-
-<!-- v2.17: acceso al apartado de manga (encima de «No Anime») -->
-<a href="/manga" id="manga-tab" class="apartado-tab" title="Tu manga, aparte del anime">
-  <span style="font-size:17px">📖</span>
-  <span class="media-tab-label">Manga</span>
-</a>
-<!-- v6: acceso a Películas y Series (abajo izquierda) -->
-<a href="/peliculas" id="media-tab" title="Tus películas y series que no son anime">
-  <span style="font-size:17px">🎬</span>
-  <span class="media-tab-label">Series y pelis</span>
-</a>
-<style>
-#media-tab{position:fixed;bottom:20px;left:20px;z-index:50;display:inline-flex;align-items:center;gap:8px;
-  padding:10px 16px;border-radius:14px;text-decoration:none;color:#fff;font-size:13px;font-weight:700;
-  background:linear-gradient(135deg,#7c3aed,#a855f7,#d946ef);box-shadow:0 6px 22px rgba(124,58,237,.4);
-  transition:transform .2s,box-shadow .2s;animation:fadeUp .8s 1.5s cubic-bezier(.16,1,.3,1) backwards}
-#media-tab:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 10px 30px rgba(217,70,239,.5)}
-#manga-tab{position:fixed;bottom:72px;left:20px;z-index:50;display:inline-flex;align-items:center;gap:8px;
-  padding:10px 16px;border-radius:14px;text-decoration:none;color:var(--light);font-size:13px;font-weight:700;
-  background:var(--card);border:1px solid rgba(124,58,237,.45);
-  transition:transform .2s,border-color .2s;animation:fadeUp .8s 1.6s cubic-bezier(.16,1,.3,1) backwards}
-#manga-tab:hover{transform:translateY(-3px);border-color:var(--light)}
-@media (max-width:560px){#manga-tab{padding:12px;border-radius:50%;bottom:76px}}
-@media (prefers-reduced-motion:reduce){#manga-tab,#media-tab{animation:none;transition:none}}
-.media-tab-label{white-space:nowrap}
-@media (max-width:560px){.media-tab-label{display:none}#media-tab{padding:12px;border-radius:50%}}
-</style>
-
-
 
 <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
 <script>
 // ── i18n ──────────────────────────────────────────────────────────────────────
 const TX = {
-  es:{sub:"ANIME · SERIES · PELÍCULAS", enter:"Entrar",    t:"{n} títulos", w:"{n} viendo",    c:"{n} completados", cont:"Continuar viendo"},
-  en:{sub:"ANIME · SERIES · MOVIES",    enter:"Enter",     t:"{n} titles", w:"{n} watching",  c:"{n} completed",   cont:"Continue watching"},
-  fr:{sub:"ANIME · SÉRIES · FILMS",     enter:"Entrer",    t:"{n} titres", w:"{n} en cours",  c:"{n} terminés",    cont:"Continuer"},
-  de:{sub:"ANIME · SERIEN · FILME",     enter:"Eintreten", t:"{n} Titel",  w:"{n} am Schauen",c:"{n} fertig",      cont:"Weiterschauen"},
+  es:{sub:"ANIME · MANGA · SERIES · PELÍCULAS", enter:"Anime", t:"{n} títulos", w:"{n} viendo", r:"{n} leyendo", c:"{n} completados", cont:"Continuar", mg:"{n} mangas", s:"{n} series", pe:"{n} pelis", vacio:"Empieza tu lista", dia:"{n} día", dias:"{n} días", nov:"Estrenos de la semana"},
+  en:{sub:"ANIME · MANGA · SERIES · MOVIES", enter:"Anime", t:"{n} titles", w:"{n} watching", r:"{n} reading", c:"{n} completed", cont:"Continue", mg:"{n} manga", s:"{n} series", pe:"{n} movies", vacio:"Start your list", dia:"{n} day", dias:"{n} days", nov:"This week's releases"},
+  fr:{sub:"ANIME · MANGA · SÉRIES · FILMS", enter:"Anime", t:"{n} titres", w:"{n} en cours", r:"{n} en lecture", c:"{n} terminés", cont:"Continuer", mg:"{n} mangas", s:"{n} séries", pe:"{n} films", vacio:"Commencez votre liste", dia:"{n} jour", dias:"{n} jours", nov:"Sorties de la semaine"},
+  de:{sub:"ANIME · MANGA · SERIEN · FILME", enter:"Anime", t:"{n} Titel", w:"{n} am Schauen", r:"{n} am Lesen", c:"{n} fertig", cont:"Weiter", mg:"{n} Manga", s:"{n} Serien", pe:"{n} Filme", vacio:"Starte deine Liste", dia:"{n} Tag", dias:"{n} Tage", nov:"Neu diese Woche"},
 };
 let LANG = 'es';
 const T = (k, n = 0) => ((TX[LANG] || TX.es)[k] || k).replace('{n}', n);
@@ -355,99 +373,95 @@ function animTitle() {
 
 
 
-// ── Stats ─────────────────────────────────────────────────────────────────────
+// ── Cifras de cada apartado ──────────────────────────────────────────────────
+function _pon(id, txt) { const el = document.getElementById(id); if (el) el.textContent = txt; }
 async function loadStats() {
+  let html = '';
   try {
     const {animes = []} = await (await fetch('/api/animes/slim')).json();
-    const w = animes.filter(a => ['viendo','watching'].includes(a.estado_usuario)).length;
-    const c = animes.filter(a => ['completado','completed'].includes(a.estado_usuario)).length;
-    let html = '';
-    if (animes.length){
-      html = `<span class="stat-pill">${T('t', animes.length)}</span>
-       <span class="stat-pill">${T('w', w)}</span>
-       <span class="stat-pill">${T('c', c)}</span>`;
-    }
-    // v2.6: incluir pelis/series si hay
-    try {
-      const ms = await (await fetch('/api/media/stats')).json();
-      if (ms && ms.total > 0){
-        html += `<span class="stat-pill">🎬 ${ms.peliculas} · 📺 ${ms.series}</span>`;
-      }
-    } catch(_) {}
-    // Racha de apertura diaria: registra la apertura de hoy y muestra la racha
-    try {
-      const rk = await (await fetch('/api/streak/checkin', {method:'POST'})).json();
-      if (rk && rk.actual > 0){
-        html += `<span class="stat-pill" title="Días seguidos abriendo Miraru">🔥 ${rk.actual} ${rk.actual === 1 ? 'día' : 'días'}</span>`;
-      }
-    } catch(_) {}
-    if (html) document.getElementById('stats-row').innerHTML = html;
+    const manga = animes.filter(a => a.tipo === 'manga');
+    const anime = animes.filter(a => a.tipo !== 'manga');
+    const enCurso = (l) => l.filter(a => ['viendo', 'watching'].includes(a.estado_usuario)).length;
+    const hechos = animes.filter(a => ['completado', 'completed'].includes(a.estado_usuario)).length;
+    _pon('p-anime-sub', anime.length ? T('t', anime.length) + ' · ' + T('w', enCurso(anime)) : T('vacio'));
+    _pon('p-manga-sub', manga.length ? T('mg', manga.length) + ' · ' + T('r', enCurso(manga)) : T('vacio'));
+    if (hechos) html += `<span class="stat-pill">✓ ${T('c', hechos)}</span>`;
   } catch(_) {}
+  try {
+    const ms = await (await fetch('/api/media/stats')).json();
+    _pon('p-media-sub', ms && ms.total > 0 ? T('s', ms.series) + ' · ' + T('pe', ms.peliculas) : T('vacio'));
+  } catch(_) {}
+  // Racha de apertura diaria: registra la apertura de hoy y muestra la racha
+  try {
+    const rk = await (await fetch('/api/streak/checkin', {method: 'POST'})).json();
+    if (rk && rk.actual > 0) {
+      html += `<span class="stat-pill" title="Días seguidos abriendo Miraru">🔥 ${T(rk.actual === 1 ? 'dia' : 'dias', rk.actual)}</span>`;
+    }
+  } catch(_) {}
+  html += `<a class="stat-pill" href="/novedades">🗓️ ${T('nov')}</a>`;
+  document.getElementById('stats-row').innerHTML = html;
 }
 
-// ── Continuar viendo ───────────────────────────────────────────────────────────
+// ── Continuar (anime y manga) ────────────────────────────────────────────────
 async function loadContinue() {
   const wrap = document.getElementById('home-continue');
   if (!wrap) return;
   try {
     const r = await fetch('/api/continuar');
     if (!r.ok) return;
-    const d = await r.json();
-    const items = (d.animes || []).slice(0, 4);
-    if (!items.length) return;
-
+    const items = ((await r.json()).animes || []).slice(0, 4);
+    if (!items.length) { wrap.style.display = 'none'; return; }
     wrap.innerHTML = '';
     const head = document.createElement('div');
+    head.className = 'hc-cab';
     head.textContent = '▶ ' + T('cont');
-    head.style.cssText = 'font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(167,139,250,.75);margin-bottom:10px';
-    wrap.appendChild(head);
-
-    const strip = document.createElement('div');
-    strip.style.cssText = 'display:flex;gap:8px;justify-content:center;flex-wrap:wrap';
+    const grid = document.createElement('div');
+    grid.className = 'hc-grid';
     items.forEach(a => {
+      const esManga = a.tipo === 'manga';
       const card = document.createElement('div');
-      card.style.cssText = 'display:flex;align-items:center;gap:8px;background:rgba(26,26,36,.8);border:1px solid rgba(124,58,237,.3);border-radius:10px;padding:6px 8px;backdrop-filter:blur(8px);cursor:pointer;max-width:230px';
-      card.onclick = () => location.href = a.tipo === 'manga' ? '/manga' : '/app';   // cada uno a su apartado
-
+      card.className = 'hc';
+      card.onclick = () => location.href = esManga ? '/manga' : '/app';   // cada uno a su apartado
       const img = document.createElement('img');
+      img.alt = '';
       miraruPortada(img, a.imagen);
-      img.style.cssText = 'width:30px;height:42px;object-fit:cover;border-radius:5px;flex-shrink:0;background:#1a1a24';
-      img.onerror = () => { img.onerror = null; img.removeAttribute('src'); img.style.background = '#1a1a24'; };
-
-      const info = document.createElement('div');
-      info.style.cssText = 'text-align:left;min-width:0';
-      const name = document.createElement('div');
-      name.style.cssText = 'font-size:12px;font-weight:600;color:#e2e2e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px';
-      name.textContent = a.nombre;
-      const next = document.createElement('div');
-      next.style.cssText = 'font-size:10px;color:#a78bfa';
+      img.onerror = () => { img.onerror = null; img.removeAttribute('src'); };
       const total = parseInt(a.capitulos) || 0;
       const vistos = a.episodios_vistos || 0;
       const alDia = total > 0 && vistos >= total;          // "12+" en emisión y ya los has visto todos
-      const ud = a.tipo === 'manga' ? 'Cap' : 'Ep';      // el manga se lee por capítulos
-      next.textContent = alDia ? '✓ Al día · ' + ud.toLowerCase() + ' ' + vistos
-                               : ud + ' ' + (vistos + 1) + (total ? ' / ' + total : '');
-      info.appendChild(name);
-      info.appendChild(next);
-
+      const ud = esManga ? 'Cap' : 'Ep';                  // el manga se lee por capítulos
+      const info = document.createElement('div'); info.className = 'hc-i';
+      const name = document.createElement('div'); name.className = 'hc-n';
+      name.textContent = a.nombre; name.title = a.nombre;
+      const sub = document.createElement('div'); sub.className = 'hc-s';
+      const tag = document.createElement('span'); tag.className = 'hc-t'; tag.textContent = esManga ? 'MANGA' : 'ANIME';
+      const nx = document.createElement('span');
+      nx.textContent = alDia ? '✓ ' + ud + ' ' + vistos : ud + ' ' + (vistos + 1) + (total ? ' / ' + total : '');
+      sub.append(tag, nx);
+      info.append(name, sub);
+      if (total) {
+        const bar = document.createElement('div'); bar.className = 'hc-b';
+        const fill = document.createElement('i');
+        fill.style.width = Math.min(100, Math.round(vistos * 100 / total)) + '%';
+        bar.appendChild(fill);
+        info.appendChild(bar);
+      }
       const plus = document.createElement('button');
+      plus.type = 'button';
       plus.textContent = '+1';
       plus.hidden = alDia;
-      plus.style.cssText = 'background:#7c3aed;color:#fff;border:none;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0';
+      plus.setAttribute('aria-label', '+1 ' + a.nombre);
       plus.onclick = async (e) => {
         e.stopPropagation();
         plus.disabled = true;
-        try { await fetch('/api/animes/' + encodeURIComponent(a.nombre) + '/plus1', {method:'POST'}); } catch(_) {}
+        try { await fetch('/api/animes/' + encodeURIComponent(a.nombre) + '/plus1', {method: 'POST'}); } catch(_) {}
         loadContinue();
         loadStats();
       };
-
-      card.appendChild(img);
-      card.appendChild(info);
-      card.appendChild(plus);
-      strip.appendChild(card);
+      card.append(img, info, plus);
+      grid.appendChild(card);
     });
-    wrap.appendChild(strip);
+    wrap.append(head, grid);
     wrap.style.display = 'block';
     requestAnimationFrame(() => { wrap.style.opacity = '1'; });
   } catch(_) {}
