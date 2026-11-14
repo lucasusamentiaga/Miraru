@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.17.2 — Inicio nuevo
+
+- **Pantalla de inicio**: tres tarjetas (Anime, Manga, Series y pelis) con lo que llevas en
+  cada apartado, en vez de un «Entrar» y dos botones en una esquina. Las cifras ya no mezclan
+  anime y manga. «Continuar» va en una cuadrícula con anime y manga, etiqueta y barra de progreso.
+- **Colores del tema** también en el inicio (título, botones, idiomas, barras).
+- **Apoyar Miraru** con Ko-fi: botón ☕ en la barra flotante, en «Más» y en el inicio.
+- **Créditos** junto a la versión del inicio, con la atribución que pide TMDB (también al pie de
+  «Series y pelis»).
+
 ## v2.17.1 — Arreglos
 
 - **Recorrido**: el botón «Siguiente» salía con un doble borde (el anillo de foco) al pasar de

@@ -10,6 +10,19 @@ from __future__ import annotations
 # icono: emoji · titulo: corto (≤ 40 letras) · texto: una frase.
 # accion (opcional): {"texto": "...", "url": "/app#..."} → botón dentro del punto.
 NOVEDADES: list[dict] = [
+    {
+        "version": "2.17.2",
+        "titulo": "Inicio nuevo",
+        "puntos": [
+            {"icono": "🚪", "titulo": "Anime, manga y series, de un vistazo",
+             "texto": "La pantalla de inicio tiene una tarjeta por apartado con lo que llevas en cada uno, y «Continuar» incluye también tus mangas.",
+             "accion": {"texto": "Ver el inicio", "url": "/"}},
+            {"icono": "🎨", "titulo": "Con tu color",
+             "texto": "El título, los botones y las barras del inicio usan el color que elijas en 🎨."},
+            {"icono": "☕", "titulo": "Apoya Miraru",
+             "texto": "Miraru sigue siendo gratis y sin anuncios. Si te gusta, en «Más → Apoyar Miraru» puedes invitarme a un café."},
+        ],
+    },
     # silenciosa: solo arreglos; no abre la ventana de novedades.
     {
         "version": "2.17.1",
