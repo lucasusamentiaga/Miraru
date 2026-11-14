@@ -112,6 +112,9 @@
     '.mtour-btn.txt{background:transparent;color:var(--muted,#a49dc0);padding:9px 8px}',
     '.mtour-btn.txt:hover{color:var(--fg,#edecf4);transform:none}',
     '.mtour-btn:focus-visible{outline:2px solid var(--light,#c4b1ff);outline-offset:2px}',
+    // v2.17.1: el botón principal recibe el foco solo al cambiar de paso; sin
+    // Tab no se enseña el anillo (salía un doble borde en «Siguiente»).
+    '.mtour-tarjeta:not(.con-tab) .mtour-btn:focus-visible{outline:none}',
     '.mtour-entra{animation:mtour-entra .45s cubic-bezier(.16,1,.3,1) both}',
     '@keyframes mtour-entra{from{opacity:0;transform:translateY(8px) scale(.98)}}',
     '@keyframes mtour-latido{0%{opacity:.9;transform:scale(1)}70%,100%{opacity:0;transform:scale(1.06)}}',
@@ -227,7 +230,8 @@
 
   function pintarTarjeta(p) {
     var e = estado, tj = e.tarjeta;
-    tj.className = 'mtour-tarjeta mtour-entra' + (p.sel ? '' : ' grande');
+    var conTab = tj.classList.contains('con-tab');
+    tj.className = 'mtour-tarjeta mtour-entra' + (p.sel ? '' : ' grande') + (conTab ? ' con-tab' : '');
     tj.innerHTML = '';
     var cab = el('div', 'mtour-cab');
     var ico = el('span', 'mtour-ico', p.ico); ico.setAttribute('aria-hidden', 'true');
@@ -345,6 +349,7 @@
     else if (ev.key === 'ArrowRight') { ev.preventDefault(); ev.stopPropagation(); var p = estado.pasos[estado.i]; if (!p.fin) ir(estado.i + 1); }
     else if (ev.key === 'ArrowLeft') { ev.preventDefault(); ev.stopPropagation(); ir(estado.i - 1); }
     else if (ev.key === 'Tab') {
+      estado.tarjeta.classList.add('con-tab');   // ahora sí: anillo de foco visible
       // El foco se queda en la tarjeta.
       var f = estado.tarjeta.querySelectorAll('button');
       if (!f.length) return;

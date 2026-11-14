@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.17.1 — Arreglos
+
+- **Recorrido**: el botón «Siguiente» salía con un doble borde (el anillo de foco) al pasar de
+  paso. Ahora el anillo solo aparece si te mueves con el tabulador.
+- Ficha de la Microsoft Store: palabras clave y capturas en inglés en orden.
+
 ## v2.17.0 — Manga aparte, el móvil con un toque y tu lista entra de golpe
 
 - **El móvil con un toque**: en «Más → Móvil», «Conectar el móvil» abre Miraru a tu WiFi en el

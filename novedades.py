@@ -10,6 +10,16 @@ from __future__ import annotations
 # icono: emoji · titulo: corto (≤ 40 letras) · texto: una frase.
 # accion (opcional): {"texto": "...", "url": "/app#..."} → botón dentro del punto.
 NOVEDADES: list[dict] = [
+    # silenciosa: solo arreglos; no abre la ventana de novedades.
+    {
+        "version": "2.17.1",
+        "silenciosa": True,
+        "titulo": "Arreglos",
+        "puntos": [
+            {"icono": "🧭", "titulo": "Recorrido más limpio",
+             "texto": "El botón «Siguiente» del recorrido ya no sale con un doble borde."},
+        ],
+    },
     {
         "version": "2.17.0",
         "titulo": "Manga aparte y el móvil con un toque",
@@ -144,6 +154,6 @@ def pendientes(vista: str | None, actual: str, maximo: int = 3) -> list[dict]:
     """Versiones con novedades que el usuario aún no ha visto: más nuevas que
     `vista` y no más nuevas que `actual` (por si el código va por delante)."""
     v0, v1 = _clave(vista or "0"), _clave(actual)
-    out = [n for n in NOVEDADES if v0 < _clave(n["version"]) <= v1]
+    out = [n for n in NOVEDADES if v0 < _clave(n["version"]) <= v1 and not n.get("silenciosa")]
     out.sort(key=lambda n: _clave(n["version"]), reverse=True)
     return out[:maximo]
