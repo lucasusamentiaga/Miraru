@@ -1,6 +1,6 @@
 # Términos de uso de Miraru / Miraru terms of use
 
-*Última actualización / Last updated: 12 de noviembre de 2026*
+*Última actualización / Last updated: 15 de noviembre de 2026*
 
 ## Español
 
@@ -25,7 +25,7 @@
    webs.
 7. **Extensión del navegador y móvil.** La extensión opcional de Miraru solo comunica a
    Miraru, en tu propio ordenador, los episodios que marcas como vistos en animeav1.com o
-   que terminas en Netflix o Crunchyroll; la instalas tú y puedes quitarla cuando quieras.
+   animeflv.net o que terminas en Netflix o Crunchyroll; la instalas tú y puedes quitarla cuando quieras.
    El acceso desde el móvil solo funciona en tu red local: úsalo en redes de confianza y
    no compartas el código de acceso.
 8. **Sin garantía.** Miraru se ofrece «tal cual», sin garantía de ningún tipo. Las
@@ -61,7 +61,7 @@ código, que siguen aplicándose.
    official sites or the ones you choose; what you watch there is your and those sites'
    responsibility.
 7. **Browser extension and phone.** The optional Miraru extension only tells Miraru, on
-   your own computer, which episodes you mark as watched on animeav1.com or finish on
+   your own computer, which episodes you mark as watched on animeav1.com or animeflv.net or finish on
    Netflix or Crunchyroll; you install it yourself and can remove it at any time. Phone
    access only works on your local network: use it on trusted networks and do not share
    the access code.
