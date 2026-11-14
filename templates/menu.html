@@ -178,10 +178,10 @@ a.stat-pill:hover{border-color:rgba(var(--accent-rgb,124,58,237),.6)}
 <script>
 // ── i18n ──────────────────────────────────────────────────────────────────────
 const TX = {
-  es:{sub:"ANIME · MANGA · SERIES · PELÍCULAS", enter:"Anime", t:"{n} títulos", w:"{n} viendo", r:"{n} leyendo", c:"{n} completados", cont:"Continuar", mg:"{n} mangas", s:"{n} series", pe:"{n} pelis", vacio:"Empieza tu lista", dia:"{n} día", dias:"{n} días", nov:"Estrenos de la semana"},
-  en:{sub:"ANIME · MANGA · SERIES · MOVIES", enter:"Anime", t:"{n} titles", w:"{n} watching", r:"{n} reading", c:"{n} completed", cont:"Continue", mg:"{n} manga", s:"{n} series", pe:"{n} movies", vacio:"Start your list", dia:"{n} day", dias:"{n} days", nov:"This week's releases"},
-  fr:{sub:"ANIME · MANGA · SÉRIES · FILMS", enter:"Anime", t:"{n} titres", w:"{n} en cours", r:"{n} en lecture", c:"{n} terminés", cont:"Continuer", mg:"{n} mangas", s:"{n} séries", pe:"{n} films", vacio:"Commencez votre liste", dia:"{n} jour", dias:"{n} jours", nov:"Sorties de la semaine"},
-  de:{sub:"ANIME · MANGA · SERIEN · FILME", enter:"Anime", t:"{n} Titel", w:"{n} am Schauen", r:"{n} am Lesen", c:"{n} fertig", cont:"Weiter", mg:"{n} Manga", s:"{n} Serien", pe:"{n} Filme", vacio:"Starte deine Liste", dia:"{n} Tag", dias:"{n} Tage", nov:"Neu diese Woche"},
+  es:{sub:"ANIME · MANGA · SERIES · PELÍCULAS", enter:"Anime", t:"{n} títulos", w:"{n} viendo", r:"{n} leyendo", c:"{n} completados", cont:"Continuar", mg:"{n} mangas", s:"{n} series", pe:"{n} pelis", vacio:"Empieza tu lista", dia:"{n} día", dias:"{n} días", nov:"Estrenos de la semana", kofi:"Apoyar Miraru"},
+  en:{sub:"ANIME · MANGA · SERIES · MOVIES", enter:"Anime", t:"{n} titles", w:"{n} watching", r:"{n} reading", c:"{n} completed", cont:"Continue", mg:"{n} manga", s:"{n} series", pe:"{n} movies", vacio:"Start your list", dia:"{n} day", dias:"{n} days", nov:"This week's releases", kofi:"Support Miraru"},
+  fr:{sub:"ANIME · MANGA · SÉRIES · FILMS", enter:"Anime", t:"{n} titres", w:"{n} en cours", r:"{n} en lecture", c:"{n} terminés", cont:"Continuer", mg:"{n} mangas", s:"{n} séries", pe:"{n} films", vacio:"Commencez votre liste", dia:"{n} jour", dias:"{n} jours", nov:"Sorties de la semaine", kofi:"Soutenir Miraru"},
+  de:{sub:"ANIME · MANGA · SERIEN · FILME", enter:"Anime", t:"{n} Titel", w:"{n} am Schauen", r:"{n} am Lesen", c:"{n} fertig", cont:"Weiter", mg:"{n} Manga", s:"{n} Serien", pe:"{n} Filme", vacio:"Starte deine Liste", dia:"{n} Tag", dias:"{n} Tage", nov:"Neu diese Woche", kofi:"Miraru unterstützen"},
 };
 let LANG = 'es';
 const T = (k, n = 0) => ((TX[LANG] || TX.es)[k] || k).replace('{n}', n);
@@ -399,6 +399,7 @@ async function loadStats() {
     }
   } catch(_) {}
   html += `<a class="stat-pill" href="/novedades">🗓️ ${T('nov')}</a>`;
+  html += `<a class="stat-pill" href="https://ko-fi.com/lucasuazz_" target="_blank" rel="noopener" title="Miraru es gratis y sin anuncios">☕ ${T('kofi')}</a>`;
   document.getElementById('stats-row').innerHTML = html;
 }
 

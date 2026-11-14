@@ -4,6 +4,7 @@
 [![Release](https://img.shields.io/github/v/release/lucasusamentiaga/Miraru)](https://github.com/lucasusamentiaga/Miraru/releases/latest)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-ap%C3%B3yame-ff5e5b?logo=ko-fi&logoColor=white)](https://ko-fi.com/lucasuazz_)
 
 **Tu biblioteca personal de anime, manga, series y películas.** App de escritorio para Windows
 que funciona en tu navegador: lleva la cuenta de los episodios que ves, te avisa cuando sale uno
