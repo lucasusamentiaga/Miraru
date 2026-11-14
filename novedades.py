@@ -10,6 +10,16 @@ from __future__ import annotations
 # icono: emoji · titulo: corto (≤ 40 letras) · texto: una frase.
 # accion (opcional): {"texto": "...", "url": "/app#..."} → botón dentro del punto.
 NOVEDADES: list[dict] = [
+    # silenciosa: solo arreglos; no abre la ventana de novedades.
+    {
+        "version": "2.17.4",
+        "silenciosa": True,
+        "titulo": "Arreglos",
+        "puntos": [
+            {"icono": "🆕", "titulo": "Temporadas nuevas, solo las que ya salen",
+             "texto": "«Temporadas nuevas de lo que viste» ya no enseña lo anunciado para dentro de meses: solo lo que está en emisión y tiene algún episodio."},
+        ],
+    },
     {
         "version": "2.17.3",
         "titulo": "Animes en emisión, bien contados",

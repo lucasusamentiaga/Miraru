@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.17.4 — Arreglos
+
+- **Temporadas nuevas de lo que viste**: solo secuelas que ya se pueden ver (en emisión y con al
+  menos un episodio emitido). Antes salían también las anunciadas («Próximamente»), como
+  Date A Live F, que se estrena en 2027. La caché anterior se recalcula sola.
+
 ## v2.17.3 — Animes en emisión, bien contados
 
 - **En emisión**: Miraru guarda cuántos episodios han salido ya (de AniList, al refrescar y al

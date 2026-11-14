@@ -30,19 +30,25 @@ def test_secuelas_de_lo_completado(db, monkeypatch):
     db.guardar_anime({"nombre": "AoT S2", "anilist_id": 2, "estado_usuario": "pendiente"})
     # Relaciones guardadas: AoT → 2 (ya en tu lista), 3 (en emisión), 4 (vieja);
     # Frieren (no completado) → 6: no cuenta.
-    main._guardar_relaciones({1: [2, 3, 4], 5: [6]})
+    main._guardar_relaciones({1: [2, 3, 4, 7, 8], 5: [6]})
     pedidos = []
 
     class Falso:
         def buscar_por_ids(self, ids, media_type="ANIME"):
             pedidos.append(sorted(ids))
             return {3: AnimeData(nombre="AoT Final", capitulos="?", imagen="", genero=[], sinopsis="",
-                                 fuente="anilist", estado_anime="En emisión", anilist_id=3),
+                                 fuente="anilist", estado_anime="En emisión", anilist_id=3, eps_emitidos=4),
+                    # anunciada para dentro de meses (Date A Live F): no
+                    7: AnimeData(nombre="DAL F", capitulos="?", imagen="", genero=[], sinopsis="",
+                                 fuente="anilist", estado_anime="Sin estrenar", anilist_id=7),
+                    # «en emisión» pero el 1 aún no ha salido: tampoco
+                    8: AnimeData(nombre="Mañana", capitulos=12, imagen="", genero=[], sinopsis="",
+                                 fuente="anilist", estado_anime="En emisión", anilist_id=8),
                     4: AnimeData(nombre="AoT OVA", capitulos=3, imagen="", genero=[], sinopsis="",
                                  fuente="anilist", estado_anime="Finalizado", anilist_id=4)}
     monkeypatch.setitem(main.SCRAPERS, "anilist", Falso())
     d = c.get("/api/secuelas?refrescar=1").json()
-    assert pedidos == [[3, 4]]
+    assert pedidos == [[3, 4, 7, 8]]
     assert [(x["nombre"], x["de"]) for x in d["items"]] == [("AoT Final", "AoT")]
     # De la caché, sin volver a preguntar; y «No me interesa» lo quita.
     assert c.get("/api/secuelas").json()["items"][0]["anilist_id"] == 3 and len(pedidos) == 1
@@ -93,3 +99,32 @@ def test_conectar_anilist_con_la_app_de_miraru(db, monkeypatch):
     assert c.post("/api/anilist/token", json={"token": "y" * 30}).status_code == 400
     r = c.post("/api/anilist/token", json={"token": "x" * 30}).json()
     assert r["username"] == "lucas" and anilist_sync.get_connection_info()["connected"]
+
+
+def test_secuelas_cache_antigua_se_recalcula(db, monkeypatch):
+    import json
+    import time
+    main, c = _cliente()
+    pedidos = []
+
+    class Falso:
+        def buscar_por_ids(self, ids, media_type="ANIME"):
+            pedidos.append(ids)
+            return {}
+    monkeypatch.setitem(main.SCRAPERS, "anilist", Falso())
+    db.guardar_anime({"nombre": "DAL", "anilist_id": 1, "estado_usuario": "completado"})
+    main._guardar_relaciones({1: [7]})
+    db.set_config("secuelas_cache", json.dumps({"t": time.time(), "items": [
+        {"anilist_id": 7, "nombre": "DAL F", "estado_anime": "Sin estrenar", "de": "DAL"}]}))
+    assert c.get("/api/secuelas").json()["items"] == [] and pedidos == [[7]]
+
+
+def test_secuelas_cache_sin_proximas(db):
+    import json
+    import time
+    main, c = _cliente()
+    db.set_config("secuelas_cache", json.dumps({"v": 2, "t": time.time(), "items": [
+        {"anilist_id": 7, "nombre": "DAL F", "estado_anime": "Sin estrenar", "de": "DAL"},
+        {"anilist_id": 9, "nombre": "Vieja caché", "estado_anime": "En emisión", "de": "X"},
+        {"anilist_id": 3, "nombre": "AoT Final", "estado_anime": "En emisión", "eps_emitidos": 2, "de": "AoT"}]}))
+    assert [x["anilist_id"] for x in c.get("/api/secuelas").json()["items"]] == [3]

@@ -3512,6 +3512,13 @@ def _secuelas_ignoradas() -> set[int]:
         return set()
 
 
+def _secuela_disponible(estado: str, emitidos) -> bool:
+    try:
+        return estado == "En emisión" and int(emitidos or 0) > 0
+    except (TypeError, ValueError):
+        return False
+
+
 def _calcular_secuelas() -> list[dict]:
     animes = db.listar_animes()
     en_lista = {int(a.get("anilist_id") or 0) for a in animes} - {0}
@@ -3539,8 +3546,11 @@ def _calcular_secuelas() -> list[dict]:
             if int(aid) not in candidatos:
                 continue
             aid = int(aid)
-            # Solo lo que viene: una precuela vieja (Finalizado) no es noticia.
-            if ficha.estado_anime not in ("En emisión", "Sin estrenar"):
+            # Solo lo que YA se puede ver: en emisión y con algún episodio
+            # emitido. Una precuela vieja (Finalizado) no es noticia, y lo
+            # anunciado para dentro de meses (Date A Live F, en 2027) tampoco
+            # (v2.17.4: antes salían «Próximamente»).
+            if not _secuela_disponible(ficha.estado_anime, getattr(ficha, "eps_emitidos", 0)):
                 continue
             if adulto.es_adulto(ficha):
                 continue
@@ -3548,24 +3558,28 @@ def _calcular_secuelas() -> list[dict]:
                           "imagen": ficha.imagen, "capitulos": ficha.capitulos,
                           "estado_anime": ficha.estado_anime, "genero": ficha.genero,
                           "sinopsis": ficha.sinopsis, "fuente": "anilist",
+                          "eps_emitidos": int(getattr(ficha, "eps_emitidos", 0) or 0),
                           "de": candidatos[aid]})
-    items.sort(key=lambda x: (x["estado_anime"] != "En emisión", x["nombre"]))
+    items.sort(key=lambda x: x["nombre"])
     return items[:12]
 
 
 @app.get("/api/secuelas")
 async def secuelas_nuevas(refrescar: int = 0):
-    """Temporadas nuevas (o próximas) de animes que completaste."""
+    """Temporadas nuevas, ya en emisión, de animes que completaste."""
     try:
         cache = json.loads(db.get_config("secuelas_cache") or "{}")
     except Exception:
         cache = {}
-    if not refrescar and cache.get("t", 0) > _time.time() - _SECUELAS_TTL:
+    # v2: desde la 2.17.4 (solo lo ya emitido); una caché anterior se recalcula.
+    if not refrescar and cache.get("v") == 2 and cache.get("t", 0) > _time.time() - _SECUELAS_TTL:
         ign = _secuelas_ignoradas()
-        return {"items": [x for x in cache.get("items", []) if x.get("anilist_id") not in ign]}
+        # Cachés de antes de la 2.17.4 traen «Sin estrenar» (y sin eps_emitidos): fuera.
+        return {"items": [x for x in cache.get("items", []) if x.get("anilist_id") not in ign
+                          and _secuela_disponible(x.get("estado_anime"), x.get("eps_emitidos"))]}
     loop = asyncio.get_running_loop()
     items = await loop.run_in_executor(executor, _calcular_secuelas)
-    db.set_config("secuelas_cache", json.dumps({"t": _time.time(), "items": items},
+    db.set_config("secuelas_cache", json.dumps({"v": 2, "t": _time.time(), "items": items},
                                                separators=(",", ":"), ensure_ascii=False))
     return {"items": items}
 
