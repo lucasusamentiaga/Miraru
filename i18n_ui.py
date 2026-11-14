@@ -398,6 +398,7 @@ UI: dict[str, tuple[str, str, str]] = {
     "Importación completada": ("Import complete", "Import terminé", "Import abgeschlossen"),
     "Importación cancelada": ("Import cancelled", "Import annulé", "Import abgebrochen"),
     "Subida completada": ("Upload complete", "Envoi terminé", "Upload abgeschlossen"),
+    "Créditos": ("Credits", "Crédits", "Credits"),
     "Apoyar Miraru": ("Support Miraru", "Soutenir Miraru", "Miraru unterstützen"),
     "Apoya Miraru en Ko-fi": ("Support Miraru on Ko-fi", "Soutenez Miraru sur Ko-fi", "Unterstütze Miraru auf Ko-fi"),
     "Miraru es gratis y sin anuncios: si te gusta, puedes invitarme a un café": ("Miraru is free and ad-free: if you like it, you can buy me a coffee", "Miraru est gratuit et sans pub : si vous l'aimez, offrez-moi un café", "Miraru ist kostenlos und werbefrei: Wenn es dir gefällt, spendier mir einen Kaffee"),

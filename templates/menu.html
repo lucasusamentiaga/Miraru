@@ -189,7 +189,7 @@ const T = (k, n = 0) => ((TX[LANG] || TX.es)[k] || k).replace('{n}', n);
 // Versión real (antes estaba escrita a mano: "v2.4.0").
 fetch('/api/version').then(r => r.json()).then(d => {
   const el = document.getElementById('app-version');
-  if (el && d && d.version) el.textContent = 'v' + d.version;
+  if (el && d && d.version) el.firstChild.textContent = 'v' + d.version + ' · ';
 }).catch(() => {});
 
 async function setLang(l) {
@@ -495,6 +495,14 @@ document.addEventListener('keydown', e => {
   }
 });
 </script>
-<div style="position:fixed;bottom:12px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(167,139,250,.4)" id="app-version"></div>
+<div style="position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:20;font-size:11px;color:var(--light,#a78bfa);opacity:.5" id="app-version"><span></span><a href="#" id="btn-creditos" style="color:inherit" onclick="event.preventDefault();verCreditos()">Créditos</a></div>
+<script>
+// v2.17.2: atribución que exigen las condiciones de TMDB (series y pelis).
+function verCreditos() {
+  const txt = 'Miraru es gratis y de código abierto (licencia MIT), hecho por Lucas Usamentiaga.\n\n' +
+    'This product uses the TMDB API but is not endorsed or certified by TMDB.';
+  if (window.miraruAviso) miraruAviso(txt);
+}
+</script>
 </body>
 </html>
