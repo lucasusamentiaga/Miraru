@@ -2738,7 +2738,7 @@ async def _refrescar_emitidos(anime: dict) -> int:
             return antes
         if nuevo != int(anime.get("eps_emitidos") or 0):
             db.refrescar_metadata_anime(anime["nombre"], {"eps_emitidos": nuevo})
-        return nuevo
+        return max(nuevo, int(anime.get("episodios_vistos") or 0))   # lo visto ya ha salido
     except Exception as e:  # noqa: BLE001
         _sync_log.warning("emitidos de %s: %s", anime.get("nombre"), e)
         return antes

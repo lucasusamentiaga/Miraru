@@ -90,3 +90,10 @@ def test_cambios_seguros_emitidos():
     assert cambios_seguros({"capitulos": "13", "estado_anime": "En emisión", "eps_emitidos": 7}, nuevo)["eps_emitidos"] == 8
     nuevo.estado_anime, nuevo.eps_emitidos = "Finalizado", 0
     assert cambios_seguros({"capitulos": "13", "estado_anime": "En emisión", "eps_emitidos": 13}, nuevo)["eps_emitidos"] == 0
+
+
+def test_lo_visto_ya_ha_salido():
+    """AniList dice 5 emitidos pero ya viste el 6 (otro horario): «6/6», no «6/5»."""
+    import emision
+    a = {"capitulos": "12", "estado_anime": "En emisión", "eps_emitidos": 5, "episodios_vistos": 6}
+    assert emision.emitidos(a) == 6 and emision.tope(a) == 6

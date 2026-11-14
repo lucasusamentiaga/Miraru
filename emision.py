@@ -46,7 +46,12 @@ def emitidos(a: dict) -> int:
     except (TypeError, ValueError):
         e = 0
     if e > 0:
-        return e
+        # Si ya has visto más, es que ha salido (otro horario, otra web):
+        # nunca «6/5 emitidos».
+        try:
+            return max(e, int(a.get("episodios_vistos") or 0))
+        except (TypeError, ValueError):
+            return e
     m = re.fullmatch(r"(\d+)\+", str(a.get("capitulos") or "").strip())
     return int(m.group(1)) if m else 0
 

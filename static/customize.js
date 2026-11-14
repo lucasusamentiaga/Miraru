@@ -311,7 +311,7 @@
     var manga = (a.tipo || "anime") === "manga";
     var enEmision = !manga && /emisi|releasing|airing/i.test(a.estado_anime || "");
     var emitidos = 0;
-    if (enEmision && +a.eps_emitidos > 0) emitidos = +a.eps_emitidos;
+    if (enEmision && +a.eps_emitidos > 0) emitidos = Math.max(+a.eps_emitidos, vistos);   // visto = ya ha salido
     else if (enEmision && /^\d+\+$/.test(caps)) emitidos = parseInt(caps, 10);
     var tope = emitidos || total;
     return {vistos: vistos, total: total, emitidos: emitidos, enEmision: enEmision, tope: tope,
