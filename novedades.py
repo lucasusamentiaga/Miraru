@@ -11,6 +11,19 @@ from __future__ import annotations
 # accion (opcional): {"texto": "...", "url": "/app#..."} → botón dentro del punto.
 NOVEDADES: list[dict] = [
     {
+        "version": "2.17.3",
+        "titulo": "Animes en emisión, bien contados",
+        "puntos": [
+            {"icono": "📡", "titulo": "Al día con lo emitido",
+             "texto": "En los animes que aún se están emitiendo, Miraru cuenta los episodios que ya han salido: «7/7 emitidos» y «✓ Al día» en vez de «Ep 8 / 13». El «+1» no pasa de lo emitido y no se pueden marcar como completados hasta que acaben."},
+            {"icono": "↩️", "titulo": "Deshacer en la extensión",
+             "texto": "Si se apunta un episodio que no era (o lo desmarcas en AnimeAV1), Miraru lo corrige: la ventana de la extensión tiene «Deshacer»."},
+            {"icono": "🧩", "titulo": "AnimeFLV, y Netflix más fiable",
+             "texto": "La extensión también funciona en AnimeFLV: «✓ Marcar visto» en la página del episodio. En Netflix lee el episodio aunque los controles estén ocultos. Pulsa ↻ en su tarjeta de extensiones para actualizarla.",
+             "accion": {"texto": "Ver la extensión", "url": "/app#extension"}},
+        ],
+    },
+    {
         "version": "2.17.2",
         "titulo": "Inicio nuevo",
         "puntos": [

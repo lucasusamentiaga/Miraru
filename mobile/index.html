@@ -575,7 +575,11 @@ function renderLista() {
   lista.forEach(a=>{
     const cap  = parseInt(a.capitulos)||0;
     const vis  = a.episodios_vistos||0;
-    const enEmision = /\+/.test(String(a.capitulos||'')) || a.estado === 'emision' || vis > cap;
+    // v2.17.3: en emisión, el tope es lo ya emitido (Tokyo Revengers 7 de 13).
+    const airing = /emisi|releasing|airing/i.test(a.estado_anime||'');
+    const emit = airing && +a.eps_emitidos>0 ? +a.eps_emitidos : 0;
+    const tope = emit || (/\+$/.test(String(a.capitulos||'').trim()) ? 0 : cap);
+    const puedeMas = !tope || vis < tope;
     const pct  = cap>0 ? Math.min(100,Math.round(vis/cap*100)) : 0;
     const cls  = ESTADO_CLS[a.estado_usuario]||'bp';
     const lbl  = ESTADO_LABEL[a.estado_usuario]||a.estado_usuario;
@@ -586,7 +590,7 @@ function renderLista() {
     card.addEventListener('click',()=>abrirModal(a));
     // v2.3: swipe gestures — derecha = +1 ep, izquierda = abrir detalle
     _addSwipe(card, {
-      onRight: () => { if (enEmision || !cap || vis < cap) plus1(enc, a); },
+      onRight: () => { if (puedeMas) plus1(enc, a); },
       onLeft:  () => abrirModal(a),
     });
 
@@ -616,7 +620,8 @@ function renderLista() {
       const pf=document.createElement('div'); pf.className='prog-fill';
       pf.style.width=pct+'%'; pb.appendChild(pf); body.appendChild(pb);
       const ec=document.createElement('div'); ec.className='ep-count';
-      ec.textContent=vis>cap ? vis+' ep vistos (en emisión)' : vis+'/'+cap+' ep ('+pct+'%)'; body.appendChild(ec);
+      ec.textContent = emit ? (vis>=emit?'✓ ':'')+vis+'/'+emit+' emitidos · '+cap+' en total'
+        : vis>cap ? vis+' ep vistos (en emisión)' : vis+'/'+cap+' ep ('+pct+'%)'; body.appendChild(ec);
     }
 
     card.appendChild(img); card.appendChild(body);
@@ -624,7 +629,7 @@ function renderLista() {
     // v2.16: sin +1 cuando ya has visto todos los episodios (antes dejaba 27/26).
     // v2.17: en emisión («4+») el total crece: se puede seguir sumando (antes
     // un anime en emisión con más vistos que el total conocido se quedaba sin +1).
-    if(enEmision || !cap || vis<cap){
+    if(puedeMas){
       const p1=document.createElement('button');
       p1.className='p1-btn'; p1.textContent='+1';
       p1.addEventListener('click',e=>{e.stopPropagation();plus1(enc,a);});
@@ -685,7 +690,7 @@ async function guardar() {
 async function plus1(enc, a) {
   try {
     const r=await api(`/api/mobile/animes/${enc}/plus1`,{method:'POST'});
-    if(r.status===409){ toast('Ya has visto todos los episodios'); return; }
+    if(r.status===409){ const d=await r.json().catch(()=>({})); toast(d.detail||'Ya has visto todos los episodios','warn'); return; }
     if(!r.ok) return;
     const d=await r.json();
     const idx=ANIMES.findIndex(x=>x.nombre===a.nombre);

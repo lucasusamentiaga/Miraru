@@ -210,3 +210,39 @@ def test_accion_desconocida_se_rechaza(cliente):
     c, _ = cliente
     r = c.post("/api/animeav1/evento", headers=H, json={"mediaId": 9, "episode": 1, "accion": "borrar"})
     assert r.status_code == 422
+
+
+def test_desmarcar_lo_que_no_tienes_no_lo_anade(cliente, db, monkeypatch):
+    c, main = cliente
+    import animeav1_sync
+    llamadas = []
+    monkeypatch.setattr(animeav1_sync, "resolver_evento",
+                        lambda *a: llamadas.append(a) or {"local": None, "nuevo": object(), "media": {}})
+    r = c.post("/api/animeav1/evento", headers=H, json={"mediaId": 77, "episode": 0, "accion": "desmarcar"})
+    assert r.json()["accion"] == "nada" and db.listar_animes() == []
+
+
+@pytest.mark.parametrize("estado,vistos,ep,esperado", [
+    ("completado", 12, 11, ("viendo", 11)),     # desmarcar el último de uno completado
+    ("viendo", 1, 0, ("pendiente", 0)),         # marcaste el 1 sin querer
+    ("viendo", 5, 4, ("viendo", 4)),
+])
+def test_desmarcar_corrige_el_estado(cliente, db, estado, vistos, ep, esperado):
+    c, _ = cliente
+    db.guardar_anime({"nombre": "Frieren", "capitulos": "12", "episodios_vistos": vistos, "estado_usuario": estado})
+    import animeav1_sync
+    animeav1_sync.recordar_id("Frieren", 5)
+    assert c.post("/api/animeav1/evento", headers=H, json={"mediaId": 5, "episode": ep, "accion": "desmarcar"}).status_code == 200
+    a = db.obtener_anime("Frieren")
+    assert (a["estado_usuario"], a["episodios_vistos"]) == esperado
+
+
+def test_animeav1_en_emision_no_completa(cliente, db):
+    """El caso de Tokyo Revengers: 7 de 13 emitidos, marcas el 7 → viendo, «al día»."""
+    c, _ = cliente
+    db.guardar_anime({"nombre": "Santen", "capitulos": "13", "estado_anime": "En emisión", "eps_emitidos": 7,
+                      "episodios_vistos": 6, "estado_usuario": "viendo"})
+    import animeav1_sync
+    animeav1_sync.recordar_id("Santen", 6)
+    r = c.post("/api/animeav1/evento", headers=H, json={"mediaId": 6, "episode": 7, "accion": "marcar"}).json()
+    assert (r["episodios_vistos"], r["estado"], r["eps_emitidos"]) == (7, "viendo", 7)

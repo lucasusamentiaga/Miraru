@@ -107,7 +107,7 @@ a.stat-pill:hover{border-color:rgba(var(--accent-rgb,124,58,237),.6)}
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
 <script src="/static/customize.js"></script>
-<script src="/static/novedades.js?v=2.17.2" defer></script>
+<script src="/static/novedades.js?v=2.17.3" defer></script>
 <script src="/static/i18n-dom.js" defer></script>
 <script src="/static/dialogos.js" defer></script>
 </head>
@@ -427,9 +427,10 @@ async function loadContinue() {
       img.alt = '';
       miraruPortada(img, a.imagen);
       img.onerror = () => { img.onerror = null; img.removeAttribute('src'); };
-      const total = parseInt(a.capitulos) || 0;
+      const EMc = window.miraruEmision ? window.miraruEmision(a) : null;   // v2.17.3: en emisión, lo emitido
+      const total = EMc ? EMc.tope : (parseInt(a.capitulos) || 0);
       const vistos = a.episodios_vistos || 0;
-      const alDia = total > 0 && vistos >= total;          // "12+" en emisión y ya los has visto todos
+      const alDia = total > 0 && vistos >= total;          // has visto todo lo que ha salido
       const ud = esManga ? 'Cap' : 'Ep';                  // el manga se lee por capítulos
       const info = document.createElement('div'); info.className = 'hc-i';
       const name = document.createElement('div'); name.className = 'hc-n';

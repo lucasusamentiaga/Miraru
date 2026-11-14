@@ -135,4 +135,68 @@ def test_extension_declara_netflix_y_crunchyroll():
     scripts = [x for c in m["content_scripts"] for x in c["matches"]]
     assert "https://www.netflix.com/*" in scripts and "https://static.crunchyroll.com/*" in scripts
     assert any(c.get("all_frames") for c in m["content_scripts"])      # el reproductor de Crunchyroll va en un marco
-    assert m["version"] == "1.5.1"
+    assert m["version"] == "1.6.0"
+
+
+# ── v1.6 (Miraru 2.17.3): AnimeFLV, la ficha de Netflix y «Deshacer» ──────────
+FLV = JS.parent / "animeflv.js"
+
+
+def _flv(expr):
+    if not shutil.which("node"):
+        pytest.skip("sin node")
+    code = f"const s=require({json.dumps(str(FLV))});console.log(JSON.stringify({expr}))"
+    return json.loads(subprocess.run(["node", "-e", code], capture_output=True, text=True, encoding="utf-8",
+                                     check=True).stdout)
+
+
+def test_animeflv_lee_nombre_y_episodio():
+    doc = "{querySelector:()=>({textContent:' Tokyo Revengers: Santen Sensou-hen '}),title:''}"
+    assert _flv(f"s.leerAnimeFLV('https://www3.animeflv.net/ver/tokyo-revengers-santen-sensouhen-7',{doc})") == \
+        {"servicio": "animeflv", "serie": "Tokyo Revengers: Santen Sensou-hen", "temporada": 1, "episodio": 7}
+    sin_h1 = "{querySelector:()=>null,title:'One Piece Episodio 1100 Online - AnimeFLV'}"
+    assert _flv(f"s.leerAnimeFLV('https://www4.animeflv.net/ver/one-piece-tv-1100',{sin_h1})")["serie"] == "One Piece"
+    assert _flv("s.leerAnimeFLV('https://www3.animeflv.net/anime/one-piece-tv',null)") is None
+
+
+def test_netflix_por_la_ficha_del_video():
+    j = {"video": {"title": "Kaiju No. 8", "type": "show", "seasons": [
+        {"seq": 1, "episodes": [{"id": 81, "seq": 1, "title": "A"}, {"id": 82, "seq": 2, "title": "B"}]},
+        {"seq": 2, "episodes": [{"id": 91, "seq": 1, "title": "C"}]}]}}
+    assert _js(f"s.leerNetflixMeta({json.dumps(j)}, '91')") == {
+        "servicio": "netflix", "serie": "Kaiju No. 8", "temporada": 2, "episodio": 1, "temporada_nombre": "", "titulo_ep": "C"}
+    assert _js("s.leerNetflixMeta({video:{title:'Suzume',type:'movie'}}, '1')") == {"servicio": "netflix", "serie": "Suzume"}
+    assert _js("s.leerNetflixMeta({}, '1')") is None
+
+
+def test_manifest_anade_animeflv():
+    m = json.loads((JS.parent / "manifest.json").read_text(encoding="utf-8"))
+    flv = [c for c in m["content_scripts"] if "animeflv.js" in c["js"]]
+    assert flv and all("/ver/" in x for x in flv[0]["matches"])
+
+
+def test_deshacer_y_desmarcar_animeflv(db, monkeypatch):
+    import main
+    importlib.reload(main)
+    monkeypatch.setattr(streaming, "resolver",
+                        lambda serie, t, e, tn="", post=None: {"media": AOT[3], "episodio": e, "local":
+                                                               next((a for a in db.listar_animes() if a.get("anilist_id") == 3), None)})
+    c = TestClient(main.app, client=("127.0.0.1", 1))
+    h = {"X-Miraru-Extension": "1"}
+    cuerpo = {"servicio": "animeflv", "serie": "Shingeki no Kyojin 3", "temporada": 1, "episodio": 1}
+    # desmarcar algo que no tienes: no se añade
+    assert c.post("/api/streaming/evento", json={**cuerpo, "accion": "desmarcar"}, headers=h).json()["accion"] == "nada"
+    assert c.post("/api/streaming/evento", json=cuerpo, headers=h).json()["accion"] == "añadido"
+    r = c.post("/api/streaming/evento", json={**cuerpo, "episodio": 2}, headers=h).json()
+    assert r["episodios_vistos"] == 2
+    r = c.post("/api/streaming/evento", json={**cuerpo, "episodio": 2, "accion": "desmarcar"}, headers=h).json()
+    assert (r["accion"], r["episodios_vistos"]) == ("deshecho", 1)
+    # deshacer uno que no es el último: nada
+    r = c.post("/api/streaming/evento", json={**cuerpo, "episodio": 5, "accion": "desmarcar"}, headers=h).json()
+    assert (r["accion"], r["episodios_vistos"]) == ("sin cambios", 1)
+    # desde la ventana de la extensión
+    nombre = r["nombre"]
+    assert c.post("/api/extension/deshacer", json={"nombre": nombre, "episodio": 1}).status_code == 403
+    r = c.post("/api/extension/deshacer", json={"nombre": nombre, "episodio": 1}, headers=h).json()
+    assert (r["accion"], r["episodios_vistos"], r["estado"]) == ("deshecho", 0, "pendiente")
+    assert c.post("/api/extension/deshacer", json={"nombre": "No existe", "episodio": 1}, headers=h).status_code == 404

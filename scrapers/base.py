@@ -25,6 +25,8 @@ class AnimeData:
     tipo: str = "anime"
     # Total de volúmenes (manga)
     volumenes_totales: int = 0
+    # v2.17.3: en emisión, último episodio que ya ha salido (0 = no se sabe)
+    eps_emitidos: int = 0
 
 
 class BaseScraper(ABC):

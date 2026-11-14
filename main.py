@@ -79,6 +79,7 @@ import anilist_sync
 import animeav1_sync
 import copia_nube
 import database as db
+import emision
 import metadatos
 import sheets_sync
 import trabajos
@@ -2717,6 +2718,32 @@ async def get_historial_anime(nombre: str):
     return {"historial": db.get_historial(nombre)}
 
 
+async def _refrescar_emitidos(anime: dict) -> int:
+    """Pregunta a AniList cuántos episodios han salido ya (por si acaba de
+    estrenarse uno) y lo guarda. Devuelve los emitidos (o los de antes si no
+    se puede preguntar)."""
+    antes = emision.emitidos(anime)
+    aid = int(anime.get("anilist_id") or 0)
+    if not aid:
+        return antes
+    try:
+        info = await asyncio.get_running_loop().run_in_executor(
+            executor, _fetch_ultimos_episodios, [{"nombre": anime["nombre"], "anilist_id": aid}])
+        meta = info.get(anime["nombre"]) or {}
+        if meta.get("next_ep"):
+            nuevo = max(0, int(meta["next_ep"]) - 1)
+        elif meta.get("total"):
+            nuevo = int(meta["total"])            # ya terminó
+        else:
+            return antes
+        if nuevo != int(anime.get("eps_emitidos") or 0):
+            db.refrescar_metadata_anime(anime["nombre"], {"eps_emitidos": nuevo})
+        return nuevo
+    except Exception as e:  # noqa: BLE001
+        _sync_log.warning("emitidos de %s: %s", anime.get("nombre"), e)
+        return antes
+
+
 @app.post("/api/animes/{nombre:path}/plus1")
 async def plus_episodio(nombre: str, nota: str = ""):
     """Suma 1 episodio visto directamente desde la tarjeta.
@@ -2734,6 +2761,14 @@ async def plus_episodio(nombre: str, nota: str = ""):
     m_tot = re.match(r"(\d+)(?:\.0+)?$", total)
     if m_tot and int(m_tot.group(1)) > 0 and nuevos > int(m_tot.group(1)):
         raise HTTPException(409, "Ya has visto todos los episodios")
+    # v2.17.3: en emisión, el tope es lo ya emitido (antes 7 de 13 dejaba
+    # seguir sumando hasta 13). Antes de decir que no, se mira AniList por si
+    # acaba de salir.
+    em = emision.emitidos(anime) if (anime.get("tipo") or "anime") != "manga" else 0
+    if em and nuevos > em:
+        em = await _refrescar_emitidos(anime)
+        if em and nuevos > em:
+            raise HTTPException(409, f"Aún no ha salido el episodio {nuevos}: van {em} emitidos.")
     ok, msg = db.actualizar_anime(nombre, {"episodios_vistos": nuevos})
     if not ok:
         raise HTTPException(500, msg)
@@ -2919,13 +2954,8 @@ async def mobile_listar(request: Request):
 @app.patch("/api/mobile/animes/{nombre:path}")
 async def mobile_actualizar(nombre: str, req: ActualizarRequest, request: Request):
     _require_auth(request)
-    campos = {k: v for k, v in (req.model_dump() if hasattr(req, "model_dump") else req.dict()).items() if v is not None}
-    if not campos:
-        raise HTTPException(400, "Sin campos")
-    ok, msg = db.actualizar_anime(nombre, campos)
-    if not ok:
-        raise HTTPException(404, msg)
-    return {"ok": True}
+    # v2.17.3: mismas reglas que en el PC (emisión, fechas, registro, AniList).
+    return await actualizar_anime(nombre, req)
 
 @app.post("/api/mobile/animes/{nombre:path}/plus1")
 async def mobile_plus1(nombre: str, request: Request):
@@ -3660,6 +3690,8 @@ async def continuar_viendo():
             "episodios_vistos": a.get("episodios_vistos") or 0,
             "puntuacion":       a.get("puntuacion"),
             "tipo":             a.get("tipo") or "anime",
+            "estado_anime":     a.get("estado_anime") or "",
+            "eps_emitidos":     emision.emitidos(a),
             "ultima_vista":     last_seen.get(a["nombre"]),
         })
     return {"animes": out}
@@ -4793,7 +4825,8 @@ async def animeav1_evento(req: AnimeAV1EventoRequest, request: Request):
         _sync_log.warning("AnimeAV1 (extensión): %s", e)
         raise HTTPException(502, "No se pudo identificar el anime en AnimeAV1") from e
     local, nuevo = r["local"], r["nuevo"]
-    if req.status == -1 and local is None:
+    if local is None and (req.status == -1 or req.accion == "desmarcar"):
+        # Quitar o desmarcar algo que no tienes en Miraru: no se añade nada.
         return {"ok": True, "accion": "nada"}
     if local is None and nuevo is None:
         if r.get("adulto"):
@@ -4825,28 +4858,50 @@ async def animeav1_evento(req: AnimeAV1EventoRequest, request: Request):
     if cambios:
         # Por el mismo camino que editar a mano: registro de actividad (mapa,
         # racha), Google Sheets y AniList.
-        await actualizar_anime(nombre, ActualizarRequest(**cambios))
+        await actualizar_anime(nombre, ActualizarRequest(**cambios), estricto=False)
     animeav1_sync.guardar_ultimo_evento(nombre, req.episode, "actualizado" if cambios else "sin cambios")
-    final = db.obtener_anime(nombre) or local
-    # imagen y capitulos: para que la ventana de la extensión enseñe la portada y el progreso
-    return {"ok": True, "accion": "actualizado" if cambios else "sin cambios", "nombre": nombre,
-            "episodios_vistos": final.get("episodios_vistos"), "estado": final.get("estado_usuario"),
-            "imagen": final.get("imagen") or "", "capitulos": str(final.get("capitulos") or "")}
+    await _emitidos_si_faltan(nombre)
+    # imagen, capitulos y emitidos: la ventana de la extensión enseña la portada y el progreso
+    return _respuesta_evento(nombre, local, "actualizado" if cambios else "sin cambios")
 
 
 # ── v2.17: Netflix y Crunchyroll (la misma extensión) ─────────────────────────
 class StreamingEventoRequest(BaseModel):
-    servicio: Literal["netflix", "crunchyroll"]
+    servicio: Literal["netflix", "crunchyroll", "animeflv"]
     serie: str = Field(..., min_length=1, max_length=300)
     temporada: Optional[int] = Field(default=None, ge=0, le=100)
     episodio: Optional[int] = Field(default=None, ge=0, le=100000)
     temporada_nombre: str = Field("", max_length=300)
     titulo_ep: str = Field("", max_length=300)
+    # v2.17.3: «Deshacer» del botón de AnimeFLV (te equivocaste de episodio)
+    accion: Optional[Literal["marcar", "desmarcar"]] = None
+
+
+async def _emitidos_si_faltan(nombre: str) -> None:
+    """Un anime en emisión sin el dato de emitidos (recién añadido, o de antes
+    de la 2.17.3): se pregunta ya a AniList para que la extensión y
+    «Continuar» enseñen «7 de 7 emitidos» y no «Ep 8 / 13»."""
+    a = db.obtener_anime(nombre)
+    if (not a or (a.get("tipo") or "anime") == "manga" or not emision.en_emision(a)
+            or int(a.get("eps_emitidos") or 0)):
+        return
+    try:
+        await asyncio.wait_for(_refrescar_emitidos(a), timeout=10)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _respuesta_evento(nombre: str, local: dict, accion: str, **extra) -> dict:
+    final = db.obtener_anime(nombre) or local
+    return {"ok": True, "accion": accion, "nombre": nombre,
+            "episodios_vistos": final.get("episodios_vistos"), "estado": final.get("estado_usuario"),
+            "imagen": final.get("imagen") or "", "capitulos": str(final.get("capitulos") or ""),
+            "eps_emitidos": emision.emitidos(final), **extra}
 
 
 @app.post("/api/streaming/evento")
 async def streaming_evento(req: StreamingEventoRequest, request: Request):
-    """Has terminado un episodio en Netflix o Crunchyroll: se apunta en Miraru.
+    """Has terminado un episodio en Netflix, Crunchyroll o AnimeFLV: se apunta en Miraru.
 
     Solo cuenta si el nombre casa ENTERO con un anime de AniList (o con uno de
     tu lista): lo que no es anime no se apunta nunca. Como la de AnimeAV1,
@@ -4863,6 +4918,15 @@ async def streaming_evento(req: StreamingEventoRequest, request: Request):
         raise HTTPException(502, "Ahora mismo no se puede identificar el anime. Se reintentará.") from e
     local, media, ep = r["local"], r["media"], int(r["episodio"] or 0)
     etiqueta = req.serie + (f" · T{req.temporada}:E{req.episodio}" if req.episodio else "")
+    if req.accion == "desmarcar":
+        # Deshacer: solo lo que ya está en tu lista, y solo si sigues en ese episodio.
+        if local is None:
+            return {"ok": True, "accion": "nada", "nombre": "", "origen": etiqueta}
+        cambios = animeav1_sync.cambios_deshacer(local, ep)
+        if cambios:
+            await actualizar_anime(local["nombre"], ActualizarRequest(**cambios), estricto=False)
+        animeav1_sync.guardar_ultimo_evento(local["nombre"], ep, "deshecho" if cambios else "sin cambios")
+        return _respuesta_evento(local["nombre"], local, "deshecho" if cambios else "sin cambios", origen=etiqueta)
     if local is None and media is None:
         raise HTTPException(404, f"«{req.serie}» no parece un anime (no está en AniList con ese nombre)")
     if local is None:
@@ -4895,13 +4959,32 @@ async def streaming_evento(req: StreamingEventoRequest, request: Request):
     else:
         cambios = animeav1_sync.cambios_por_evento(local, ep, None, "marcar")
     if cambios:
-        await actualizar_anime(nombre, ActualizarRequest(**cambios))
+        await actualizar_anime(nombre, ActualizarRequest(**cambios), estricto=False)
     animeav1_sync.guardar_ultimo_evento(nombre, ep, "actualizado" if cambios else "sin cambios")
-    final = db.obtener_anime(nombre) or local
-    return {"ok": True, "accion": "actualizado" if cambios else "sin cambios", "nombre": nombre,
-            "episodios_vistos": final.get("episodios_vistos"), "estado": final.get("estado_usuario"),
-            "imagen": final.get("imagen") or "", "capitulos": str(final.get("capitulos") or ""),
-            "origen": etiqueta}
+    await _emitidos_si_faltan(nombre)
+    return _respuesta_evento(nombre, local, "actualizado" if cambios else "sin cambios", origen=etiqueta)
+
+
+class DeshacerRequest(BaseModel):
+    nombre: str = Field(..., min_length=1, max_length=300)
+    episodio: int = Field(..., ge=1, le=100000)
+
+
+@app.post("/api/extension/deshacer")
+async def extension_deshacer(req: DeshacerRequest, request: Request):
+    """«Deshacer» en la ventana de la extensión: quita el último episodio
+    apuntado (Netflix o Crunchyroll se cuelan a veces: lo dejaste puesto, se
+    puso solo el siguiente…). Solo si tu progreso sigue en ese episodio."""
+    if request.headers.get("X-Miraru-Extension") != "1":
+        raise HTTPException(403, "Solo la extensión de Miraru puede usar esta ruta")
+    local = db.obtener_anime(req.nombre)
+    if local is None:
+        raise HTTPException(404, "Ese anime ya no está en tu lista")
+    cambios = animeav1_sync.cambios_deshacer(local, req.episodio)
+    if cambios:
+        await actualizar_anime(req.nombre, ActualizarRequest(**cambios), estricto=False)
+    animeav1_sync.guardar_ultimo_evento(req.nombre, req.episodio, "deshecho" if cambios else "sin cambios")
+    return _respuesta_evento(req.nombre, local, "deshecho" if cambios else "sin cambios")
 
 
 # ── v2.16.1: la extensión trae tus listas de AnimeAV1 («Mis Listas») ─────────
@@ -5089,7 +5172,11 @@ fetch('/api/anilist/connect', {{
 # rutas como ".../nota" o ".../tags/x" y las romperían.
 
 @app.patch("/api/animes/{nombre:path}")
-async def actualizar_anime(nombre: str, req: ActualizarRequest):
+async def actualizar_anime(nombre: str, req: ActualizarRequest, estricto: bool = True):
+    """`estricto` (lo que hace el usuario a mano): en emisión no deja marcar
+    completado ni pasar de los episodios emitidos. Lo que llega de fuera
+    (extensión, AnimeAV1, Netflix) se corrige solo en la base de datos sin
+    dar error (ver emision.ajustar)."""
     # Compatibilidad Pydantic v1 y v2
     campos = {k: v for k, v in (req.model_dump() if hasattr(req, "model_dump") else req.dict()).items() if v is not None}
     if not campos:
@@ -5104,6 +5191,18 @@ async def actualizar_anime(nombre: str, req: ActualizarRequest):
         fin = campos.get("fecha_fin", prev.get("fecha_fin") or "")
         if ini and fin and fin < ini and ("fecha_inicio" in campos or "fecha_fin" in campos):
             raise HTTPException(422, "La fecha de fin no puede ser anterior a la de inicio.")
+        if estricto and (prev.get("tipo") or "anime") != "manga":
+            vistos_n = int(campos.get("episodios_vistos", prev.get("episodios_vistos") or 0) or 0)
+            em = emision.emitidos(prev)
+            if "episodios_vistos" in campos and em and vistos_n > em \
+                    and vistos_n > int(prev.get("episodios_vistos") or 0):
+                em = await _refrescar_emitidos(prev)
+                if em and vistos_n > em:
+                    raise HTTPException(409, f"Aún no ha salido el episodio {em + 1}: van {em} emitidos.")
+            if campos.get("estado_usuario") == "completado" and not emision.puede_completar(prev, vistos_n):
+                t = emision.total(prev)
+                raise HTTPException(409, "Aún está en emisión" + (f" ({em or '?'} de {t} episodios)" if t else "")
+                                    + ": no se puede marcar como completado.")
     ok, msg = db.actualizar_anime(nombre, campos)
     if not ok:
         raise HTTPException(404, msg)

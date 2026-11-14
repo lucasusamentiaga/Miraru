@@ -773,10 +773,10 @@ body.sel-mode .ac .salir{display:none}
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
 <script src="/static/customize.js"></script>
-<script src="/static/novedades.js?v=2.17.2" defer></script>
-<script src="/static/selects.js?v=2.17.2" defer></script>
-<script src="/static/temporadas.js?v=2.17.2"></script>
-<script src="/static/tour.js?v=2.17.2" defer></script>
+<script src="/static/novedades.js?v=2.17.3" defer></script>
+<script src="/static/selects.js?v=2.17.3" defer></script>
+<script src="/static/temporadas.js?v=2.17.3"></script>
+<script src="/static/tour.js?v=2.17.3" defer></script>
 <script src="/static/i18n-dom.js" defer></script>
 <script src="/static/dialogos.js" defer></script>
 </head>
@@ -2124,10 +2124,11 @@ function render() {
     // v2.17: un manga (o anime) en curso no tiene total: antes salía «? caps», sin
     // progreso ni «+1», justo en los que más se siguen (One Piece, Berserk…).
     const esPeli   = a.capitulos === 'película';
-    const conMas1  = !esPeli;
+    const conMas1  = !esPeli && !(!isManga && window.miraruEmision(a).alDia);
     const capsLabel = esPeli ? T('movie') : (isManga ? (capNum ? `${capNum} caps` : (/emisi|releasing/i.test(a.estado_anime || '') ? _tr('En publicación') : '? caps')) : T('episodes', {n: a.capitulos}));
     const caps     = isManga && volTotal > 0 ? `${capsLabel} · ${volTotal} vols` : capsLabel;
     const vistos   = a.episodios_vistos || 0;
+    const EM       = window.miraruEmision(a);       // v2.17.3: en emisión, lo emitido manda
     const pct      = capNum > 0 ? Math.min(100, Math.round(vistos / capNum * 100)) : 0;
     const showProg = capNum > 0;
     const gens     = (a.genero||'').split(',').slice(0,2).map(g=>g.trim()).filter(Boolean);
@@ -2162,7 +2163,8 @@ function render() {
         `<div class="ameta">` +
           `<span style="font-size:10px;color:var(--muted)">${_esc(caps)}</span>` +
           (a.puntuacion ? `<span style="font-size:10px;color:#fbbf24">${_esc(T('score', {n: a.puntuacion}))}</span>` : '') +
-          (showProg && vistos > 0 ? `<span style="font-size:10px;color:var(--muted)">${vistos}/${capNum}</span>` : '') +
+          (showProg && vistos > 0 && !EM.emitidos ? `<span style="font-size:10px;color:var(--muted)">${vistos}/${capNum}</span>` : '') +
+          (EM.emitidos ? `<span style="font-size:10px;color:var(--muted)" title="${_esc(_tr('Episodios ya emitidos') + (capNum ? ' · ' + capNum + ' ' + _tr('en total') : ''))}">${EM.alDia ? '✓ ' : ''}${vistos}/${EM.emitidos} ${_esc(_tr('emitidos'))}</span>` : '') +
           (!showProg && conMas1 && vistos > 0 ? `<span style="font-size:10px;color:var(--muted)">${isManga ? 'Cap' : 'Ep'} ${vistos}</span>` : '') +
           (isManga && volLeidos > 0 ? `<span style="font-size:10px;color:var(--muted)">${volLeidos}${volTotal > 0 ? '/' + volTotal : ''} vol</span>` : '') +
         `</div>` +
@@ -2312,7 +2314,8 @@ function render() {
       sigNom.setAttribute('data-no-i18n', '');
       sigNom.textContent = siguiente.nombre;
       sig.appendChild(sigNom);
-      if (!esPeli(siguiente)) sig.appendChild(document.createTextNode(' · ep ' + ep));
+      if (!esPeli(siguiente)) sig.appendChild(document.createTextNode(
+        window.miraruEmision(siguiente).alDia ? ' · ✓ ' + _tr('Al día') : ' · ep ' + ep));
       hMeta.appendChild(sig);
     }
     hInfo.appendChild(hMeta);
@@ -2328,7 +2331,8 @@ function render() {
       const caps = parseInt(a.capitulos) || 0;
       const et = esPeli(a) ? '🎬' : (tmp.etiquetas ? tmp.etiquetas[k] : 'T' + (++nT));
       pil.setAttribute('data-no-i18n', '');
-      pil.textContent = et + (esPeli(a) ? '' : ' ' + (a.episodios_vistos || 0) + '/' + (caps || '?'));
+      const emP = window.miraruEmision(a).emitidos;    // v2.17.3: en emisión, sobre lo emitido
+      pil.textContent = et + (esPeli(a) ? '' : ' ' + (a.episodios_vistos || 0) + '/' + (emP || caps || '?'));
       pil.title = a.nombre;
       pil.addEventListener('click', e => { e.stopPropagation(); abrirModal(encodeURIComponent(a.nombre)); });
       temps.appendChild(pil);
@@ -2755,6 +2759,17 @@ function abrirModal(enc) {
   }
 
   document.getElementById('edit-estado').value    = a.estado_usuario || 'pendiente';
+  // v2.17.3: en emisión con episodios por salir no se puede completar, ni pasar
+  // de lo que ya se ha emitido.
+  {
+    const EMf = window.miraruEmision(a);
+    const optC = document.getElementById('opt-completed');
+    optC.disabled = !EMf.puedeCompletar && a.estado_usuario !== 'completado';
+    optC.title = optC.disabled ? _tr('Aún está en emisión: no se puede marcar como completado.') : '';
+    const inpV = document.getElementById('edit-vistos');
+    if (EMf.emitidos) { inpV.max = Math.max(EMf.emitidos, a.episodios_vistos || 0); inpV.title = EMf.emitidos + ' ' + _tr('emitidos'); }
+    else { inpV.removeAttribute('max'); inpV.title = ''; }
+  }
   document.getElementById('edit-puntuacion').value= a.puntuacion || '';
   document.getElementById('edit-vistos').value    = a.episodios_vistos || '';
   document.getElementById('edit-inicio').value    = a.fecha_inicio || '';
@@ -3874,6 +3889,10 @@ async function markComplete(enc) {
   const nombre = decodeURIComponent(enc);
   const idx = ANIMES.findIndex(a => a.nombre === nombre);
   const a = idx >= 0 ? ANIMES[idx] : null;
+  if (a && !window.miraruEmision(a).puedeCompletar) {
+    toast('📡 ' + _tr('Aún está en emisión: no se puede marcar como completado.'), 'err');
+    return;
+  }
   const body = {estado_usuario: 'completado'};
   const capNum = a ? parseInt(a.capitulos) : 0;
   if (capNum > 0) body.episodios_vistos = capNum;
@@ -3898,8 +3917,11 @@ async function plusEpisodio(enc) {
   try {
     const r = await fetch(`/api/animes/${encodeURIComponent(nombre)}/plus1`, {method:'POST'});
     if (r.status === 409) {
-      // Ya estaba en el último episodio: ofrecer completarlo en vez de no hacer nada.
       const a = ANIMES.find(x => x.nombre === nombre);
+      // v2.17.3: en emisión, al día (el siguiente aún no ha salido).
+      const det = await r.json().catch(() => ({}));
+      if (/no ha salido/i.test(det.detail || '')) { toast('📡 ' + _tr(det.detail)); return; }
+      // Ya estaba en el último episodio: ofrecer completarlo en vez de no hacer nada.
       const fin = _tr(MODO_MANGA ? 'Ya has leído todos los capítulos' : 'Ya has visto todos los episodios');
       if (a && a.estado_usuario !== 'completado')
         toastAction('🎉 ' + fin, '✓ ' + (T('mark_completed') || 'Completar'), () => markComplete(enc));
@@ -3934,7 +3956,7 @@ async function plusEpisodio(enc) {
     // v2.4: si has llegado al último episodio, sugiere marcar completado.
     const capNum = idx >= 0 ? parseInt(ANIMES[idx].capitulos) : 0;
     const estadoNow = idx >= 0 ? (ANIMES[idx].estado_usuario || '') : '';
-    if (capNum > 0 && d.episodios_vistos >= capNum &&
+    if (capNum > 0 && d.episodios_vistos >= capNum && (idx < 0 || window.miraruEmision(ANIMES[idx]).puedeCompletar) &&
         estadoNow !== 'completado' && estadoNow !== 'completed') {
       toastAction('🎉 ' + nombre + ' · ' + (MODO_MANGA ? _tr('último capítulo') : (T('last_ep') || 'último episodio')),
         '✓ ' + (T('mark_completed') || 'Completar'), () => markComplete(enc));
@@ -4256,9 +4278,10 @@ async function cargarContinuar() {
       name.textContent = _nomVis(a.nombre);
       const next = document.createElement('div');
       next.style.cssText = 'font-size:10px;color:var(--muted);margin-top:2px';
-      const total = parseInt(a.capitulos) || 0;
+      const EMc = window.miraruEmision(a);              // v2.17.3: en emisión, el tope es lo emitido
+      const total = EMc.tope;
       const vistos = a.episodios_vistos || 0;
-      const alDia = total > 0 && vistos >= total;          // "12+" en emisión y ya los has visto todos
+      const alDia = EMc.alDia;                           // has visto todo lo que ha salido
       // Si ya llevas más de los que dice la ficha («4+» con 6 vistos: dato de emisión
       // atrasado), no se enseña «6 / 4», que parece un error.
       const ud = a.tipo === 'manga' ? 'Cap' : 'Ep';      // el manga se lee por capítulos

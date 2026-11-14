@@ -1,5 +1,9 @@
 // Miraru — copia a Miraru, al momento, los episodios que ves en AnimeAV1,
-// Netflix y Crunchyroll.
+// Netflix, Crunchyroll y AnimeFLV.
+//
+// AnimeFLV (v1.6): animeflv.js pone una pastilla «✓ Marcar visto» en la
+// página del episodio (y lo apunta solo a los 15 min de reproductor), con
+// «Deshacer». Va por el mismo camino que Netflix.
 //
 // Netflix y Crunchyroll (v1.5): streaming.js avisa al terminar un episodio
 // (pasado el 80 %) con el nombre de la serie, la temporada y el episodio, y
@@ -105,8 +109,15 @@ async function _encolar(ev) {
   ev.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   ev.cuando = Date.now();
   ev.intentos = 0;
-  // Del mismo anime solo importa lo último que hiciste.
   const k = claveEv(ev);
+  // Deshacer algo que aún no había llegado a Miraru (estaba cerrado): basta
+  // con no mandarlo.
+  if (ev.accion === 'desmarcar' && ev.ruta === '/api/streaming/evento' &&
+      cola.some(e => claveEv(e) === k && e.accion !== 'desmarcar')) {
+    await chrome.storage.local.set({cola: cola.filter(e => claveEv(e) !== k)});
+    return;
+  }
+  // Del mismo anime solo importa lo último que hiciste.
   const nueva = cola.filter(e => claveEv(e) !== k || ('status' in e) !== ('status' in ev));
   nueva.push(ev);
   await chrome.storage.local.set({cola: nueva.slice(-200)});
@@ -159,6 +170,7 @@ async function enviarUnaVez() {
     if (r.ok) {
       const ultimo = {cuando: Date.now(), nombre: d.nombre || '', episodio: d.episodios_vistos,
         accion: d.accion || '', estado: d.estado || '', imagen: d.imagen || '', capitulos: d.capitulos || '',
+        eps_emitidos: d.eps_emitidos || 0,
         servicio: ev.servicio || 'animeav1'};
       const {historial = []} = await chrome.storage.local.get('historial');
       await chrome.storage.local.set({ultimo, historial: [ultimo, ...historial.filter(h =>
@@ -246,10 +258,11 @@ chrome.alarms.onAlarm.addListener(a => {
   if (a.name === 'listas') sincronizarListas();
 });
 chrome.runtime.onStartup.addListener(() => { enviarCola(); sincronizarListas(); });
-// ── v1.5: Netflix y Crunchyroll ────────────────────────────────────────────
-async function apuntarStreaming(d) {
+// ── v1.5: Netflix y Crunchyroll (v1.6: y AnimeFLV) ─────────────────────────
+async function apuntarStreaming(d, accion) {
   if (!d || !d.serie) return;
   const ev = {ruta: '/api/streaming/evento', servicio: d.servicio, serie: String(d.serie).slice(0, 300)};
+  if (accion === 'desmarcar') ev.accion = 'desmarcar';
   if (d.temporada) ev.temporada = Number(d.temporada);
   if (d.episodio) ev.episodio = Number(d.episodio);
   if (d.temporada_nombre) ev.temporada_nombre = String(d.temporada_nombre).slice(0, 300);
@@ -261,6 +274,8 @@ async function apuntarStreaming(d) {
 
 chrome.runtime.onMessage.addListener((msg, sender, responder) => {
   if (msg && msg.tipo === 'streaming-visto') { apuntarStreaming(msg.datos); return false; }
+  if (msg && msg.tipo === 'streaming-desmarcar') { apuntarStreaming(msg.datos, 'desmarcar'); return false; }
+  if (msg && msg.tipo === 'deshacer') { deshacer(msg.nombre, msg.episodio).then(responder); return true; }
   if (msg && msg.tipo === 'streaming-visto-marco') {
     // El vídeo de Crunchyroll vive en un marco: el nombre lo tiene la página.
     const tab = sender.tab && sender.tab.id;
@@ -272,7 +287,7 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
     return false;
   }
   if (msg && msg.tipo === 'streaming-sin-datos') {
-    apuntarFallo({titulo: msg.servicio === 'netflix' ? 'Netflix' : 'Crunchyroll'},
+    apuntarFallo({titulo: {netflix: 'Netflix', animeflv: 'AnimeFLV'}[msg.servicio] || 'Crunchyroll'},
                  'No pude leer el nombre del episodio en la página').then(() =>
       marcar('?', '#d97706', 'No pude leer qué episodio era'));
     return false;
@@ -281,3 +296,28 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
   else if (msg === 'listas') sincronizarListas(true).then(responder);
   return true;
 });
+
+// «Deshacer» en la ventana de la extensión: quita el último episodio apuntado
+// (solo si en Miraru sigues justo en ese episodio).
+async function deshacer(nombre, episodio) {
+  if (!nombre || !(episodio > 0)) return {ok: false};
+  try {
+    const r = await fetch(`http://127.0.0.1:${await puerto()}/api/extension/deshacer`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-Miraru-Extension': '1'},
+      body: JSON.stringify({nombre, episodio}),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) return {ok: false, detalle: d.detail || ('Error ' + r.status)};
+    const {ultimo, historial = []} = await chrome.storage.local.get(['ultimo', 'historial']);
+    if (ultimo && ultimo.nombre === nombre) {
+      const nuevo = Object.assign({}, ultimo, {accion: d.accion, episodio: d.episodios_vistos, estado: d.estado,
+        eps_emitidos: d.eps_emitidos, cuando: Date.now()});
+      await chrome.storage.local.set({ultimo: nuevo,
+        historial: historial.filter(h => !(h.nombre === nombre && h.episodio === episodio))});
+    }
+    return {ok: true, accion: d.accion};
+  } catch (_) {
+    return {ok: false, detalle: 'Miraru está cerrado'};
+  }
+}

@@ -239,6 +239,8 @@ def init_db():
             ("grupo",              "TEXT DEFAULT ''"),
             # v2.17: cuántas veces lo has vuelto a ver entero
             ("revisionados",       "INTEGER DEFAULT 0"),
+            # v2.17.3: en emisión, último episodio que ya ha salido (ver emision.py)
+            ("eps_emitidos",       "INTEGER DEFAULT 0"),
         ]:
             if col not in existing:
                 conn.execute(f"ALTER TABLE animes ADD COLUMN {col} {definition}")
@@ -328,7 +330,8 @@ _SLIM_COLS = (
     "id, nombre, fuente, capitulos, imagen, genero, estado_anime, "
     "estado_usuario, puntuacion, episodios_vistos, temporada, "
     "lista_personalizada, favorito, notif_activa, fecha_inicio, fecha_fin, "
-    "anilist_id, tipo, volumenes_leidos, volumenes_totales, grupo, revisionados"
+    "anilist_id, tipo, volumenes_leidos, volumenes_totales, grupo, revisionados, "
+    "eps_emitidos"
 )
 _slim_cache: Optional[list[dict]] = None
 
@@ -497,8 +500,9 @@ def guardar_anime(data: dict) -> tuple[bool, str]:
                     estado_anime, estado_usuario, puntuacion,
                     episodios_vistos, temporada, lista_personalizada,
                     favorito, notif_activa, notas, fecha_inicio, fecha_fin,
-                    anilist_id, tipo, volumenes_leidos, volumenes_totales, grupo)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    anilist_id, tipo, volumenes_leidos, volumenes_totales, grupo,
+                    eps_emitidos)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (
                     data.get("nombre", ""),
                     data.get("fuente", ""),
@@ -522,6 +526,7 @@ def guardar_anime(data: dict) -> tuple[bool, str]:
                     data.get("volumenes_leidos") or 0,
                     data.get("volumenes_totales") or 0,
                     (data.get("grupo") or "").strip(),
+                    int(data.get("eps_emitidos") or 0),
                 ),
             )
         _invalidar_cache()
@@ -533,8 +538,15 @@ def guardar_anime(data: dict) -> tuple[bool, str]:
 
 
 def actualizar_anime(nombre: str, campos: dict) -> tuple[bool, str]:
-    allowed = {"estado_usuario","puntuacion","fecha_inicio","fecha_fin","episodios_vistos","notas","temporada","lista_personalizada","favorito","notif_activa","anilist_id","tipo","volumenes_leidos","volumenes_totales","grupo","revisionados"}
+    allowed = {"estado_usuario","puntuacion","fecha_inicio","fecha_fin","episodios_vistos","notas","temporada","lista_personalizada","favorito","notif_activa","anilist_id","tipo","volumenes_leidos","volumenes_totales","grupo","revisionados","eps_emitidos"}
     campos  = {k: v for k, v in campos.items() if k in allowed}
+    # v2.17.3: en emisión no se puede completar con episodios por salir, y si
+    # se ven más de los «emitidos» se sube ese dato (ver emision.py).
+    if "estado_usuario" in campos or "episodios_vistos" in campos:
+        import emision
+        actual = obtener_anime(nombre)
+        if actual:
+            campos = emision.ajustar(actual, campos)
     if not campos:
         return False, "sin campos válidos"
     sets   = ", ".join(f"{k}=?" for k in campos)
@@ -573,7 +585,7 @@ def refrescar_metadata_anime(nombre: str, campos: dict) -> tuple[bool, str]:
     """Como actualizar_anime pero para campos de la FUENTE (no del usuario).
     Permite refrescar capitulos/imagen/sinopsis/genero/estado_anime sin tocar
     el progreso del usuario (estado_usuario, puntuacion, episodios_vistos, etc.)."""
-    allowed = {"capitulos", "imagen", "sinopsis", "genero", "estado_anime", "fuente", "anilist_id", "volumenes_totales"}
+    allowed = {"capitulos", "imagen", "sinopsis", "genero", "estado_anime", "fuente", "anilist_id", "volumenes_totales", "eps_emitidos"}
     campos = {k: v for k, v in campos.items() if k in allowed}
     if not campos:
         return False, "sin campos válidos"

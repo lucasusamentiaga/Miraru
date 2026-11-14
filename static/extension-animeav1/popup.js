@@ -51,12 +51,29 @@ async function pintar() {
   if (ultimo && ultimo.nombre) {
     $('vacio').hidden = true;
     $('ultimo').hidden = false;
-    $('u-etq').textContent = ultimo.accion === 'añadido' ? '＋ Añadido a tu lista' :
+    $('u-etq').textContent = ultimo.accion === 'deshecho' ? '↩ Deshecho' : ultimo.accion === 'añadido' ? '＋ Añadido a tu lista' :
       ultimo.estado === 'completado' ? '🏁 ¡Completado!' : '✓ Apuntado en Miraru';
     $('u-nombre').textContent = ultimo.nombre;
     const total = parseInt(ultimo.capitulos, 10);
-    $('u-ep').textContent = 'Episodio ' + (ultimo.episodio ?? '?') + (total > 0 ? ' de ' + total : '');
-    const fr = total > 0 ? Math.min(1, (ultimo.episodio || 0) / total) : 1;
+    // En emisión: lo que ha salido (7 de 7 emitidos, 13 en total), no «7 de 13».
+    const emit = Number(ultimo.eps_emitidos) || 0;
+    const tope = emit || total;
+    $('u-ep').textContent = 'Episodio ' + (ultimo.episodio ?? '?') +
+      (emit ? ' de ' + emit + ' emitidos' + (total > emit ? ' (' + total + ' en total)' : '') : total > 0 ? ' de ' + total : '');
+    const fr = tope > 0 ? Math.min(1, (ultimo.episodio || 0) / tope) : 1;
+    // Deshacer: Netflix, Crunchyroll y AnimeFLV (en AnimeAV1 se usa su «Marcar como no visto»).
+    const puedeDeshacer = ultimo.servicio && ultimo.servicio !== 'animeav1' && ultimo.accion !== 'deshecho' && ultimo.episodio > 0;
+    $('u-deshacer').hidden = !puedeDeshacer;
+    $('u-deshacer').onclick = async () => {
+      const b = $('u-deshacer');
+      b.disabled = true; b.textContent = 'Deshaciendo…';
+      let r = null;
+      try { r = await chrome.runtime.sendMessage({tipo: 'deshacer', nombre: ultimo.nombre, episodio: ultimo.episodio}); } catch (_) {}
+      b.disabled = false; b.textContent = 'Deshacer';
+      if (!r || !r.ok) { b.textContent = (r && r.detalle) || 'No se pudo'; setTimeout(() => { b.textContent = 'Deshacer'; }, 2500); }
+      else if (r.accion === 'sin cambios') { b.textContent = 'Ya habías visto más'; }
+      pintar();
+    };
     requestAnimationFrame(() => requestAnimationFrame(() => { $('u-barra').style.transform = `scaleX(${fr})`; }));
     $('u-cuando').textContent = hace(ultimo.cuando);
     if (ultimo.imagen) { $('u-img').src = ultimo.imagen; $('u-img').hidden = false; } else $('u-img').hidden = true;

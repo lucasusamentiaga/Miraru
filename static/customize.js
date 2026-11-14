@@ -300,6 +300,25 @@
   // ── Barra flotante: apariencia + redes del autor ──────────────────────────
   // Una sola barra en todas las páginas (antes cada plantilla llevaba sus
   // propios botones de X e Instagram y la de inicio un 🎨 en la cabecera).
+  // v2.17.3: animes en emisión (mismas reglas que emision.py en el servidor).
+  // tope = hasta qué episodio se puede ver hoy; alDia = visto todo lo emitido;
+  // puedeCompletar = solo si ya terminó o has visto todos los previstos.
+  window.miraruEmision = function (a) {
+    a = a || {};
+    var vistos = +a.episodios_vistos || 0;
+    var caps = String(a.capitulos || "").trim();
+    var total = /^\d+$/.test(caps) ? +caps : 0;
+    var manga = (a.tipo || "anime") === "manga";
+    var enEmision = !manga && /emisi|releasing|airing/i.test(a.estado_anime || "");
+    var emitidos = 0;
+    if (enEmision && +a.eps_emitidos > 0) emitidos = +a.eps_emitidos;
+    else if (enEmision && /^\d+\+$/.test(caps)) emitidos = parseInt(caps, 10);
+    var tope = emitidos || total;
+    return {vistos: vistos, total: total, emitidos: emitidos, enEmision: enEmision, tope: tope,
+            alDia: tope > 0 && vistos >= tope,
+            puedeCompletar: !enEmision || (total > 0 && vistos >= total)};
+  };
+
   // v2.17.2: Ko-fi (apoyar Miraru). Primero de la fila y también en el móvil.
   var KOFI = "https://ko-fi.com/lucasuazz_";
   window.MIRARU_KOFI = KOFI;

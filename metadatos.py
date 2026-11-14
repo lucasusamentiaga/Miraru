@@ -72,6 +72,15 @@ def cambios_seguros(actual: dict, nuevo) -> dict:
     if estado not in _ESTADOS_DESCONOCIDOS and estado != (actual.get("estado_anime") or ""):
         cambios["estado_anime"] = estado
 
+    # v2.17.3: episodios ya emitidos (solo con dato de verdad; al terminar → 0)
+    em = getattr(nuevo, "eps_emitidos", None)
+    if em is not None:
+        estado_final = cambios.get("estado_anime", actual.get("estado_anime") or "")
+        en_em = estado_final.strip().lower() in {"en emisión", "en emision", "releasing"}
+        em = int(em or 0) if en_em else 0
+        if (em or not en_em) and em != int(actual.get("eps_emitidos") or 0):
+            cambios["eps_emitidos"] = em
+
     aid = getattr(nuevo, "anilist_id", 0) or 0
     if aid and not actual.get("anilist_id"):
         cambios["anilist_id"] = aid

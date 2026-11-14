@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.17.3 — Animes en emisión, bien contados
+
+- **En emisión**: Miraru guarda cuántos episodios han salido ya (de AniList, al refrescar y al
+  pulsar «+1»). Tarjeta «✓ 7/7 emitidos», «Continuar» con «✓ Al día», el «+1» se esconde al estar
+  al día y no deja pasar de lo emitido. No se puede marcar como completado algo que aún se emite
+  con episodios por salir (a mano da aviso; desde la extensión o AniList se queda en «Viendo»), y
+  los que ya tenías así vuelven a «Viendo» al refrescar. Arregla «Ep 8 / 13» tras marcar el 7 de 7
+  en AnimeAV1.
+- **Desmarcar en AnimeAV1**: desmarcar el 1 vuelve a «pendiente», desmarcar algo que no tienes en
+  Miraru ya no lo añade, desmarcar el último de un completado lo deja en «Viendo».
+- **Extensión 1.6.0**: AnimeFLV (pastilla «✓ Marcar visto» en la página del episodio, se apunta
+  sola a los 15 min de reproductor, con «Deshacer»); Netflix lee el episodio de la ficha del vídeo
+  aunque los controles estén ocultos; «Deshacer» en la ventana de la extensión (Netflix,
+  Crunchyroll, AnimeFLV); el progreso enseña lo emitido.
+
 ## v2.17.2 — Inicio nuevo
 
 - **Pantalla de inicio**: tres tarjetas (Anime, Manga, Series y pelis) con lo que llevas en

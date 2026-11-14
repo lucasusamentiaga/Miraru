@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Miraru — episodios vistos",
   "short_name": "Miraru",
-  "version": "1.5.1",
-  "description": "Lo que ves en AnimeAV1, Netflix y Crunchyroll se apunta solo en tu Miraru. Tus listas de AnimeAV1 también.",
+  "version": "1.6.0",
+  "description": "Lo que ves en AnimeAV1, AnimeFLV, Netflix y Crunchyroll se apunta solo en tu Miraru. Tus listas de AnimeAV1 también.",
   "icons": {
     "16": "iconos/16.png",
     "32": "iconos/32.png",
@@ -54,6 +54,16 @@
       ],
       "run_at": "document_idle",
       "all_frames": true
+    },
+    {
+      "matches": [
+        "https://*.animeflv.net/ver/*",
+        "https://animeflv.net/ver/*"
+      ],
+      "js": [
+        "animeflv.js"
+      ],
+      "run_at": "document_idle"
     }
   ]
 }

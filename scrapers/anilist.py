@@ -206,6 +206,10 @@ def _parse_media(media: dict, nombre: str, fuente: str,
             next_ep = nae.get("episode") or 0
             capitulos = f"{next_ep - 1}+" if next_ep > 1 else "?"
 
+    emitidos = 0
+    if not is_manga and media.get("status") == "RELEASING":
+        nae_e = (media.get("nextAiringEpisode") or {}).get("episode") or 0
+        emitidos = max(0, int(nae_e) - 1) if nae_e else 0
     d = AnimeData(
         nombre=title,
         capitulos=capitulos,
@@ -217,6 +221,7 @@ def _parse_media(media: dict, nombre: str, fuente: str,
         anilist_id=media.get("id", 0),
         tipo="manga" if is_manga else "anime",
         volumenes_totales=media.get("volumes") or 0,
+        eps_emitidos=emitidos,
     )
     if media.get("isAdult"):
         # v2.14.1: lo marca para que el filtro de scrapers/adulto.py lo descarte.

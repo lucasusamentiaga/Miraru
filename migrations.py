@@ -173,7 +173,7 @@ EN_EMISION = {
 
 # Campos que el refresco periódico puede tocar (la sinopsis/géneros no cambian
 # por emitirse un episodio y no merece la pena reescribirlos cada 12h).
-_CAMPOS_REFRESCO_EMISION = ("capitulos", "estado_anime", "imagen", "anilist_id")
+_CAMPOS_REFRESCO_EMISION = ("capitulos", "estado_anime", "imagen", "anilist_id", "eps_emitidos")
 
 
 def refrescar_en_emision(sleep: float = 0.4) -> int:
@@ -238,9 +238,28 @@ def refrescar_en_emision(sleep: float = 0.4) -> int:
                 _time.sleep(sleep)
         if actualizados:
             log.info("refresco emisión: %d series actualizadas", actualizados)
+        revisar_completados_en_emision()
     except Exception as e:
         log.warning("refresco emisión: %s", e)
     return actualizados
+
+
+def revisar_completados_en_emision() -> int:
+    """v2.17.3: un anime en emisión con episodios por salir no puede estar
+    «completado» (venía así de importaciones o de marcarlo a mano). Pasa a
+    «viendo». Devuelve cuántos cambió."""
+    import emision
+    cambiados = 0
+    for a in db.listar_animes():
+        # Solo con dato fresco de AniList (eps_emitidos): un «En emisión» viejo
+        # que no se pudo refrescar no basta para cambiar nada.
+        if (a.get("estado_usuario") == "completado" and int(a.get("eps_emitidos") or 0) > 0
+                and not emision.puede_completar(a)):
+            ok, _ = db.actualizar_anime(a["nombre"], {"estado_usuario": "viendo"})
+            cambiados += 1 if ok else 0
+    if cambiados:
+        log.info("emisión: %d completados que aún se emiten → viendo", cambiados)
+    return cambiados
 
 
 def completar_episodios_vistos() -> int:

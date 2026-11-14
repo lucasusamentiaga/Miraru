@@ -1,4 +1,4 @@
-// Miraru — Netflix y Crunchyroll (v1.5).
+// Miraru — Netflix y Crunchyroll (v1.5; v1.6: Netflix por la ficha del vídeo).
 //
 // Cuando terminas un episodio (pasado el 80 %), avisa a Miraru con lo que
 // enseña la página: el nombre de la serie, la temporada y el episodio. Miraru
@@ -71,8 +71,27 @@
             titulo_ep: tituloEl.textContent.trim()};
   }
 
+  // v1.6: Netflix por su propia ficha del vídeo (la que usa su reproductor),
+  // con el id de /watch/<id>. No depende de que los controles estén a la
+  // vista (Netflix los esconde, y con ellos el nombre). Si falla, la página.
+  function leerNetflixMeta(j, id) {
+    const v = j && j.video;
+    if (!v || !v.title) return null;
+    const serie = String(v.title).trim();
+    if (v.type === 'movie') return {servicio: 'netflix', serie};
+    for (const t of v.seasons || []) {
+      for (const e of t.episodes || []) {
+        if (String(e.id || e.episodeId) === String(id)) {
+          return {servicio: 'netflix', serie, temporada: Number(t.seq) || 1, episodio: Number(e.seq) || null,
+                  temporada_nombre: '', titulo_ep: String(e.title || '').trim()};
+        }
+      }
+    }
+    return null;
+  }
+
   if (EN_PRUEBAS) {
-    module.exports = {leerTemporadaEpisodio, leerNetflix, leerCrunchyroll};
+    module.exports = {leerTemporadaEpisodio, leerNetflix, leerCrunchyroll, leerNetflixMeta};
     return;
   }
 
@@ -105,7 +124,25 @@
     }
   }
 
+  const fichasNetflix = new Map();     // id de /watch/ → lo leído de su ficha
+  async function netflixPorFicha() {
+    const id = (location.pathname.match(/\/watch\/(\d+)/) || [])[1];
+    if (!id) return null;
+    if (fichasNetflix.has(id)) return fichasNetflix.get(id);
+    let d = null;
+    try {
+      const r = await fetch('/nq/website/memberapi/release/metadata?movieid=' + id, {credentials: 'include'});
+      if (r.ok) d = leerNetflixMeta(await r.json(), id);
+    } catch (_) { /* sin ficha: se usa la página */ }
+    fichasNetflix.set(id, d);
+    return d;
+  }
+
   async function datos() {
+    if (esNetflix) {
+      const f = await netflixPorFicha();
+      if (f) return f;
+    }
     recordar();
     if (!ultimo && esNetflix) {
       despertarControles();
@@ -142,6 +179,7 @@
     return false;
   });
 
+  if (esNetflix) setInterval(() => { if (enReproductor()) netflixPorFicha(); }, 5000);   // leerla pronto
   setInterval(vigilar, 2000);
   setInterval(recordar, 1500);
 })();

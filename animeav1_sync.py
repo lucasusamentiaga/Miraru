@@ -484,7 +484,10 @@ def cambios_por_evento(local: dict, episodio: Optional[int], estado: Optional[in
     `accion` la deduce la extensión de la página donde pulsaste:
     - «marcar»: solo sube (marcar un episodio antiguo, o dos clics que llegan
       desordenados, nunca bajan tu progreso).
-    - «desmarcar»: baja hasta lo que diga AnimeAV1 (es lo que pediste).
+    - «desmarcar»: se queda en lo que diga AnimeAV1 (es lo que pediste): si
+      desmarcas el último, baja uno; si desmarcas uno antiguo, AnimeAV1 baja
+      tu progreso hasta ahí y Miraru también. Si desmarcas el episodio 1,
+      vuelve a «pendiente» (lo marcaste sin querer).
     Sin `accion` (versiones viejas de la extensión): sube si va por delante y
     baja solo si es justo el anterior (N-1), que es como desmarca AnimeAV1."""
     cambios: dict = {}
@@ -495,7 +498,7 @@ def cambios_por_evento(local: dict, episodio: Optional[int], estado: Optional[in
         if accion == "marcar":
             aplica = ep > vistos
         elif accion == "desmarcar":
-            aplica = ep < vistos
+            aplica = ep < vistos               # desmarcar nunca sube
         else:
             aplica = ep > vistos or ep == vistos - 1
         if aplica:
@@ -509,6 +512,8 @@ def cambios_por_evento(local: dict, episodio: Optional[int], estado: Optional[in
                 cambios["estado_usuario"] = "completado"
         elif ep > vistos and actual == "pendiente":
             cambios["estado_usuario"] = "viendo"          # empezar a verlo
+        elif ep == 0 and accion == "desmarcar" and vistos > 0 and actual in ("viendo", "completado"):
+            cambios["estado_usuario"] = "pendiente"       # marcaste el 1 sin querer
         elif ep < vistos and actual == "completado":
             cambios["estado_usuario"] = "viendo"          # desmarcar el último
     if estado is not None and episodio is None and estado in ESTADO_DESDE_AV1:
@@ -516,6 +521,16 @@ def cambios_por_evento(local: dict, episodio: Optional[int], estado: Optional[in
         if nuevo != actual:
             cambios["estado_usuario"] = nuevo
     return cambios
+
+
+def cambios_deshacer(local: dict, episodio: int) -> dict:
+    """«Deshacer» el último episodio apuntado (desde la ventana de la extensión
+    o el botón de AnimeFLV): solo si tu progreso sigue justo en ese episodio.
+    Si ya has visto más (o ya se deshizo), no se toca nada."""
+    ep = int(episodio or 0)
+    if ep <= 0 or int(local.get("episodios_vistos") or 0) != ep:
+        return {}
+    return cambios_por_evento(local, ep - 1, None, "desmarcar")
 
 
 def guardar_ultimo_evento(nombre: str, episodio: Optional[int], accion: str):
