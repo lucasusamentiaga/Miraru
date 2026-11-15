@@ -107,7 +107,7 @@ a.stat-pill:hover{border-color:rgba(var(--accent-rgb,124,58,237),.6)}
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
 <script src="/static/customize.js"></script>
-<script src="/static/novedades.js?v=2.17.4" defer></script>
+<script src="/static/novedades.js?v=2.17.5" defer></script>
 <script src="/static/i18n-dom.js" defer></script>
 <script src="/static/dialogos.js" defer></script>
 </head>
@@ -178,10 +178,10 @@ a.stat-pill:hover{border-color:rgba(var(--accent-rgb,124,58,237),.6)}
 <script>
 // ── i18n ──────────────────────────────────────────────────────────────────────
 const TX = {
-  es:{sub:"ANIME · MANGA · SERIES · PELÍCULAS", enter:"Anime", t:"{n} títulos", w:"{n} viendo", r:"{n} leyendo", c:"{n} completados", cont:"Continuar", mg:"{n} mangas", s:"{n} series", pe:"{n} pelis", vacio:"Empieza tu lista", dia:"{n} día", dias:"{n} días", nov:"Estrenos de la semana", kofi:"Apoyar Miraru"},
-  en:{sub:"ANIME · MANGA · SERIES · MOVIES", enter:"Anime", t:"{n} titles", w:"{n} watching", r:"{n} reading", c:"{n} completed", cont:"Continue", mg:"{n} manga", s:"{n} series", pe:"{n} movies", vacio:"Start your list", dia:"{n} day", dias:"{n} days", nov:"This week's releases", kofi:"Support Miraru"},
-  fr:{sub:"ANIME · MANGA · SÉRIES · FILMS", enter:"Anime", t:"{n} titres", w:"{n} en cours", r:"{n} en lecture", c:"{n} terminés", cont:"Continuer", mg:"{n} mangas", s:"{n} séries", pe:"{n} films", vacio:"Commencez votre liste", dia:"{n} jour", dias:"{n} jours", nov:"Sorties de la semaine", kofi:"Soutenir Miraru"},
-  de:{sub:"ANIME · MANGA · SERIEN · FILME", enter:"Anime", t:"{n} Titel", w:"{n} am Schauen", r:"{n} am Lesen", c:"{n} fertig", cont:"Weiter", mg:"{n} Manga", s:"{n} Serien", pe:"{n} Filme", vacio:"Starte deine Liste", dia:"{n} Tag", dias:"{n} Tage", nov:"Neu diese Woche", kofi:"Miraru unterstützen"},
+  es:{ald:"Al día", em:"emitidos", sub:"ANIME · MANGA · SERIES · PELÍCULAS", enter:"Anime", t:"{n} títulos", w:"{n} viendo", r:"{n} leyendo", c:"{n} completados", cont:"Continuar", mg:"{n} mangas", s:"{n} series", pe:"{n} pelis", vacio:"Empieza tu lista", dia:"{n} día", dias:"{n} días", nov:"Estrenos de la semana", kofi:"Apoyar Miraru"},
+  en:{ald:"Up to date", em:"aired", sub:"ANIME · MANGA · SERIES · MOVIES", enter:"Anime", t:"{n} titles", w:"{n} watching", r:"{n} reading", c:"{n} completed", cont:"Continue", mg:"{n} manga", s:"{n} series", pe:"{n} movies", vacio:"Start your list", dia:"{n} day", dias:"{n} days", nov:"This week's releases", kofi:"Support Miraru"},
+  fr:{ald:"À jour", em:"diffusés", sub:"ANIME · MANGA · SÉRIES · FILMS", enter:"Anime", t:"{n} titres", w:"{n} en cours", r:"{n} en lecture", c:"{n} terminés", cont:"Continuer", mg:"{n} mangas", s:"{n} séries", pe:"{n} films", vacio:"Commencez votre liste", dia:"{n} jour", dias:"{n} jours", nov:"Sorties de la semaine", kofi:"Soutenir Miraru"},
+  de:{ald:"Aktuell", em:"ausgestrahlt", sub:"ANIME · MANGA · SERIEN · FILME", enter:"Anime", t:"{n} Titel", w:"{n} am Schauen", r:"{n} am Lesen", c:"{n} fertig", cont:"Weiter", mg:"{n} Manga", s:"{n} Serien", pe:"{n} Filme", vacio:"Starte deine Liste", dia:"{n} Tag", dias:"{n} Tage", nov:"Neu diese Woche", kofi:"Miraru unterstützen"},
 };
 let LANG = 'es';
 const T = (k, n = 0) => ((TX[LANG] || TX.es)[k] || k).replace('{n}', n);
@@ -438,7 +438,8 @@ async function loadContinue() {
       const sub = document.createElement('div'); sub.className = 'hc-s';
       const tag = document.createElement('span'); tag.className = 'hc-t'; tag.textContent = esManga ? 'MANGA' : 'ANIME';
       const nx = document.createElement('span');
-      nx.textContent = alDia ? '✓ ' + ud + ' ' + vistos : ud + ' ' + (vistos + 1) + (total ? ' / ' + total : '');
+      nx.textContent = alDia ? '✓ ' + T('ald') + ' · ' + ud.toLowerCase() + ' ' + vistos
+        : ud + ' ' + (vistos + 1) + (EMc && EMc.emitidos ? ' · ' + EMc.emitidos + ' ' + T('em') : total ? ' / ' + total : '');
       sub.append(tag, nx);
       info.append(name, sub);
       if (total) {

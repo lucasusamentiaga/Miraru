@@ -8,6 +8,38 @@ function hace(ms) {
   return new Date(ms).toLocaleDateString(undefined, {day: 'numeric', month: 'short'});
 }
 
+const NOMBRE_SERV = {animeav1: 'AnimeAV1', animeflv: 'AnimeFLV', netflix: 'Netflix', crunchyroll: 'Crunchyroll'};
+function pintarServ(el, s) {
+  el.hidden = !NOMBRE_SERV[s];
+  el.dataset.s = s || '';
+  el.textContent = NOMBRE_SERV[s] || '';
+}
+
+// «Viendo ahora»: lo que suena en Netflix, Crunchyroll o AnimeFLV (últimos 20 s).
+async function pintarAhora() {
+  let ahora = null;
+  try { ({ahora} = await chrome.storage.session.get('ahora')); } catch (_) { /* nada */ }
+  const vivo = ahora && Date.now() - ahora.cuando < 20000;
+  $('ahora').hidden = !vivo;
+  if (!vivo) return;
+  pintarServ($('a-serv'), ahora.servicio);
+  const d = ahora.datos;
+  const umbral = ahora.umbral || 0.8;
+  const p = Math.max(0, Math.min(1, ahora.progreso || 0));
+  const apuntado = ahora.estado === 'apuntado' || (ahora.servicio !== 'animeflv' && p >= umbral);
+  $('ahora').classList.toggle('listo', apuntado);
+  $('ahora').classList.toggle('mal', !d);
+  $('a-nombre').textContent = d ? d.serie + (d.episodio ? ` · T${d.temporada || 1}:E${d.episodio}` : ' · película') : 'No leo el nombre del episodio';
+  $('a-barra').style.transform = `scaleX(${p})`;
+  $('a-marca').style.left = `calc(${umbral * 100}% - 1px)`;
+  $('a-marca').hidden = umbral >= 1;
+  $('a-txt').textContent = !d
+    ? (ahora.servicio === 'netflix' ? 'Mueve el ratón sobre el vídeo para que salga el título.' : 'Abre el episodio desde su página.')
+    : apuntado ? '✓ Se apunta en Miraru'
+    : ahora.servicio === 'animeflv' ? 'Pulsa «✓ Marcar visto» en la página, o se apunta solo a los 15 min.'
+    : `Se apunta al llegar al ${Math.round(umbral * 100)} % (vas por el ${Math.round(p * 100)} %).`;
+}
+
 const limpiarTitulo = t => (t || '').replace(/\s*-\s*AnimeAV1\s*$/i, '').replace(/\s+Episodio\s+\d+.*$/i, '');
 
 async function pintar() {
@@ -48,6 +80,8 @@ async function pintar() {
   $('fallo').hidden = !conFallo;
   if (conFallo) $('fallo').textContent = `⚠ No se pudo apuntar «${limpiarTitulo(f.titulo)}»: ${f.motivo}`;
 
+  $('u-deshacer').disabled = false;
+  $('u-deshacer').textContent = '↩ Deshacer';
   if (ultimo && ultimo.nombre) {
     $('vacio').hidden = true;
     $('ultimo').hidden = false;
@@ -58,8 +92,10 @@ async function pintar() {
     // En emisión: lo que ha salido (7 de 7 emitidos, 13 en total), no «7 de 13».
     const emit = Number(ultimo.eps_emitidos) || 0;
     const tope = emit || total;
-    $('u-ep').textContent = 'Episodio ' + (ultimo.episodio ?? '?') +
-      (emit ? ' de ' + emit + ' emitidos' + (total > emit ? ' (' + total + ' en total)' : '') : total > 0 ? ' de ' + total : '');
+    const ep = ultimo.episodio ?? '?';
+    $('u-ep').textContent = emit
+      ? (ep >= emit ? `Episodio ${ep} · ✓ al día` : `Episodio ${ep} de ${emit} emitidos`) + (total > emit ? ` (${total} en total)` : '')
+      : 'Episodio ' + ep + (total > 0 ? ' de ' + total : '');
     const fr = tope > 0 ? Math.min(1, (ultimo.episodio || 0) / tope) : 1;
     // Deshacer: Netflix, Crunchyroll y AnimeFLV (en AnimeAV1 se usa su «Marcar como no visto»).
     const puedeDeshacer = ultimo.servicio && ultimo.servicio !== 'animeav1' && ultimo.accion !== 'deshecho' && ultimo.episodio > 0;
@@ -69,11 +105,17 @@ async function pintar() {
       b.disabled = true; b.textContent = 'Deshaciendo…';
       let r = null;
       try { r = await chrome.runtime.sendMessage({tipo: 'deshacer', nombre: ultimo.nombre, episodio: ultimo.episodio}); } catch (_) {}
-      b.disabled = false; b.textContent = 'Deshacer';
-      if (!r || !r.ok) { b.textContent = (r && r.detalle) || 'No se pudo'; setTimeout(() => { b.textContent = 'Deshacer'; }, 2500); }
-      else if (r.accion === 'sin cambios') { b.textContent = 'Ya habías visto más'; }
-      pintar();
+      if (!r || !r.ok) {
+        b.textContent = (r && r.detalle) || 'No se pudo';
+        setTimeout(() => { b.disabled = false; b.textContent = '↩ Deshacer'; }, 2500);
+      } else if (r.accion === 'sin cambios') {
+        b.textContent = 'Ya habías visto más';          // no se toca: sigues por delante
+      } else {
+        pintar();
+      }
     };
+    $('ultimo').classList.toggle('deshecho', ultimo.accion === 'deshecho');
+    pintarServ($('u-serv'), ultimo.servicio);
     requestAnimationFrame(() => requestAnimationFrame(() => { $('u-barra').style.transform = `scaleX(${fr})`; }));
     $('u-cuando').textContent = hace(ultimo.cuando);
     if (ultimo.imagen) { $('u-img').src = ultimo.imagen; $('u-img').hidden = false; } else $('u-img').hidden = true;
@@ -88,6 +130,7 @@ async function pintar() {
     const fila = document.createElement('div');
     const a = document.createElement('span'); a.textContent = h.nombre;
     const b = document.createElement('span'); b.textContent = 'ep ' + (h.episodio ?? '?') + ' · ' + hace(h.cuando);
+    if (h.servicio) { a.title = NOMBRE_SERV[h.servicio] || ''; a.className = 'serv-l'; a.dataset.s = h.servicio; }
     fila.append(a, b);
     $('hist').appendChild(fila);
   });
@@ -124,5 +167,7 @@ $('reintentar').addEventListener('click', async () => {
   pintar();
 });
 $('guia').addEventListener('click', () => chrome.tabs.create({url: chrome.runtime.getURL('bienvenida.html')}));
-chrome.storage.onChanged.addListener((_c, area) => { if (area === 'local') pintar(); });
+chrome.storage.onChanged.addListener((_c, area) => { if (area === 'local') pintar(); if (area === 'session') pintarAhora(); });
 pintar();
+pintarAhora();
+setInterval(pintarAhora, 5000);

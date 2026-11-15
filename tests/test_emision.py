@@ -97,3 +97,14 @@ def test_lo_visto_ya_ha_salido():
     import emision
     a = {"capitulos": "12", "estado_anime": "En emisión", "eps_emitidos": 5, "episodios_vistos": 6}
     assert emision.emitidos(a) == 6 and emision.tope(a) == 6
+
+
+def test_continuar_pone_detras_lo_que_esta_al_dia(c):
+    import database
+    database.guardar_anime({"nombre": "Pendiente de ver", "capitulos": "12", "estado_anime": "Finalizado",
+                            "estado_usuario": "viendo", "episodios_vistos": 3})
+    database.log_episode("Santen", 7)          # Santen es lo último que tocaste…
+    lista = c.get("/api/continuar").json()["animes"]
+    nombres = [a["nombre"] for a in lista]
+    assert nombres.index("Pendiente de ver") < nombres.index("Santen")    # …pero está al día
+    assert next(a for a in lista if a["nombre"] == "Santen")["al_dia"] is True

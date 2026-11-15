@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.17.5 — Arreglos
+
+- **Continuar** (inicio y lista): lo que está al día con lo emitido va detrás de lo que tiene
+  episodios por ver (`al_dia` en `/api/continuar`); en emisión, «Ep 3 · 6 emitidos» en vez de
+  «Ep 3 / 6». En el móvil, nunca «6/5 emitidos».
+- **Extensión 1.6.1**: «Viendo ahora» en la ventana (Netflix, Crunchyroll, AnimeFLV: nombre,
+  episodio y cuánto falta para el 80 %), así se ve si ha leído bien el episodio antes del final;
+  servicio de cada apunte (punto de color) y «↩ Deshacer» en línea. Netflix: si no lee el nombre
+  sigue intentándolo hasta que lo consigue (antes se rendía al primer fallo). AnimeFLV: pastilla
+  nueva con anillo de progreso hasta el apunte automático, plegable.
+
 ## v2.17.4 — Arreglos
 
 - **Temporadas nuevas de lo que viste**: solo secuelas que ya se pueden ver (en emisión y con al

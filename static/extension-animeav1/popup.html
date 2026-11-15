@@ -7,7 +7,7 @@
 <body class="popup">
   <div class="cab">
     <img src="iconos/48.png" alt="">
-    <div class="t"><b>Miraru</b><small>AnimeAV1 · AnimeFLV · Netflix · Crunchyroll</small></div>
+    <div class="t"><b>Miraru</b><small title="AnimeAV1 · AnimeFLV · Netflix · Crunchyroll">Lo que ves se apunta solo</small></div>
     <span class="pastilla" id="pastilla"><i></i><span id="pastilla-txt">…</span></span>
   </div>
   <div class="cuerpo">
@@ -15,15 +15,25 @@
     <div class="aviso warn" id="pendientes" hidden></div>
     <div class="aviso warn" id="fallo" hidden></div>
 
+    <!-- v1.6.1: lo que suena ahora (Netflix, Crunchyroll, AnimeFLV) -->
+    <section class="ahora" id="ahora" hidden aria-live="polite">
+      <div class="ah-cab"><span class="serv" id="a-serv"></span><span class="ah-vivo">Viendo ahora</span></div>
+      <div class="ah-n" id="a-nombre"></div>
+      <div class="ah-medidor"><span id="a-barra"></span><i id="a-marca" title="Aquí se apunta"></i></div>
+      <div class="ah-e" id="a-txt"></div>
+    </section>
+
     <div class="ultimo" id="ultimo" hidden>
       <img id="u-img" alt="">
       <div class="t">
-        <div class="etq" id="u-etq">✓ Apuntado en Miraru</div>
+        <div class="u-cab"><span class="etq" id="u-etq">✓ Apuntado en Miraru</span><span class="serv" id="u-serv"></span></div>
         <div class="n" id="u-nombre"></div>
         <div class="e" id="u-ep"></div>
         <div class="barra"><span id="u-barra"></span></div>
-        <div class="e" id="u-cuando" style="margin-top:4px"></div>
-        <button class="btn sec mini" id="u-deshacer" type="button" style="margin-top:6px;min-height:28px" hidden title="Por si se apuntó el que no era">Deshacer</button>
+        <div class="u-pie">
+          <span class="e" id="u-cuando"></span>
+          <button class="enlace" id="u-deshacer" type="button" hidden title="Por si se apuntó el que no era">↩ Deshacer</button>
+        </div>
       </div>
     </div>
     <div class="vacio" id="vacio">

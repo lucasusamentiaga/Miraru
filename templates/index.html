@@ -773,10 +773,10 @@ body.sel-mode .ac .salir{display:none}
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
 <script src="/static/customize.js"></script>
-<script src="/static/novedades.js?v=2.17.4" defer></script>
-<script src="/static/selects.js?v=2.17.4" defer></script>
-<script src="/static/temporadas.js?v=2.17.4"></script>
-<script src="/static/tour.js?v=2.17.4" defer></script>
+<script src="/static/novedades.js?v=2.17.5" defer></script>
+<script src="/static/selects.js?v=2.17.5" defer></script>
+<script src="/static/temporadas.js?v=2.17.5"></script>
+<script src="/static/tour.js?v=2.17.5" defer></script>
 <script src="/static/i18n-dom.js" defer></script>
 <script src="/static/dialogos.js" defer></script>
 </head>
@@ -4285,8 +4285,9 @@ async function cargarContinuar() {
       // Si ya llevas más de los que dice la ficha («4+» con 6 vistos: dato de emisión
       // atrasado), no se enseña «6 / 4», que parece un error.
       const ud = a.tipo === 'manga' ? 'Cap' : 'Ep';      // el manga se lee por capítulos
+      // En emisión: «Ep 3 · 6 emitidos» (no «Ep 3 / 6», que parece que la serie tiene 6).
       next.textContent = alDia ? `✓ ${_tr('Al día')} · ${ud.toLowerCase()} ${vistos}`
-                               : `${ud} ${vistos + 1}` + (total ? ` / ${total}` : '');
+                               : `${ud} ${vistos + 1}` + (EMc.emitidos ? ` · ${EMc.emitidos} ${_tr('emitidos')}` : total ? ` / ${total}` : '');
       info.appendChild(name);
       info.appendChild(next);
 

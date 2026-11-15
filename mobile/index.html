@@ -577,7 +577,7 @@ function renderLista() {
     const vis  = a.episodios_vistos||0;
     // v2.17.3: en emisión, el tope es lo ya emitido (Tokyo Revengers 7 de 13).
     const airing = /emisi|releasing|airing/i.test(a.estado_anime||'');
-    const emit = airing && +a.eps_emitidos>0 ? +a.eps_emitidos : 0;
+    const emit = airing && +a.eps_emitidos>0 ? Math.max(+a.eps_emitidos, +a.episodios_vistos||0) : 0;   // lo visto ya ha salido
     const tope = emit || (/\+$/.test(String(a.capitulos||'').trim()) ? 0 : cap);
     const puedeMas = !tope || vis < tope;
     const pct  = cap>0 ? Math.min(100,Math.round(vis/cap*100)) : 0;

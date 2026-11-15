@@ -274,6 +274,7 @@ async function apuntarStreaming(d, accion) {
 
 chrome.runtime.onMessage.addListener((msg, sender, responder) => {
   if (msg && msg.tipo === 'streaming-visto') { apuntarStreaming(msg.datos); return false; }
+  if (msg && msg.tipo === 'streaming-ahora') { guardarAhora(msg, sender); return false; }
   if (msg && msg.tipo === 'streaming-desmarcar') { apuntarStreaming(msg.datos, 'desmarcar'); return false; }
   if (msg && msg.tipo === 'deshacer') { deshacer(msg.nombre, msg.episodio).then(responder); return true; }
   if (msg && msg.tipo === 'streaming-visto-marco') {
@@ -320,4 +321,21 @@ async function deshacer(nombre, episodio) {
   } catch (_) {
     return {ok: false, detalle: 'Miraru está cerrado'};
   }
+}
+
+// v1.6.1: «Ahora» en la ventana de la extensión: lo que suena en la pestaña
+// (Netflix, Crunchyroll, AnimeFLV) y cuánto falta para que se apunte. En
+// Crunchyroll el progreso llega del marco del vídeo y el nombre de la página.
+async function guardarAhora(msg, sender) {
+  const tab = sender.tab && sender.tab.id;
+  if (tab == null) return;
+  const {ahora} = await chrome.storage.session.get('ahora').catch(() => ({}));
+  const antes = ahora && ahora.tab === tab ? ahora : {tab};
+  const nuevo = Object.assign({}, antes, {cuando: Date.now()});
+  if (msg.servicio) nuevo.servicio = msg.servicio;
+  if ('datos' in msg) nuevo.datos = msg.datos;
+  if (msg.progreso != null) nuevo.progreso = msg.progreso;
+  if (msg.umbral) nuevo.umbral = msg.umbral;
+  if (msg.estado) nuevo.estado = msg.estado;
+  await chrome.storage.session.set({ahora: nuevo}).catch(() => {});
 }

@@ -153,22 +153,49 @@
   }
 
   const avisados = new Set();     // un aviso por vídeo
+  const sinNombre = new Set();    // vídeos de los que ya se avisó que no hay nombre
+  let ultimoAhora = 0;
+  // v1.6.1: lo que estás viendo ahora (para la ventana de la extensión):
+  // nombre, episodio y cuánto llevas. Así se ve si lo ha leído bien ANTES
+  // de llegar al final.
+  async function avisarAhora(v) {
+    if (Date.now() - ultimoAhora < 5000) return;
+    ultimoAhora = Date.now();
+    const progreso = v && v.duration ? Math.min(1, v.currentTime / v.duration) : null;
+    if (enMarco) {
+      chrome.runtime.sendMessage({tipo: 'streaming-ahora', marco: true, progreso}).catch(() => {});
+      return;
+    }
+    const d = esNetflix ? (await netflixPorFicha()) || ultimo : ultimo;
+    chrome.runtime.sendMessage({tipo: 'streaming-ahora', servicio: esNetflix ? 'netflix' : 'crunchyroll',
+                                datos: d || null, progreso, umbral: UMBRAL}).catch(() => {});
+  }
+
   async function vigilar() {
     if (!enReproductor()) return;
     recordar();
     const v = [...document.querySelectorAll('video')].find(x => x.duration > MIN_SEG && isFinite(x.duration));
+    if (v && !v.paused) avisarAhora(v);
+    else if (!enMarco && !v) avisarAhora(null);
     if (!v || v.currentTime / v.duration < UMBRAL) return;
     const clave = location.href + '|' + Math.round(v.duration);
     if (avisados.has(clave)) return;
-    avisados.add(clave);
     if (enMarco) {
       // El vídeo de Crunchyroll está en un marco: que la página ponga el nombre.
+      avisados.add(clave);
       chrome.runtime.sendMessage({tipo: 'streaming-visto-marco'}).catch(() => {});
       return;
     }
     const d = await datos();
-    if (d) chrome.runtime.sendMessage({tipo: 'streaming-visto', datos: d}).catch(() => {});
-    else chrome.runtime.sendMessage({tipo: 'streaming-sin-datos', servicio: esNetflix ? 'netflix' : 'crunchyroll'}).catch(() => {});
+    if (d) {
+      avisados.add(clave);
+      chrome.runtime.sendMessage({tipo: 'streaming-visto', datos: d}).catch(() => {});
+    } else if (!sinNombre.has(clave)) {
+      // Se sigue intentando en cada vuelta (los controles pueden volver a
+      // salir), pero el aviso de «no pude leerlo» solo una vez.
+      sinNombre.add(clave);
+      chrome.runtime.sendMessage({tipo: 'streaming-sin-datos', servicio: esNetflix ? 'netflix' : 'crunchyroll'}).catch(() => {});
+    }
   }
 
   chrome.runtime.onMessage.addListener((msg, _s, responder) => {

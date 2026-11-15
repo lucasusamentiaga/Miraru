@@ -3694,6 +3694,14 @@ async def continuar_viendo():
         # Prioriza: 1) tiene actividad reciente, 2) creado más reciente
         return (last_seen.get(a["nombre"], "0"), a.get("creado_en") or "0")
     candidatos.sort(key=_key, reverse=True)
+    # v2.17.5: primero lo que tiene episodios por ver; los que están al día
+    # con lo emitido (esperando al siguiente) van detrás (sort estable).
+    def _al_dia(a) -> bool:
+        if (a.get("tipo") or "anime") == "manga":
+            return False
+        t = emision.tope(a)
+        return bool(t) and int(a.get("episodios_vistos") or 0) >= t
+    candidatos.sort(key=_al_dia)
     # Enriquecer con next_ep para el botón "ver ep X+1"
     out = []
     for a in candidatos[:12]:
@@ -3706,6 +3714,7 @@ async def continuar_viendo():
             "tipo":             a.get("tipo") or "anime",
             "estado_anime":     a.get("estado_anime") or "",
             "eps_emitidos":     emision.emitidos(a),
+            "al_dia":           _al_dia(a),
             "ultima_vista":     last_seen.get(a["nombre"]),
         })
     return {"animes": out}

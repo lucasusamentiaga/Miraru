@@ -12,6 +12,18 @@ from __future__ import annotations
 NOVEDADES: list[dict] = [
     # silenciosa: solo arreglos; no abre la ventana de novedades.
     {
+        "version": "2.17.5",
+        "silenciosa": True,
+        "titulo": "Arreglos",
+        "puntos": [
+            {"icono": "📡", "titulo": "Continuar, primero lo que puedes ver",
+             "texto": "En «Continuar», lo que está al día con lo emitido va detrás, y los que se emiten dicen cuántos episodios han salido («Ep 3 · 6 emitidos»)."},
+            {"icono": "🧩", "titulo": "Extensión: «Viendo ahora»",
+             "texto": "La ventana de la extensión enseña lo que estás viendo en Netflix, Crunchyroll o AnimeFLV y cuánto falta para que se apunte."},
+        ],
+    },
+    # silenciosa: solo arreglos; no abre la ventana de novedades.
+    {
         "version": "2.17.4",
         "silenciosa": True,
         "titulo": "Arreglos",

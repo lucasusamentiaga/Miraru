@@ -135,7 +135,7 @@ def test_extension_declara_netflix_y_crunchyroll():
     scripts = [x for c in m["content_scripts"] for x in c["matches"]]
     assert "https://www.netflix.com/*" in scripts and "https://static.crunchyroll.com/*" in scripts
     assert any(c.get("all_frames") for c in m["content_scripts"])      # el reproductor de Crunchyroll va en un marco
-    assert m["version"] == "1.6.0"
+    assert m["version"] == "1.6.1"
 
 
 # ── v1.6 (Miraru 2.17.3): AnimeFLV, la ficha de Netflix y «Deshacer» ──────────

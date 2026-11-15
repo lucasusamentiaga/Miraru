@@ -175,3 +175,35 @@ html.popup-html,.popup{width:360px;min-width:360px;max-width:none}
 .listas .t b{display:block;font-size:13px}
 .listas .t small{display:block;font-size:12px;color:var(--gris);line-height:1.4}
 .btn.mini{padding:6px 10px;font-size:12px;white-space:nowrap}
+
+/* v1.6.1: servicio de cada apunte, «Viendo ahora» y «Deshacer» en línea */
+.serv{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--gris);white-space:nowrap}
+.serv::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c,var(--acento2))}
+.serv[data-s=animeav1]{--c:#a855f7}.serv[data-s=animeflv]{--c:#f59e0b}
+.serv[data-s=netflix]{--c:#e50914}.serv[data-s=crunchyroll]{--c:#f47521}
+.u-cab{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.u-pie{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+.enlace{border:0;background:none;padding:4px 6px;margin:-4px -6px;border-radius:6px;font:600 12px/1.2 var(--texto);color:var(--acento2);cursor:pointer}
+.enlace:hover{background:var(--card-hi);color:var(--fg)}
+.enlace:disabled{color:var(--gris);cursor:default;background:none}
+.ultimo.deshecho .etq{color:var(--gris)}
+.ultimo.deshecho .barra span{background:var(--borde-hi)}
+
+.ahora{padding:12px;border-radius:12px;background:var(--bg2);border:1px solid var(--borde-hi);animation:llega .45s var(--salida-expo) both}
+.ah-cab{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ah-vivo{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--gris)}
+.ah-vivo::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok);animation:late 1.6s var(--salida) infinite}
+@keyframes late{50%{opacity:.35}}
+.ah-n{font:700 13.5px/1.3 var(--titulo);margin:6px 0 8px;overflow-wrap:anywhere}
+.ah-medidor{position:relative;height:6px;border-radius:99px;background:var(--borde)}
+.ah-medidor span{position:absolute;inset:0;border-radius:inherit;transform-origin:left;transform:scaleX(0);
+  background:var(--acento2);transition:transform .6s var(--salida)}
+.ah-medidor i{position:absolute;top:-3px;bottom:-3px;width:2px;border-radius:2px;background:var(--fg);opacity:.8}
+.ahora.listo .ah-medidor span{background:var(--ok)}
+.ah-e{margin-top:7px;font-size:12px;color:var(--gris)}
+.ahora.listo .ah-e{color:#86efac}
+.ahora.mal .ah-e{color:#fcd34d}
+@media (prefers-reduced-motion:reduce){.ah-vivo::before{animation:none}}
+.hist .serv-l::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--c,var(--acento2))}
+.serv-l[data-s=animeav1]{--c:#a855f7}.serv-l[data-s=animeflv]{--c:#f59e0b}.serv-l[data-s=netflix]{--c:#e50914}.serv-l[data-s=crunchyroll]{--c:#f47521}
+.ultimo .barra{max-width:none}
