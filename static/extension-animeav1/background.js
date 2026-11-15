@@ -339,3 +339,75 @@ async function guardarAhora(msg, sender) {
   if (msg.estado) nuevo.estado = msg.estado;
   await chrome.storage.session.set({ahora: nuevo}).catch(() => {});
 }
+
+// ── v1.6.2: actualizarse desde la propia extensión ────────────────────────
+// Miraru trae dentro la última versión. Si es más nueva que esta, la ventana
+// lo avisa (y el icono enseña «↑»). Al pulsar «Actualizar», Miraru copia los
+// archivos a la carpeta de la extensión y aquí se recarga (chrome.runtime.reload).
+// Tras recargar se comprueba si de verdad cambió la versión: si no, es que la
+// extensión está cargada desde otra carpeta y la ventana explica qué hacer.
+function versionMayor(a, b) {
+  const pa = String(a || '').split('.').map(Number), pb = String(b || '').split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const x = pa[i] || 0, y = pb[i] || 0;
+    if (x !== y) return x > y;
+  }
+  return false;
+}
+
+async function buscarActualizacion() {
+  const mia = chrome.runtime.getManifest().version;
+  try {
+    const r = await fetch(`http://127.0.0.1:${await puerto()}/api/extension/version`, {cache: 'no-store'});
+    if (!r.ok) return null;
+    const d = await r.json();
+    const hay = versionMayor(d.version, mia);
+    await chrome.storage.local.set({actualizacion: hay ? {version: d.version, carpeta: d.carpeta, cuando: Date.now()} : null});
+    if (hay) {
+      await chrome.action.setBadgeBackgroundColor({color: '#2563eb'});
+      await chrome.action.setBadgeText({text: '↑'});
+      await chrome.action.setTitle({title: `Miraru — versión ${d.version} de la extensión lista para instalar`});
+    }
+    return hay ? d.version : null;
+  } catch (_) {
+    return null;                       // Miraru cerrado: ya se mirará
+  }
+}
+
+async function actualizarExtension() {
+  const mia = chrome.runtime.getManifest().version;
+  let d;
+  try {
+    const r = await fetch(`http://127.0.0.1:${await puerto()}/api/extension/actualizar`, {
+      method: 'POST', headers: {'X-Miraru-Extension': '1'}});
+    d = await r.json().catch(() => ({}));
+    if (!r.ok) return {ok: false, detalle: d.detail || ('Error ' + r.status)};
+  } catch (_) {
+    return {ok: false, detalle: 'Miraru está cerrado: ábrelo y vuelve a intentarlo'};
+  }
+  await chrome.storage.local.set({actualizando: {de: mia, a: d.version, carpeta: d.carpeta, cuando: Date.now()}});
+  setTimeout(() => chrome.runtime.reload(), 300);      // que la ventana reciba la respuesta
+  return {ok: true, version: d.version};
+}
+
+// Al arrancar tras una recarga: ¿se actualizó de verdad?
+async function comprobarActualizacion() {
+  const {actualizando} = await chrome.storage.local.get('actualizando');
+  if (!actualizando) return;
+  const mia = chrome.runtime.getManifest().version;
+  const ok = !versionMayor(actualizando.a, mia);
+  await chrome.storage.local.set({actualizando: null,
+    resultadoActualizacion: {ok, version: mia, esperada: actualizando.a, carpeta: actualizando.carpeta, cuando: Date.now()}});
+  if (ok) {
+    await chrome.storage.local.set({actualizacion: null});
+    await marcar('✓', '#16a34a', `Extensión actualizada a la versión ${mia}`);
+  }
+}
+comprobarActualizacion().then(buscarActualizacion);
+chrome.alarms.create('actualizacion', {periodInMinutes: 180, delayInMinutes: 2});
+chrome.alarms.onAlarm.addListener(a => { if (a.name === 'actualizacion') buscarActualizacion(); });
+chrome.runtime.onMessage.addListener((msg, _s, responder) => {
+  if (msg === 'buscar-actualizacion') { buscarActualizacion().then(responder); return true; }
+  if (msg === 'actualizar-extension') { actualizarExtension().then(responder); return true; }
+  return false;
+});

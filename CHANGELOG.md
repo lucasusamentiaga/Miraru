@@ -1,5 +1,18 @@
 # Changelog
 
+## v2.17.6 — La extensión se actualiza sola
+
+- **Extensión 1.6.2 — actualizar desde su ventana**: pregunta a Miraru qué versión trae
+  (`/api/extension/version`); si es más nueva, aviso «Versión X de la extensión» con «Actualizar»
+  (y «↑» en el icono). Miraru copia los archivos a la carpeta de la extensión
+  (`/api/extension/actualizar`, solo la extensión y solo desde el PC) y la extensión se recarga
+  (`chrome.runtime.reload`). Si tras recargar sigue en la versión vieja (cargada desde otra
+  carpeta), explica cómo instalarla bien con «Instalar bien». En Ajustes, «Buscar actualización».
+- **animeflv.or.at**: páginas `/AAAA/MM/DD/<anime>-episodio-<n>/`, nombre del enlace a la ficha.
+  El tiempo para el apunte automático cuenta desde que pulsas el reproductor (la imagen con ▶
+  que luego se cambia por el vídeo) mientras la pestaña está a la vista.
+- Las pestañas abiertas con la versión anterior del script ya no dan errores tras actualizar.
+
 ## v2.17.5 — Arreglos
 
 - **Continuar** (inicio y lista): lo que está al día con lo emitido va detrás de lo que tiene

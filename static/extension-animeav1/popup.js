@@ -167,7 +167,69 @@ $('reintentar').addEventListener('click', async () => {
   pintar();
 });
 $('guia').addEventListener('click', () => chrome.tabs.create({url: chrome.runtime.getURL('bienvenida.html')}));
-chrome.storage.onChanged.addListener((_c, area) => { if (area === 'local') pintar(); if (area === 'session') pintarAhora(); });
+// ── v1.6.2: versión nueva de la extensión ──────────────────────────────────
+$('mi-version').textContent = chrome.runtime.getManifest().version;
+async function pintarActualizacion() {
+  const {actualizacion, resultadoActualizacion: res} = await chrome.storage.local.get(['actualizacion', 'resultadoActualizacion']);
+  const mia = chrome.runtime.getManifest().version;
+  $('nueva').hidden = !actualizacion;
+  if (actualizacion) {
+    $('nv-tit').textContent = `Versión ${actualizacion.version} de la extensión`;
+    $('nv-txt').textContent = `Tienes la ${mia}. Se instala en un momento, sin salir de aquí.`;
+  }
+  // Resultado de la última actualización (se enseña unos minutos).
+  const reciente = res && Date.now() - res.cuando < 10 * 60 * 1000;
+  $('nv-res').hidden = !reciente;
+  if (!reciente) return;
+  $('nv-res').className = 'aviso ' + (res.ok ? 'ok' : 'warn');
+  $('nv-res').textContent = '';
+  if (res.ok) {
+    $('nv-res').textContent = `✓ Extensión actualizada a la versión ${res.version}. Recarga las pestañas de Netflix, Crunchyroll o AnimeFLV que tengas abiertas.`;
+    return;
+  }
+  // La recarga no cambió nada: Chrome la tiene cargada desde otra carpeta.
+  const p = document.createElement('div');
+  p.textContent = `Sigue en la ${res.version}: tu navegador carga la extensión desde otra carpeta. Para que a partir de ahora se actualice sola:`;
+  const ol = document.createElement('ol');
+  ['Pulsa «Instalar bien» (se abre la página de extensiones).',
+   'Quita la extensión de Miraru que tienes ahora.',
+   'Activa «Modo de desarrollador», pulsa «Cargar descomprimida» y pega con Ctrl+V.'].forEach(t => {
+    const li = document.createElement('li'); li.textContent = t; ol.appendChild(li);
+  });
+  const b = document.createElement('button');
+  b.className = 'btn mini'; b.type = 'button'; b.textContent = 'Instalar bien';
+  b.onclick = async () => {
+    b.disabled = true;
+    try {
+      const {puerto = 8765} = await chrome.storage.local.get('puerto');
+      const r = await fetch(`http://127.0.0.1:${puerto}/api/extension/preparar`, {method: 'POST'});
+      b.textContent = r.ok ? 'Ruta copiada: pégala con Ctrl+V' : 'No se pudo (¿Miraru abierto?)';
+    } catch (_) { b.textContent = 'Abre Miraru y vuelve a intentarlo'; }
+  };
+  $('nv-res').append(p, ol, b);
+}
+$('nv-btn').addEventListener('click', async () => {
+  const b = $('nv-btn');
+  b.disabled = true; b.textContent = 'Instalando…';
+  let r = null;
+  try { r = await chrome.runtime.sendMessage('actualizar-extension'); } catch (_) { /* se recargó: la ventana se cierra */ }
+  if (r && !r.ok) {
+    b.disabled = false; b.textContent = 'Actualizar';
+    $('nv-txt').textContent = r.detalle || 'No se pudo actualizar';
+  }
+});
+$('buscar-act').addEventListener('click', async () => {
+  const b = $('buscar-act');
+  b.disabled = true; b.textContent = 'Buscando…';
+  let v = null;
+  try { v = await chrome.runtime.sendMessage('buscar-actualizacion'); } catch (_) { /* nada */ }
+  b.disabled = false; b.textContent = v ? 'Hay una nueva ↑' : 'Ya tienes la última';
+  pintarActualizacion();
+});
+pintarActualizacion();
+chrome.runtime.sendMessage('buscar-actualizacion').then(pintarActualizacion).catch(() => {});
+
+chrome.storage.onChanged.addListener((_c, area) => { if (area === 'local') { pintar(); pintarActualizacion(); } if (area === 'session') pintarAhora(); });
 pintar();
 pintarAhora();
 setInterval(pintarAhora, 5000);

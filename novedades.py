@@ -10,6 +10,17 @@ from __future__ import annotations
 # icono: emoji · titulo: corto (≤ 40 letras) · texto: una frase.
 # accion (opcional): {"texto": "...", "url": "/app#..."} → botón dentro del punto.
 NOVEDADES: list[dict] = [
+    {
+        "version": "2.17.6",
+        "titulo": "La extensión se actualiza sola",
+        "puntos": [
+            {"icono": "⬆️", "titulo": "Actualizar desde la extensión",
+             "texto": "Cuando haya una versión nueva de la extensión, su ventana te avisa y se instala con un botón, sin ir a la página de extensiones."},
+            {"icono": "🧩", "titulo": "También en animeflv.or.at",
+             "texto": "La pastilla «✓ Marcar visto» sale en los episodios de animeflv.or.at y cuenta el tiempo desde que pulsas el reproductor.",
+             "accion": {"texto": "Ver la extensión", "url": "/app#extension"}},
+        ],
+    },
     # silenciosa: solo arreglos; no abre la ventana de novedades.
     {
         "version": "2.17.5",

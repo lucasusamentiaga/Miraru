@@ -10,26 +10,52 @@
 // - Una vez apuntado, «Deshacer» lo quita (por si te equivocaste de episodio).
 //
 // Solo lee de la página el nombre del anime y el número del episodio
-// (/ver/<anime>-<número>). Lo que no es anime de AniList no se apunta.
+// (/ver/<anime>-<número>, o …/<anime>-episodio-<número>/ en animeflv.or.at). Lo que no es anime de AniList no se apunta.
 (function () {
   'use strict';
 
   const AUTO_SEG = 15 * 60;
   const EN_PRUEBAS = typeof module !== 'undefined';
 
-  // /ver/tokyo-revengers-seiya-kessen-hen-7 → episodio 7
+  // Dos formas de página de episodio:
+  // - animeflv.net:    /ver/tokyo-revengers-seiya-kessen-hen-7
+  // - animeflv.or.at:  /2026/11/08/ao-no-hako-season-2-episodio-5/  (v1.6.2)
+  //   con un enlace a /anime/ao-no-hako-season-2/ cuyo texto es el nombre.
+  const quitarEpisodio = t => String(t || '').replace(/\s+/g, ' ').trim()
+    .replace(/\s*[-|–]\s*AnimeFLV.*$/i, '')
+    .replace(/\s+(Episodio|Capítulo|Cap\.?|Ep\.?)\s+\d+.*$/i, '')
+    .replace(/\s+(Sub Español|Latino|Castellano).*$/i, '').trim();
+
   function leerAnimeFLV(url, doc) {
     let u;
     try { u = new URL(url); } catch (_) { return null; }
-    const m = u.pathname.match(/^\/ver\/(.+)-(\d{1,5})\/?$/);
-    if (!m) return null;
-    const episodio = Number(m[2]);
-    let serie = '';
-    const h = doc && doc.querySelector('.CapiTop h1, h1.Title, .Title-Episodio h1');
-    if (h) serie = h.textContent.trim();
-    if (!serie && doc && doc.title) serie = doc.title.replace(/\s+(Episodio|Capítulo|Cap\.?)\s+\d+.*$/i, '').replace(/\s*[-|]\s*AnimeFLV.*$/i, '').trim();
-    if (!serie) serie = m[1].replace(/-/g, ' ');           // el nombre de la dirección, como último recurso
+    let slug = '', episodio = 0, m;
+    if ((m = u.pathname.match(/^\/ver\/(.+)-(\d{1,5})\/?$/))) {
+      slug = m[1]; episodio = Number(m[2]);
+    } else if ((m = u.pathname.match(/^\/(?:\d{4}\/\d{1,2}\/\d{1,2}\/)?([^/]+)-episodio-(\d{1,5})\/?$/i))) {
+      slug = m[1]; episodio = Number(m[2]);
+    }
     if (!episodio) return null;
+    let serie = '';
+    if (doc) {
+      // El enlace a la ficha del anime (su dirección empieza igual que la del episodio).
+      const fichas = doc.querySelectorAll ? [...doc.querySelectorAll('a[href*="/anime/"]')] : [];
+      const ficha = fichas.find(a => {
+        const s = ((a.getAttribute('href') || '').match(/\/anime\/([^/?#]+)/) || [])[1];
+        return s && (slug === s || slug.startsWith(s + "-"));
+      });
+      if (ficha) serie = ficha.textContent.trim();
+      if (!serie) {
+        const h = doc.querySelector('.CapiTop h1, h1.Title, .Title-Episodio h1');
+        if (h) serie = h.textContent.trim();
+      }
+      if (!serie) {
+        const h = doc.querySelector('h1.entry-title');
+        if (h) serie = quitarEpisodio(h.textContent);
+      }
+      if (!serie && doc.title) serie = quitarEpisodio(doc.title);
+    }
+    if (!serie) serie = slug.replace(/-/g, ' ');           // el nombre de la dirección, como último recurso
     return {servicio: 'animeflv', serie, temporada: 1, episodio};
   }
 
@@ -150,12 +176,29 @@
   (document.body || document.documentElement).appendChild(caja);
 
   // ── Automático: tiempo con el reproductor en marcha ────────────────────────
-  // Al pulsar dentro del reproductor (un marco), el foco pasa a ese marco: es
-  // la mejor señal que tiene la página de que lo estás viendo.
+  // El vídeo va en un marco de otra web: la página no sabe si suena. Cuenta
+  // como «viendo» desde que pulsas el reproductor (en animeflv.or.at es una
+  // imagen con ▶ que luego se cambia por el marco) o el foco entra en el marco,
+  // y solo mientras la pestaña está a la vista.
+  let jugando = false;
+  const enReproductor = (x, y, el) => {
+    if (el && el.closest && el.closest('iframe, video, [class*="player" i], [id*="player" i], [class*="play" i], .video, #video')) return true;
+    return [...document.querySelectorAll('iframe, video')].some(f => {
+      const r = f.getBoundingClientRect();
+      return r.width > 200 && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    });
+  };
+  document.addEventListener('pointerdown', e => {
+    if (e.composedPath().includes(caja)) return;                      // la pastilla no cuenta
+    if (enReproductor(e.clientX, e.clientY, e.target)) jugando = true;
+  }, true);
+  window.addEventListener('blur', () => {
+    setTimeout(() => { if (document.activeElement && document.activeElement.tagName === 'IFRAME') jugando = true; }, 0);
+  });
   setInterval(() => {
     if (estado !== 'listo') return;          // ya apuntado, o lo deshiciste: no insistir
-    const viendo = document.visibilityState === 'visible' &&
-      (document.activeElement && document.activeElement.tagName === 'IFRAME' || document.fullscreenElement);
+    const viendo = document.visibilityState === 'visible' && (jugando || document.fullscreenElement ||
+      (document.activeElement && document.activeElement.tagName === 'IFRAME'));
     if (!viendo) return;
     segundos += 5;
     if (segundos >= AUTO_SEG) apuntar();

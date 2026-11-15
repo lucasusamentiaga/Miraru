@@ -135,7 +135,7 @@ def test_extension_declara_netflix_y_crunchyroll():
     scripts = [x for c in m["content_scripts"] for x in c["matches"]]
     assert "https://www.netflix.com/*" in scripts and "https://static.crunchyroll.com/*" in scripts
     assert any(c.get("all_frames") for c in m["content_scripts"])      # el reproductor de Crunchyroll va en un marco
-    assert m["version"] == "1.6.1"
+    assert m["version"] == "1.6.2"
 
 
 # ── v1.6 (Miraru 2.17.3): AnimeFLV, la ficha de Netflix y «Deshacer» ──────────
@@ -172,7 +172,8 @@ def test_netflix_por_la_ficha_del_video():
 def test_manifest_anade_animeflv():
     m = json.loads((JS.parent / "manifest.json").read_text(encoding="utf-8"))
     flv = [c for c in m["content_scripts"] if "animeflv.js" in c["js"]]
-    assert flv and all("/ver/" in x for x in flv[0]["matches"])
+    assert flv and "https://animeflv.or.at/*" in flv[0]["matches"]
+    assert all("/ver/" in x for x in flv[0]["matches"] if "animeflv.net" in x)
 
 
 def test_deshacer_y_desmarcar_animeflv(db, monkeypatch):
@@ -200,3 +201,32 @@ def test_deshacer_y_desmarcar_animeflv(db, monkeypatch):
     r = c.post("/api/extension/deshacer", json={"nombre": nombre, "episodio": 1}, headers=h).json()
     assert (r["accion"], r["episodios_vistos"], r["estado"]) == ("deshecho", 0, "pendiente")
     assert c.post("/api/extension/deshacer", json={"nombre": "No existe", "episodio": 1}, headers=h).status_code == 404
+
+
+def test_animeflv_or_at():
+    """animeflv.or.at (v1.6.2): /AAAA/MM/DD/<anime>-episodio-<n>/ y el nombre del enlace a la ficha."""
+    doc = ("{querySelectorAll:q=>q.includes('/anime/')?[{getAttribute:()=>'https://animeflv.or.at/anime/',textContent:'Anime'},"
+           "{getAttribute:()=>'https://animeflv.or.at/anime/ao-no-hako-season-2/',textContent:' Ao no Hako Season 2 '}]:[],"
+           "querySelector:()=>null,title:''}")
+    r = _flv(f"s.leerAnimeFLV('https://animeflv.or.at/2026/11/08/ao-no-hako-season-2-episodio-5/',{doc})")
+    assert r == {"servicio": "animeflv", "serie": "Ao no Hako Season 2", "temporada": 1, "episodio": 5}
+    h1 = ("{querySelectorAll:()=>[],querySelector:q=>q.includes('entry-title')?"
+          "{textContent:'\\n\\t Ao no Hako Season 2 Episodio 5 Sub Español \\n'}:null,title:''}")
+    assert _flv(f"s.leerAnimeFLV('https://animeflv.or.at/2026/11/08/ao-no-hako-season-2-episodio-5/',{h1})")["serie"] == \
+        "Ao no Hako Season 2"
+    assert _flv("s.leerAnimeFLV('https://animeflv.or.at/anime/ao-no-hako-season-2/',null)") is None
+
+
+def test_extension_se_actualiza_desde_miraru(db, tmp_path, monkeypatch):
+    import main
+    importlib.reload(main)
+    monkeypatch.setenv("MIRARU_EXT_DIR", str(tmp_path / "ext"))
+    c = TestClient(main.app, client=("127.0.0.1", 1))
+    v = c.get("/api/extension/version").json()
+    assert v["version"] == "1.6.2" and v["en_carpeta"] == ""
+    assert c.post("/api/extension/actualizar").status_code == 403               # sin la cabecera, no
+    r = c.post("/api/extension/actualizar", headers={"X-Miraru-Extension": "1"}).json()
+    assert r["ok"] and r["version"] == "1.6.2" and (tmp_path / "ext" / "manifest.json").is_file()
+    assert c.get("/api/extension/version").json()["en_carpeta"] == "1.6.2"
+    lejos = TestClient(main.app, client=("192.168.1.50", 1))
+    assert lejos.post("/api/extension/actualizar", headers={"X-Miraru-Extension": "1"}).status_code == 403

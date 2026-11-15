@@ -5104,6 +5104,40 @@ def extension_preparar(request: Request):
             "navegador": extension_local.abrir_extensiones()}
 
 
+# ── v2.17.6: la extensión se actualiza desde su propia ventana ─────────────────
+# La extensión está «descomprimida» en ~/Miraru/extension-navegador (o donde la
+# cargaste). Miraru trae dentro la versión más nueva: la extensión pregunta
+# cuál es, y si hay una nueva, Miraru copia los archivos a la carpeta y la
+# extensión se recarga sola (chrome.runtime.reload). Si la cargaste desde otra
+# carpeta, la recarga no cambia nada y la ventana ofrece instalarla bien.
+@app.get("/api/extension/version")
+def extension_version():
+    import extension_local
+    origen = STATIC_DIR / "extension-animeav1"
+    return {"version": extension_local._version(origen) if origen.is_dir() else "",
+            "carpeta": str(extension_local.carpeta()),
+            "en_carpeta": extension_local._version(extension_local.carpeta())}
+
+
+@app.post("/api/extension/actualizar")
+def extension_actualizar(request: Request):
+    """Copia la extensión nueva a su carpeta. Solo la propia extensión, y solo
+    desde este ordenador."""
+    import extension_local
+    if request.headers.get("X-Miraru-Extension") != "1":
+        raise HTTPException(403, "Solo la extensión de Miraru puede usar esta ruta")
+    if _client_ip(request) not in ("127.0.0.1", "::1", "localhost"):
+        raise HTTPException(403, "Esto solo se puede hacer desde el ordenador donde está Miraru.")
+    origen = STATIC_DIR / "extension-animeav1"
+    if not origen.is_dir():
+        raise HTTPException(404, "Esta instalación no trae la extensión")
+    try:
+        ruta = extension_local.copiar(origen)
+    except OSError as e:
+        raise HTTPException(500, f"No se pudo copiar la extensión: {e}") from e
+    return {"ok": True, "version": extension_local._version(origen), "carpeta": str(ruta)}
+
+
 @app.get("/api/biblioteca/version")
 async def biblioteca_version():
     """Número que cambia con cada cambio en la lista: la pestaña de Miraru lo

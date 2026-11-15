@@ -207,3 +207,14 @@ html.popup-html,.popup{width:360px;min-width:360px;max-width:none}
 .hist .serv-l::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--c,var(--acento2))}
 .serv-l[data-s=animeav1]{--c:#a855f7}.serv-l[data-s=animeflv]{--c:#f59e0b}.serv-l[data-s=netflix]{--c:#e50914}.serv-l[data-s=crunchyroll]{--c:#f47521}
 .ultimo .barra{max-width:none}
+
+/* v1.6.2: aviso de versión nueva */
+.nueva{display:flex;align-items:center;gap:10px;padding:10px 10px 10px 12px;border-radius:12px;
+  background:rgba(var(--acento-rgb),.14);border:1px solid rgba(var(--acento-rgb),.55);animation:llega .45s var(--salida-expo) both}
+.nv-ico{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--acento);color:#fff;font-weight:700;flex-shrink:0}
+.nv-t{flex:1;min-width:0}
+.nv-t b{display:block;font-size:13px}
+.nv-t small{display:block;font-size:12px;color:var(--gris);line-height:1.4}
+.aviso.ok{background:rgba(var(--ok-rgb),.1);border:1px solid rgba(var(--ok-rgb),.4);color:#bbf7d0}
+.aviso .btn{margin-top:8px}
+.aviso ol{margin:6px 0 0;padding-left:18px}

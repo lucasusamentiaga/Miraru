@@ -11,6 +11,13 @@
     <span class="pastilla" id="pastilla"><i></i><span id="pastilla-txt">…</span></span>
   </div>
   <div class="cuerpo">
+    <!-- v1.6.2: actualizar la extensión desde aquí -->
+    <div class="nueva" id="nueva" hidden>
+      <span class="nv-ico" aria-hidden="true">↑</span>
+      <span class="nv-t"><b id="nv-tit">Nueva versión de la extensión</b><small id="nv-txt">Se instala en un momento, sin salir de aquí.</small></span>
+      <button class="btn mini" id="nv-btn" type="button">Actualizar</button>
+    </div>
+    <div class="aviso" id="nv-res" hidden></div>
     <div class="aviso mal" id="cerrado" hidden>Miraru está cerrado. Ábrelo y lo que marques se apuntará solo.</div>
     <div class="aviso warn" id="pendientes" hidden></div>
     <div class="aviso warn" id="fallo" hidden></div>
@@ -56,6 +63,7 @@
     </div>
     <details><summary>Ajustes</summary>
       <p>Puerto de Miraru: <input id="puerto" type="number" min="1" max="65535"> <span>(normalmente 8765)</span></p>
+      <p>Extensión <span id="mi-version"></span> · <button class="enlace" id="buscar-act" type="button">Buscar actualización</button></p>
     </details>
   </div>
 <script src="popup.js"></script>
