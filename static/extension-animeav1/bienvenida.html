@@ -10,13 +10,13 @@
   <div class="fondo" aria-hidden="true"></div>
   <main>
     <header class="hero">
-      <div class="logos" aria-hidden="true">
-        <img src="iconos/128.png" alt="" class="logo">
-        <span class="mas">+</span>
-        <span class="av1">AV1</span>
-      </div>
+      <img src="iconos/128.png" alt="" class="logo" width="76" height="76">
       <h1>¡Listo! Ya está instalada <span class="fiesta" aria-hidden="true">🎉</span></h1>
-      <p class="sub">Cuando marques un episodio como visto en AnimeAV1 o AnimeFLV, o termines uno en Netflix o Crunchyroll, se apuntará <strong>solo</strong> en tu Miraru, en ese mismo momento.</p>
+      <p class="sub">Lo que veas en estas webs se apuntará <strong>solo</strong> en tu Miraru, en ese mismo momento.</p>
+      <ul class="webs" aria-label="Dónde funciona">
+        <li data-s="animeav1">AnimeAV1</li><li data-s="animeflv">AnimeFLV</li>
+        <li data-s="netflix">Netflix</li><li data-s="crunchyroll">Crunchyroll</li>
+      </ul>
     </header>
 
     <ol class="pasos" aria-live="polite">
@@ -29,12 +29,39 @@
         </div>
       </li>
 
-      <li class="paso" id="p-av1">
+      <!-- v1.6.2: cada web, cómo se apunta y si está lista -->
+      <li class="paso" id="p-webs">
         <div class="num"><span>2</span><svg viewBox="0 0 24 24" fill="none" stroke="#06210f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
         <div class="cuerpo">
-          <h2>Sesión iniciada en AnimeAV1</h2>
-          <p class="estado">Comprobando…</p>
-          <div class="acciones"><a class="btn" href="https://animeav1.com" target="_blank" rel="noopener">Ir a AnimeAV1</a></div>
+          <h2>Cómo se apunta en cada web</h2>
+          <p class="estado">No tienes que hacer nada más que ver tus episodios.</p>
+          <ul class="servicios">
+            <li data-s="animeav1" id="s-av1">
+              <span class="s-ico" aria-hidden="true">AV1</span>
+              <div class="s-t"><b>AnimeAV1</b>
+                <p>Pulsa <span class="s-boton"><span aria-hidden="true">👁</span> Marcar como visto</span> debajo del vídeo. Desmarcarlo también se copia. Tus «Mis Listas» se pasan solas.</p></div>
+              <span class="s-est" id="s-av1-est">Comprobando…</span>
+            </li>
+            <li data-s="animeflv">
+              <span class="s-ico" aria-hidden="true">FLV</span>
+              <div class="s-t"><b>AnimeFLV</b>
+                <p>En la página del episodio sale una pastilla abajo a la derecha: <span class="s-boton">✓ Marcar visto</span>. Si no la pulsas, se apunta sola a los 15 min de reproductor.</p></div>
+              <span class="s-est ok">Lista</span>
+            </li>
+            <li data-s="netflix">
+              <span class="s-ico" aria-hidden="true">N</span>
+              <div class="s-t"><b>Netflix</b>
+                <p>Se apunta solo al llegar al 80 % del episodio. Lo que no es anime no se apunta.</p></div>
+              <span class="s-est ok">Lista</span>
+            </li>
+            <li data-s="crunchyroll">
+              <span class="s-ico" aria-hidden="true">CR</span>
+              <div class="s-t"><b>Crunchyroll</b>
+                <p>Igual que Netflix: al 80 % del episodio, solo.</p></div>
+              <span class="s-est ok">Lista</span>
+            </li>
+          </ul>
+          <p class="s-nota">Mientras ves algo en Netflix, Crunchyroll o AnimeFLV, el icono de Miraru enseña <b>«Viendo ahora»</b> con el episodio que ha leído y cuánto falta.</p>
         </div>
       </li>
 
@@ -42,18 +69,11 @@
         <div class="num"><span>3</span><svg viewBox="0 0 24 24" fill="none" stroke="#06210f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
         <div class="cuerpo">
           <h2>Pruébalo con un episodio</h2>
-          <p class="estado">Abre cualquier episodio en AnimeAV1 y pulsa este botón, que está debajo del vídeo:</p>
-          <div class="maqueta" aria-hidden="true">
-            <span class="m-btn">‹</span>
-            <span class="m-btn m-ojo">👁<span class="m-cursor">👆</span></span>
-            <span class="m-btn">⬇</span>
-            <span class="m-btn">›</span>
-            <span class="m-etiqueta">Marcar como visto</span>
-          </div>
+          <p class="estado">Marca un episodio en AnimeAV1 o AnimeFLV (o termina uno en Netflix o Crunchyroll) y aparecerá aquí.</p>
           <div class="resultado" id="resultado" hidden>
             <img id="r-portada" alt="">
             <div>
-              <div class="r-ok">✓ ¡Funciona! Apuntado en Miraru</div>
+              <div class="r-cab"><span class="r-ok">✓ ¡Funciona! Apuntado en Miraru</span><span class="serv" id="r-serv" hidden></span></div>
               <div class="r-nombre" id="r-nombre"></div>
               <div class="r-ep" id="r-ep"></div>
               <div class="barra"><span id="r-barra"></span></div>
@@ -72,7 +92,12 @@
       <div class="nota">
         <span class="ico" aria-hidden="true">🔒</span>
         <div><strong>Solo mira lo que ves</strong>
-          <p>En AnimeAV1 solo se entera de cuándo marcas un episodio. En Netflix y Crunchyroll, solo del nombre del episodio que tienes delante cuando llegas casi al final. En AnimeFLV, del nombre y el número del episodio que abres: pulsa «✓ Marcar visto» en la pastilla de abajo a la derecha (o se apunta solo a los 15 minutos de reproductor), y «Deshacer» si te equivocas. No lee tu historial ni tu cuenta, y se lo cuenta solo a Miraru, en tu propio PC. Lo que no es anime no se apunta.</p></div>
+          <p>En AnimeAV1 solo se entera de cuándo marcas un episodio. En AnimeFLV, del nombre y el número del episodio que abres. En Netflix y Crunchyroll, del nombre del episodio que tienes delante y de cuánto llevas. No lee tu historial ni tu cuenta, y se lo cuenta solo a Miraru, en tu propio PC.</p></div>
+      </div>
+      <div class="nota">
+        <span class="ico" aria-hidden="true">↩</span>
+        <div><strong>¿Se apuntó el que no era?</strong>
+          <p>En la ventana de la extensión, «↩ Deshacer» lo quita (o «Marcar como no visto» en AnimeAV1). Y cuando haya una versión nueva de la extensión, la misma ventana te avisa y se instala con un botón.</p></div>
       </div>
     </section>
   </main>

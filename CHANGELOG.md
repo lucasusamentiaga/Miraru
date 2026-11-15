@@ -12,6 +12,9 @@
   El tiempo para el apunte automático cuenta desde que pulsas el reproductor (la imagen con ▶
   que luego se cambia por el vídeo) mientras la pestaña está a la vista.
 - Las pestañas abiertas con la versión anterior del script ya no dan errores tras actualizar.
+- **Guía de bienvenida (extensión 1.6.3)**: las cuatro webs arriba; el paso 2 es «Cómo se apunta en
+  cada web» (AnimeAV1 con su comprobación de sesión, AnimeFLV, Netflix y Crunchyroll) y la prueba
+  vale con cualquiera, con la web de donde vino y lo emitido si está en emisión.
 
 ## v2.17.5 — Arreglos
 

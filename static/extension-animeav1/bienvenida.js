@@ -26,38 +26,55 @@ async function comprobarMiraru() {
   }
 }
 
+// AnimeAV1 es la única que necesita tu sesión (para que «Marcar como visto»
+// guarde algo). Las demás no necesitan nada: el paso 2 está bien igualmente.
+function estadoAV1(estado, texto) {
+  const viejo = $('s-av1-est');
+  const el = document.createElement(estado === 'mal' ? 'a' : 'span');
+  el.id = 's-av1-est';
+  el.className = 's-est ' + (estado || '');
+  el.textContent = texto;
+  if (estado === 'mal') { el.href = 'https://animeav1.com'; el.target = '_blank'; el.rel = 'noopener'; el.title = 'Entra en AnimeAV1 con tu cuenta'; }
+  viejo.replaceWith(el);
+}
+
 async function comprobarAnimeAV1() {
   try {
     const r = await fetch('https://animeav1.com/cuenta/listas/__data.json', {credentials: 'include', cache: 'no-store'});
-    if (r.status === 401 || r.status === 403) {
-      poner('p-av1', 'mal', 'No has iniciado sesión. Entra en AnimeAV1 con tu cuenta (sin ella el botón «Marcar como visto» no guarda nada).');
-      return;
-    }
+    if (r.status === 401 || r.status === 403) { estadoAV1('mal', 'Inicia sesión →'); return; }
     const j = await r.json();
     const error = (j.nodes || []).some(n => n && n.type === 'error') || j.type === 'error' || j.type === 'redirect';
-    if (!r.ok || error) {
-      poner('p-av1', 'mal', 'No has iniciado sesión. Entra en AnimeAV1 con tu cuenta.');
-    } else {
-      poner('p-av1', 'ok', 'Sesión iniciada. Perfecto.');
-    }
+    if (!r.ok || error) estadoAV1('mal', 'Inicia sesión →');
+    else estadoAV1('ok', 'Sesión iniciada');
   } catch (_) {
-    poner('p-av1', 'espera', 'No he podido comprobarlo. Si ya entras en AnimeAV1 con tu cuenta, está bien.');
+    estadoAV1('', 'Sin comprobar');
   }
 }
+
+const NOMBRE_SERV = {animeav1: 'AnimeAV1', animeflv: 'AnimeFLV', netflix: 'Netflix', crunchyroll: 'Crunchyroll'};
 
 function pintarResultado(u) {
   if (!u || !u.nombre) return;
   $('resultado').hidden = false;
   $('r-nombre').textContent = u.nombre;
   const total = parseInt(u.capitulos, 10);
-  $('r-ep').textContent = 'Episodio ' + (u.episodio ?? '?') + (total > 0 ? ' de ' + total : '');
-  const fr = total > 0 ? Math.min(1, (u.episodio || 0) / total) : 1;
+  const emit = Number(u.eps_emitidos) || 0;                // en emisión: lo que ha salido
+  const tope = emit || total;
+  const ep = u.episodio ?? '?';
+  $('r-ep').textContent = emit
+    ? (ep >= emit ? `Episodio ${ep} · ✓ al día` : `Episodio ${ep} de ${emit} emitidos`) + (total > emit ? ` (${total} en total)` : '')
+    : 'Episodio ' + ep + (total > 0 ? ' de ' + total : '');
+  const fr = tope > 0 ? Math.min(1, (u.episodio || 0) / tope) : 1;
+  $('r-serv').hidden = !NOMBRE_SERV[u.servicio];
+  $('r-serv').dataset.s = u.servicio || '';
+  $('r-serv').textContent = NOMBRE_SERV[u.servicio] || '';
   requestAnimationFrame(() => requestAnimationFrame(() => { $('r-barra').style.transform = `scaleX(${fr})`; }));
   if (u.imagen) { $('r-portada').src = u.imagen; $('r-portada').hidden = false; } else { $('r-portada').hidden = true; }
-  poner('p-prueba', 'ok', '¡Ya está! A partir de ahora, cada episodio que marques en AnimeAV1 aparecerá en Miraru.');
+  poner('p-prueba', 'ok', '¡Ya está! A partir de ahora, lo que veas en AnimeAV1, AnimeFLV, Netflix o Crunchyroll aparecerá en Miraru.');
   document.body.classList.add('celebra');
 }
 
+poner('p-webs', 'ok', 'No tienes que hacer nada más que ver tus episodios.');
 comprobarMiraru();
 comprobarAnimeAV1();
 setInterval(comprobarMiraru, 3000);

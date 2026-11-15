@@ -50,11 +50,6 @@ p{text-wrap:pretty}
 .bienvenida main{width:min(720px,100%);margin:0 auto;padding:clamp(28px,6vw,56px) clamp(16px,4vw,24px) 56px}
 
 .hero{text-align:center;margin-bottom:clamp(24px,4vw,36px)}
-.logos{display:inline-flex;align-items:center;gap:clamp(10px,2.5vw,16px);margin-bottom:18px}
-.logo{width:clamp(56px,12vw,76px);height:auto;filter:drop-shadow(0 6px 18px rgba(var(--acento-rgb),.5))}
-.mas{font-size:24px;color:var(--gris)}
-.av1{display:grid;place-items:center;width:clamp(56px,12vw,76px);aspect-ratio:1;border-radius:22%;background:#111;border:1px solid #333;
-  font:700 clamp(17px,3.6vw,22px)/1 var(--titulo);letter-spacing:.02em;color:#fff}
 .hero h1{font:700 clamp(25px,5.4vw,34px)/1.15 var(--titulo);letter-spacing:-.01em;margin:0 0 10px}
 .hero h1 .fiesta{display:inline-block;opacity:0;transform:scale(.6) rotate(-12deg);transition:opacity .5s var(--salida-expo),transform .6s var(--salida-expo)}
 .celebra .hero h1 .fiesta{opacity:1;transform:none}
@@ -218,3 +213,37 @@ html.popup-html,.popup{width:360px;min-width:360px;max-width:none}
 .aviso.ok{background:rgba(var(--ok-rgb),.1);border:1px solid rgba(var(--ok-rgb),.4);color:#bbf7d0}
 .aviso .btn{margin-top:8px}
 .aviso ol{margin:6px 0 0;padding-left:18px}
+
+/* ── v1.6.2: bienvenida con las cuatro webs ─────────────────────────────── */
+.hero .webs{list-style:none;margin:18px 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.webs li{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:99px;font-size:13px;font-weight:600;
+  background:var(--card);border:1px solid var(--borde)}
+.webs li::before,.servicios .s-ico::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+[data-s=animeav1]{--c:#a855f7}[data-s=animeflv]{--c:#f59e0b}[data-s=netflix]{--c:#e50914}[data-s=crunchyroll]{--c:#f47521}
+
+.servicios{list-style:none;margin:4px 0 0;padding:0}
+.servicios li{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:start;padding:12px 0}
+.servicios li+li{border-top:1px solid #241e38}
+.s-ico{position:relative;display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:var(--bg2);
+  border:1px solid var(--borde-hi);font:700 12.5px/1 var(--titulo);letter-spacing:.01em}
+.servicios .s-ico::after{position:absolute;right:-3px;bottom:-3px;border:2px solid var(--card)}
+.s-t{min-width:0}
+.s-t b{font:700 14.5px/1.3 var(--titulo)}
+.s-t p{margin:3px 0 0;color:var(--gris);font-size:13px;max-width:56ch}
+.s-boton{display:inline-flex;align-items:center;gap:5px;padding:1px 8px;border-radius:7px;white-space:nowrap;
+  background:rgba(var(--acento-rgb),.16);border:1px solid rgba(var(--acento-rgb),.45);color:var(--fg);font-size:12px;font-weight:600}
+.s-est{font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap;color:var(--gris);border:1px solid var(--borde);margin-top:2px}
+.s-est.ok{color:#86efac;border-color:rgba(var(--ok-rgb),.4);background:rgba(var(--ok-rgb),.08)}
+.s-est.mal{color:#fcd34d;border-color:rgba(var(--warn-rgb),.45);background:rgba(var(--warn-rgb),.08)}
+a.s-est{text-decoration:none}
+a.s-est:hover{border-color:var(--warn)}
+.s-nota{margin:6px 0 0;padding-top:12px;border-top:1px solid #241e38;color:var(--gris);font-size:13px}
+.s-nota b{color:var(--fg);font-weight:600}
+#p-webs.ok .estado{margin-bottom:12px}
+.r-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+@media (max-width:480px){
+  .servicios li{grid-template-columns:34px 1fr;row-gap:6px}
+  .s-ico{width:34px;height:34px;font-size:11px}
+  .s-est{grid-column:2;justify-self:start;margin-top:0}
+}
+.hero .logo{display:block;width:clamp(60px,12vw,76px);height:auto;margin:0 auto 16px;filter:drop-shadow(0 6px 18px rgba(var(--acento-rgb),.5))}
