@@ -1305,7 +1305,7 @@ fetch('/api/version').then(r => r.json()).then(d => {
         <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirCopia();toggleMenuMas(false)" title="Copia en la nube" id="btn-copia">☁<span class="lbl">Copia en la nube</span></button>
         <a href="/mobile" class="btn btn-ghost btn-sm" role="menuitem" title="Acceso móvil">📱<span class="lbl">Móvil</span></a>
         <div class="grupo">Aplicación</div>
-        <button class="btn btn-ghost btn-sm" role="menuitem" onclick="window.miraruElegirNavegador&&miraruElegirNavegador();toggleMenuMas(false)" title="En qué navegador se abre Miraru" id="btn-navegador">🧭<span class="lbl">Navegador</span></button>
+        <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirNavegador();toggleMenuMas(false)" title="En qué navegador se abre Miraru" id="btn-navegador">🧭<span class="lbl">Navegador</span></button>
         <div class="fila-idioma">🌐
           <select class="lang-select" id="lang-sel" onchange="cambiarIdioma(this.value)" aria-label="Idioma">
             <option value="es">ES</option>
@@ -4218,6 +4218,8 @@ async function animeAleatorio() {
 // clave es pública (solo sirve para enviar a ese buzón).
 const REPORTE_CLAVE = 'e2ff41dd-4c5a-4c92-aa28-704987b3b844';
 let _ultimoReporte = 0;
+// v2.17.7: «Más → Navegador» (la ventana vive en static/navegador.js)
+function abrirNavegador() { if (window.miraruElegirNavegador) window.miraruElegirNavegador(); }
 function abrirReporte() {
   document.getElementById('rep-form').hidden = false;
   document.getElementById('rep-hecho').hidden = true;
