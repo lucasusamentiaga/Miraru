@@ -138,14 +138,27 @@ def detectar() -> list[dict]:
 
 def predeterminado() -> str:
     """id del navegador predeterminado de Windows ('' si no se sabe)."""
+    progid = ""
     try:
         import winreg
-        k = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
-                           r"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\https\UserChoice")
-        progid = (winreg.QueryValueEx(k, "ProgId")[0] or "").lower()
+        for sub in ("UserChoiceLatest", "UserChoice"):       # Windows 11 reciente usa «Latest»
+            try:
+                k = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                                   r"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\https" + "\\" + sub)
+                progid = (winreg.QueryValueEx(k, "ProgId")[0] or "")
+                if progid:
+                    break
+            except OSError:
+                continue
     except Exception:  # noqa: BLE001
         return ""
-    for pref, id_ in _PROGID.items():
+    return _id_por_progid(progid)
+
+
+def _id_por_progid(progid: str) -> str:
+    """«Opera GXStable» → operagx, «ChromeHTML» → chrome…"""
+    progid = (progid or "").lower().replace(" ", "")
+    for pref, id_ in sorted(_PROGID.items(), key=lambda kv: -len(kv[0])):
         if progid.startswith(pref):
             return id_
     return ""

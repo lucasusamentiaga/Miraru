@@ -67,3 +67,10 @@ def test_id_por_ejecutable():
     assert f(r"C:\Program Files\Google\Chrome\Application\chrome.exe") == "chrome"
     assert f(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe") == "edge"
     assert f(r"C:\Program Files\Internet Explorer\iexplore.exe") == "ie"
+
+
+def test_progid_del_predeterminado():
+    f = navegadores._id_por_progid
+    assert f("Opera GXStable") == "operagx" and f("OperaStable") == "opera"
+    assert f("ChromeHTML") == "chrome" and f("MSEdgeHTM") == "edge" and f("FirefoxURL-308046B0AF4A39CB") == "firefox"
+    assert f("AppXq0fevzme2pys62n3e0fbqa7peapykr8v") == ""
