@@ -6,23 +6,32 @@
 </head>
 <body class="popup">
   <div class="cab">
-    <img src="iconos/48.png" alt="">
+    <img src="iconos/48.png" alt="" width="30" height="30">
     <div class="t"><b>Miraru</b><small title="AnimeAV1 · AnimeFLV · Netflix · Crunchyroll">Lo que ves se apunta solo</small></div>
-    <span class="pastilla" id="pastilla"><i></i><span id="pastilla-txt">…</span></span>
+    <span class="pastilla espera" id="pastilla" role="status"><i></i><span id="pastilla-txt">Conectando…</span></span>
   </div>
   <div class="cuerpo">
-    <!-- v1.6.2: actualizar la extensión desde aquí -->
+    <!-- actualizar la extensión desde aquí (v1.6.2) -->
     <div class="nueva" id="nueva" hidden>
       <span class="nv-ico" aria-hidden="true">↑</span>
-      <span class="nv-t"><b id="nv-tit">Nueva versión de la extensión</b><small id="nv-txt">Se instala en un momento, sin salir de aquí.</small></span>
+      <span class="nv-t"><b id="nv-tit">Nueva versión de la extensión</b><small id="nv-txt"></small></span>
       <button class="btn mini" id="nv-btn" type="button">Actualizar</button>
     </div>
     <div class="aviso" id="nv-res" hidden></div>
-    <div class="aviso mal" id="cerrado" hidden>Miraru está cerrado. Ábrelo y lo que marques se apuntará solo.</div>
-    <div class="aviso warn" id="pendientes" hidden></div>
     <div class="aviso warn" id="fallo" hidden></div>
 
-    <!-- v1.6.1: lo que suena ahora (Netflix, Crunchyroll, AnimeFLV) -->
+    <!-- v1.7: lo que se guarda mientras Miraru está cerrado -->
+    <section class="guardados" id="guardados" hidden aria-live="polite">
+      <div class="gd-cab">
+        <span class="gd-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg></span>
+        <span class="gd-t"><b id="gd-tit"></b><small id="gd-txt"></small></span>
+        <button class="btn sec mini" id="reintentar" type="button" hidden>Enviar ahora</button>
+      </div>
+      <ul class="gd-lista" id="gd-lista"></ul>
+      <div class="gd-barra" id="gd-barra" hidden><span></span></div>
+    </section>
+
+    <!-- lo que suena ahora (Netflix, Crunchyroll, AnimeFLV) -->
     <section class="ahora" id="ahora" hidden aria-live="polite">
       <div class="ah-cab"><span class="serv" id="a-serv"></span><span class="ah-vivo">Viendo ahora</span></div>
       <div class="ah-n" id="a-nombre"></div>
@@ -33,8 +42,8 @@
     <div class="ultimo" id="ultimo" hidden>
       <img id="u-img" alt="">
       <div class="t">
-        <div class="u-cab"><span class="etq" id="u-etq">✓ Apuntado en Miraru</span><span class="serv" id="u-serv"></span></div>
-        <div class="n" id="u-nombre"></div>
+        <div class="u-cab"><span class="etq" id="u-etq"></span><span class="serv" id="u-serv"></span></div>
+        <div class="n" id="u-nombre" data-no-i18n></div>
         <div class="e" id="u-ep"></div>
         <div class="barra"><span id="u-barra"></span></div>
         <div class="u-pie">
@@ -44,8 +53,8 @@
       </div>
     </div>
     <div class="vacio" id="vacio">
-      <span class="m-btn m-ojo">👁</span>
-      <span>Pulsa <b>«Marcar como visto»</b> en AnimeAV1 o AnimeFLV, o ve un anime en <b>Netflix</b> o <b>Crunchyroll</b> hasta casi el final: aparecerá aquí y en Miraru.</span>
+      <span class="m-btn m-ojo" aria-hidden="true">👁</span>
+      <span>Pulsa «Marcar como visto» en AnimeAV1 o AnimeFLV, o ve un anime en Netflix o Crunchyroll hasta casi el final: aparecerá aquí y en Miraru.</span>
     </div>
 
     <div class="hist" id="hist" hidden><h3>Antes</h3></div>
@@ -58,14 +67,18 @@
 
     <div class="fila">
       <a class="btn" id="abrir" href="#" target="_blank">Abrir Miraru</a>
-      <button class="btn sec" id="reintentar" hidden>Enviar ahora</button>
-      <button class="btn sec" id="guia">Guía</button>
+      <button class="btn sec" id="guia" type="button">Guía</button>
     </div>
-    <details><summary>Ajustes</summary>
-      <p>Puerto de Miraru: <input id="puerto" type="number" min="1" max="65535"> <span>(normalmente 8765)</span></p>
-      <p>Extensión <span id="mi-version"></span> · <button class="enlace" id="buscar-act" type="button">Buscar actualización</button></p>
+    <details class="ajustes"><summary>Ajustes</summary>
+      <label class="aj-fila"><span>Idioma</span>
+        <select id="idioma"><option value="">Como Miraru</option></select></label>
+      <label class="aj-fila"><span>Puerto de Miraru:</span>
+        <span><input id="puerto" type="number" min="1" max="65535"> <small>(normalmente 8765)</small></span></label>
+      <p class="aj-fila"><span>Extensión <b id="mi-version" data-no-i18n></b></span>
+        <button class="enlace" id="buscar-act" type="button">Buscar actualización</button></p>
     </details>
   </div>
+<script src="i18n.js"></script>
 <script src="popup.js"></script>
 </body>
 </html>

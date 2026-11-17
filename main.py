@@ -154,13 +154,6 @@ async def _lifespan(app: FastAPI):
         extension_local.actualizar_si_existe(STATIC_DIR / "extension-animeav1")
     except Exception:  # noqa: BLE001
         pass
-    # Auto-detección de episodios: arranca si hay carpeta configurada
-    try:
-        import watch_folder
-        if not _sin_hilos_de_fondo():
-            watch_folder.auto_start()
-    except Exception:
-        pass
 
     yield          # ← aquí el servidor atiende peticiones
 
@@ -3502,7 +3495,8 @@ async def notif_activas():
 # estrenar es una temporada (o película) nueva. Nada de red salvo para poner
 # nombre y portada a los candidatos, y como mucho una vez al día.
 
-_SECUELAS_TTL = 24 * 3600
+_SECUELAS_TTL = 12 * 3600
+_SECUELAS_V = 3            # sube si cambia cómo se calculan: la caché vieja se recalcula
 
 
 def _secuelas_ignoradas() -> set[int]:
@@ -3512,74 +3506,45 @@ def _secuelas_ignoradas() -> set[int]:
         return set()
 
 
-def _secuela_disponible(estado: str, emitidos) -> bool:
+def _secuela_disponible(x: dict) -> bool:
+    """Ya se puede ver: en emisión con episodios, o terminada hace poco."""
     try:
-        return estado == "En emisión" and int(emitidos or 0) > 0
+        if x.get("motivo") == "reciente":
+            return True
+        return x.get("estado_anime") == "En emisión" and int(x.get("eps_emitidos") or 0) > 0
     except (TypeError, ValueError):
         return False
 
 
 def _calcular_secuelas() -> list[dict]:
-    animes = db.listar_animes()
-    en_lista = {int(a.get("anilist_id") or 0) for a in animes} - {0}
-    rel = _relaciones_guardadas()
-    fuera = en_lista | _secuelas_ignoradas()
-    candidatos: dict[int, str] = {}      # id → de qué anime tuyo sale
-    for a in animes:
-        if (a.get("tipo") or "anime") == "manga":
-            continue
-        if a.get("estado_usuario") not in ("completado", "completed"):
-            continue
-        for rid in rel.get(str(a.get("anilist_id") or 0), []):
-            rid = int(rid)
-            if rid not in fuera and rid not in candidatos:
-                candidatos[rid] = a["nombre"]
-    if not candidatos:
-        return []
-    anilist = SCRAPERS.get("anilist")
-    if not anilist:
-        return []
-    items: list[dict] = []
-    ids = list(candidatos)[:100]
-    for i in range(0, len(ids), 50):
-        for aid, ficha in anilist.buscar_por_ids(ids[i:i + 50]).items():
-            if int(aid) not in candidatos:
-                continue
-            aid = int(aid)
-            # Solo lo que YA se puede ver: en emisión y con algún episodio
-            # emitido. Una precuela vieja (Finalizado) no es noticia, y lo
-            # anunciado para dentro de meses (Date A Live F, en 2027) tampoco
-            # (v2.17.4: antes salían «Próximamente»).
-            if not _secuela_disponible(ficha.estado_anime, getattr(ficha, "eps_emitidos", 0)):
-                continue
-            if adulto.es_adulto(ficha):
-                continue
-            items.append({"anilist_id": aid, "nombre": ficha.nombre,
-                          "imagen": ficha.imagen, "capitulos": ficha.capitulos,
-                          "estado_anime": ficha.estado_anime, "genero": ficha.genero,
-                          "sinopsis": ficha.sinopsis, "fuente": "anilist",
-                          "eps_emitidos": int(getattr(ficha, "eps_emitidos", 0) or 0),
-                          "de": candidatos[aid]})
-    items.sort(key=lambda x: x["nombre"])
-    return items[:12]
+    """v2.17.7: búsqueda a fondo en `secuelas.py` (cadena de secuelas con
+    relaciones frescas de AniList, de lo que has visto o estás viendo)."""
+    import secuelas
+    from scrapers import anilist as anilist_mod
+    items = secuelas.buscar(
+        db.listar_animes(), anilist_mod._post, ignorados=_secuelas_ignoradas(),
+        clave=db.clave_nombre,
+        es_adulto=lambda m: "hentai" in {g.lower() for g in (m.get("genres") or [])},
+        pausa=ANILIST_MIN_INTERVAL)
+    return items[:16]
 
 
 @app.get("/api/secuelas")
 async def secuelas_nuevas(refrescar: int = 0):
-    """Temporadas nuevas, ya en emisión, de animes que completaste."""
+    """Temporadas nuevas (ya en emisión o recién terminadas) de lo que has visto."""
     try:
         cache = json.loads(db.get_config("secuelas_cache") or "{}")
     except Exception:
         cache = {}
-    # v2: desde la 2.17.4 (solo lo ya emitido); una caché anterior se recalcula.
-    if not refrescar and cache.get("v") == 2 and cache.get("t", 0) > _time.time() - _SECUELAS_TTL:
+    if not refrescar and cache.get("v") == _SECUELAS_V and cache.get("t", 0) > _time.time() - _SECUELAS_TTL:
         ign = _secuelas_ignoradas()
-        # Cachés de antes de la 2.17.4 traen «Sin estrenar» (y sin eps_emitidos): fuera.
+        claves = {db.clave_nombre(a["nombre"]) for a in db.listar_animes_slim()}
         return {"items": [x for x in cache.get("items", []) if x.get("anilist_id") not in ign
-                          and _secuela_disponible(x.get("estado_anime"), x.get("eps_emitidos"))]}
+                          and db.clave_nombre(x.get("nombre") or "") not in claves
+                          and _secuela_disponible(x)]}
     loop = asyncio.get_running_loop()
     items = await loop.run_in_executor(executor, _calcular_secuelas)
-    db.set_config("secuelas_cache", json.dumps({"v": 2, "t": _time.time(), "items": items},
+    db.set_config("secuelas_cache", json.dumps({"v": _SECUELAS_V, "t": _time.time(), "items": items},
                                                separators=(",", ":"), ensure_ascii=False))
     return {"items": items}
 
@@ -4587,47 +4552,7 @@ async def nota_rapida(nombre: str, req: NotaRequest):
     return {"ok": True}
 
 
-# ── Auto-detección de episodios (watch folder) ───────────────────────────────
-
-class WatchFolderRequest(BaseModel):
-    carpeta: str = Field(..., max_length=500)
-
-@app.get("/api/watch-folder/status")
-async def watch_folder_status():
-    """Estado del watcher de carpeta."""
-    try:
-        import watch_folder
-        return watch_folder.get_status()
-    except Exception:
-        return {"activo": False, "carpeta": None, "archivos_procesados": 0, "log": []}
-
-@app.post("/api/watch-folder/start")
-async def watch_folder_start(req: WatchFolderRequest):
-    """Inicia la vigilancia de una carpeta para auto-detectar episodios."""
-    import watch_folder
-    carpeta = req.carpeta.strip()
-    if not Path(carpeta).is_dir():
-        raise HTTPException(400, f"La carpeta no existe: {carpeta}")
-    ok = watch_folder.start(carpeta)
-    if not ok:
-        raise HTTPException(409, "El watcher ya está activo")
-    return {"ok": True, "carpeta": carpeta}
-
-@app.post("/api/watch-folder/stop")
-async def watch_folder_stop():
-    """Para la vigilancia de carpeta."""
-    import watch_folder
-    watch_folder.stop()
-    return {"ok": True}
-
-@app.get("/api/watch-folder/log")
-async def watch_folder_log():
-    """Log de archivos detectados recientemente."""
-    try:
-        import watch_folder
-        return {"log": watch_folder.get_log()}
-    except Exception:
-        return {"log": []}
+# v2.17.7: «Carpeta vigilada» eliminada (no se usaba).
 
 
 # ── AniList Sync ─────────────────────────────────────────────────────────────
@@ -5104,6 +5029,48 @@ def extension_preparar(request: Request):
             "navegador": extension_local.abrir_extensiones()}
 
 
+# ── v2.17.7: en qué navegador se abre Miraru ─────────────────────────────────
+_LOCAL = ("127.0.0.1", "::1", "localhost", "testclient")
+
+
+@app.get("/api/navegadores")
+def navegadores_listar(request: Request):
+    """Los navegadores instalados, el elegido y si ya se preguntó.
+    `preguntar`: enseñar la pantalla de elección (solo una vez, solo en el PC
+    y solo si hay de dónde elegir)."""
+    import navegadores
+    lista = [{"id": n["id"], "nombre": n["nombre"]} for n in navegadores.detectar()]
+    local = _client_ip(request) in _LOCAL
+    preguntado = navegadores.preguntado()
+    if local and not preguntado and len(lista) < 2:
+        navegadores.marcar_preguntado()           # con uno solo no hay nada que elegir
+        preguntado = True
+    return {"navegadores": lista, "elegido": navegadores.elegido(),
+            "predeterminado": navegadores.predeterminado(),
+            "preguntar": local and not preguntado}
+
+
+class NavegadorRequest(BaseModel):
+    id: str = Field("", max_length=80)
+    abrir: bool = False
+
+
+@app.post("/api/navegador")
+def navegador_elegir(req: NavegadorRequest, request: Request):
+    """Guarda el navegador elegido ('' = el predeterminado del sistema) y, si
+    se pide, abre Miraru en él ahora mismo. Solo desde este PC."""
+    import navegadores
+    if _client_ip(request) not in _LOCAL:
+        raise HTTPException(403, "Esto solo se puede hacer desde el ordenador donde está Miraru.")
+    if req.id and req.id not in {n["id"] for n in navegadores.detectar()}:
+        raise HTTPException(404, "Ese navegador no está instalado")
+    navegadores.guardar(req.id)
+    abierto = None
+    if req.abrir:
+        abierto = navegadores.abrir(f"http://127.0.0.1:{os.environ.get('MIRARU_PUERTO', '8765')}/", req.id)
+    return {"ok": True, "elegido": req.id, "abierto": abierto}
+
+
 # ── v2.17.6: la extensión se actualiza desde su propia ventana ─────────────────
 # La extensión está «descomprimida» en ~/Miraru/extension-navegador (o donde la
 # cargaste). Miraru trae dentro la versión más nueva: la extensión pregunta
@@ -5116,7 +5083,41 @@ def extension_version():
     origen = STATIC_DIR / "extension-animeav1"
     return {"version": extension_local._version(origen) if origen.is_dir() else "",
             "carpeta": str(extension_local.carpeta()),
-            "en_carpeta": extension_local._version(extension_local.carpeta())}
+            "en_carpeta": extension_local._version(extension_local.carpeta()),
+            "id": db.get_config("extension_id") or "",
+            "instalada": db.get_config("extension_version") or ""}
+
+
+class ExtensionHolaRequest(BaseModel):
+    id: str = Field(..., min_length=32, max_length=32)
+    version: str = Field("", max_length=20)
+
+
+@app.post("/api/extension/hola")
+def extension_hola(req: ExtensionHolaRequest, request: Request):
+    """v2.17.7: la extensión dice quién es (su id) al arrancar. Así la guía de
+    Miraru (/extension) puede hablar con ella."""
+    if request.headers.get("X-Miraru-Extension") != "1":
+        raise HTTPException(403, "Solo la extensión de Miraru puede usar esta ruta")
+    if not re.fullmatch(r"[a-p]{32}", req.id):          # así son los id de las extensiones de Chrome
+        raise HTTPException(422, "id no válido")
+    if db.get_config("extension_id") != req.id:
+        db.set_config("extension_id", req.id)
+    if db.get_config("extension_version") != req.version:
+        db.set_config("extension_version", req.version)
+    return {"ok": True}
+
+
+@app.get("/extension", response_class=HTMLResponse)
+def guia_extension():
+    """v2.17.7: la guía de la extensión con dirección corta
+    (http://127.0.0.1:8765/extension en vez de chrome-extension://…)."""
+    p = STATIC_DIR / "extension-animeav1" / "bienvenida.html"
+    if not p.is_file():
+        raise HTTPException(404, "Esta instalación no trae la extensión")
+    html = p.read_text(encoding="utf-8").replace(
+        "<head>", '<head>\n<base href="/static/extension-animeav1/">', 1)
+    return HTMLResponse(html, headers={"Cache-Control": "no-store"})
 
 
 @app.post("/api/extension/actualizar")

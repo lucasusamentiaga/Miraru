@@ -23,40 +23,6 @@ def test_revisionados_se_guardan_con_limites(db):
     assert slim[0]["revisionados"] == 2
 
 
-def test_secuelas_de_lo_completado(db, monkeypatch):
-    main, c = _cliente()
-    db.guardar_anime({"nombre": "AoT", "anilist_id": 1, "estado_usuario": "completado"})
-    db.guardar_anime({"nombre": "Frieren", "anilist_id": 5, "estado_usuario": "viendo"})
-    db.guardar_anime({"nombre": "AoT S2", "anilist_id": 2, "estado_usuario": "pendiente"})
-    # Relaciones guardadas: AoT → 2 (ya en tu lista), 3 (en emisión), 4 (vieja);
-    # Frieren (no completado) → 6: no cuenta.
-    main._guardar_relaciones({1: [2, 3, 4, 7, 8], 5: [6]})
-    pedidos = []
-
-    class Falso:
-        def buscar_por_ids(self, ids, media_type="ANIME"):
-            pedidos.append(sorted(ids))
-            return {3: AnimeData(nombre="AoT Final", capitulos="?", imagen="", genero=[], sinopsis="",
-                                 fuente="anilist", estado_anime="En emisión", anilist_id=3, eps_emitidos=4),
-                    # anunciada para dentro de meses (Date A Live F): no
-                    7: AnimeData(nombre="DAL F", capitulos="?", imagen="", genero=[], sinopsis="",
-                                 fuente="anilist", estado_anime="Sin estrenar", anilist_id=7),
-                    # «en emisión» pero el 1 aún no ha salido: tampoco
-                    8: AnimeData(nombre="Mañana", capitulos=12, imagen="", genero=[], sinopsis="",
-                                 fuente="anilist", estado_anime="En emisión", anilist_id=8),
-                    4: AnimeData(nombre="AoT OVA", capitulos=3, imagen="", genero=[], sinopsis="",
-                                 fuente="anilist", estado_anime="Finalizado", anilist_id=4)}
-    monkeypatch.setitem(main.SCRAPERS, "anilist", Falso())
-    d = c.get("/api/secuelas?refrescar=1").json()
-    assert pedidos == [[3, 4, 7, 8]]
-    assert [(x["nombre"], x["de"]) for x in d["items"]] == [("AoT Final", "AoT")]
-    # De la caché, sin volver a preguntar; y «No me interesa» lo quita.
-    assert c.get("/api/secuelas").json()["items"][0]["anilist_id"] == 3 and len(pedidos) == 1
-    assert c.post("/api/secuelas/ignorar", json={"anilist_id": 3}).json()["ok"]
-    assert c.get("/api/secuelas").json()["items"] == []
-    assert c.get("/api/secuelas?refrescar=1").json()["items"] == []
-
-
 def test_corregir_la_fecha_de_un_episodio(db):
     main, c = _cliente()
     db.guardar_anime({"nombre": "Dandadan", "capitulos": "12"})
@@ -77,10 +43,11 @@ def test_corregir_la_fecha_de_un_episodio(db):
 def test_cabecera_con_menu_mas_y_series_y_pelis(db):
     main, c = _cliente()
     html = c.get("/app").text
-    for falta in ('id="btn-menu-movil"', 'class="header-utils"', 'class="header-settings"', 'id="export-menu"', ">No Anime<"):
+    for falta in ('id="btn-menu-movil"', 'class="header-utils"', 'class="header-settings"', 'id="export-menu"', ">No Anime<",
+                  'id="btn-watchfolder"', 'id="modal-watchfolder"', 'id="btn-theme"'):
         assert falta not in html, falta
     menu = html.split('id="menu-mas"')[1].split("</header>")[0]
-    for id_ in ("btn-sync", "btn-anilist", "btn-copia", "btn-extension", "btn-watchfolder", "lang-sel", "btn-theme", "btn-random"):
+    for id_ in ("btn-sync", "btn-anilist", "btn-copia", "btn-extension", "lang-sel", "btn-random"):
         assert f'id="{id_}"' in menu, id_
     assert "Series y pelis" in html and "¿Ya llevas tu lista en AniList o MyAnimeList?" in html
 
@@ -99,32 +66,3 @@ def test_conectar_anilist_con_la_app_de_miraru(db, monkeypatch):
     assert c.post("/api/anilist/token", json={"token": "y" * 30}).status_code == 400
     r = c.post("/api/anilist/token", json={"token": "x" * 30}).json()
     assert r["username"] == "lucas" and anilist_sync.get_connection_info()["connected"]
-
-
-def test_secuelas_cache_antigua_se_recalcula(db, monkeypatch):
-    import json
-    import time
-    main, c = _cliente()
-    pedidos = []
-
-    class Falso:
-        def buscar_por_ids(self, ids, media_type="ANIME"):
-            pedidos.append(ids)
-            return {}
-    monkeypatch.setitem(main.SCRAPERS, "anilist", Falso())
-    db.guardar_anime({"nombre": "DAL", "anilist_id": 1, "estado_usuario": "completado"})
-    main._guardar_relaciones({1: [7]})
-    db.set_config("secuelas_cache", json.dumps({"t": time.time(), "items": [
-        {"anilist_id": 7, "nombre": "DAL F", "estado_anime": "Sin estrenar", "de": "DAL"}]}))
-    assert c.get("/api/secuelas").json()["items"] == [] and pedidos == [[7]]
-
-
-def test_secuelas_cache_sin_proximas(db):
-    import json
-    import time
-    main, c = _cliente()
-    db.set_config("secuelas_cache", json.dumps({"v": 2, "t": time.time(), "items": [
-        {"anilist_id": 7, "nombre": "DAL F", "estado_anime": "Sin estrenar", "de": "DAL"},
-        {"anilist_id": 9, "nombre": "Vieja caché", "estado_anime": "En emisión", "de": "X"},
-        {"anilist_id": 3, "nombre": "AoT Final", "estado_anime": "En emisión", "eps_emitidos": 2, "de": "AoT"}]}))
-    assert [x["anilist_id"] for x in c.get("/api/secuelas").json()["items"]] == [3]

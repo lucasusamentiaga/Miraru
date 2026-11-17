@@ -11,6 +11,21 @@ from __future__ import annotations
 # accion (opcional): {"texto": "...", "url": "/app#..."} → botón dentro del punto.
 NOVEDADES: list[dict] = [
     {
+        "version": "2.17.7",
+        "titulo": "Tu navegador, tus ideas y temporadas al día",
+        "puntos": [
+            {"icono": "🧭", "titulo": "Elige tu navegador",
+             "texto": "Miraru se abre en el navegador que elijas. Puedes cambiarlo cuando quieras en «Más → Navegador»."},
+            {"icono": "🐞", "titulo": "Reportar un bug",
+             "texto": "En «Más → Reportar un bug» puedes contarme un fallo o una idea: me llega directamente."},
+            {"icono": "🆕", "titulo": "Temporadas nuevas, a fondo",
+             "texto": "Miraru sigue toda la cadena de secuelas de lo que ves o has visto, y enseña las que ya se emiten o acaban de terminar."},
+            {"icono": "🧩", "titulo": "Extensión en tu idioma",
+             "texto": "La extensión habla español, inglés, francés y alemán, guarda lo que ves aunque Miraru esté cerrado y su guía tiene dirección corta: 127.0.0.1:8765/extension.",
+             "accion": {"texto": "Ver la extensión", "url": "/extension"}},
+        ],
+    },
+    {
         "version": "2.17.6",
         "titulo": "La extensión se actualiza sola",
         "puntos": [

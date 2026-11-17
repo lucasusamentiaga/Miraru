@@ -1,5 +1,28 @@
 # Changelog
 
+## v2.17.7 — Tu navegador, tus ideas y temporadas al día
+
+- **Elegir navegador** (`navegadores.py`): detecta los navegadores instalados (rutas habituales y
+  los que Windows tiene registrados) y, la primera vez que se abre esta versión en el PC, pregunta
+  en cuál usar Miraru (`static/navegador.js`, en los cuatro idiomas). Si eliges otro, se abre allí
+  al momento. El launcher lo usa al arrancar. Cambiable en «Más → Navegador».
+- **Reportar un bug** («Más → Reportar un bug»): fallo, idea u otra cosa, correo opcional y datos
+  técnicos opcionales; se envía con Web3Forms al correo del autor (y si no hay internet, a GitHub).
+- **Temporadas nuevas, a fondo** (`secuelas.py`): parte de lo completado, viendo o en pausa;
+  sigue la cadena de SECUELAS hasta 4 saltos con relaciones frescas de AniList (antes, solo las
+  directas, guardadas una vez); enseña lo que se emite con episodios o terminó hace ≤ 120 días;
+  nada que ya tengas (por id o por nombre). Caché de 12 h. En cuadrícula, con «En emisión» /
+  «Completa» y episodios.
+- **Continuar viendo**: con más de 5, en cuadrícula hacia abajo.
+- **Fuera**: la «Carpeta vigilada» y el botón de tema del menú «Más» (ya está en 🎨).
+- **Extensión 1.7.0**: español, inglés, francés y alemán (elige en Ajustes o en la guía; por
+  defecto, el de Miraru). Lo que ves con Miraru cerrado se guarda (hasta 1000, 30 días) y se sube
+  solo, en orden, en cuanto Miraru vuelve (cada 30 s), con reintentos crecientes si Miraru
+  contesta con error; el icono enseña cuántos hay guardados y la ventana, la lista. Guía con
+  dirección corta: `http://127.0.0.1:8765/extension` (habla con la extensión por
+  `externally_connectable`; si no está puesta, ayuda a instalarla).
+- Privacidad: el envío de reportes.
+
 ## v2.17.6 — La extensión se actualiza sola
 
 - **Extensión 1.6.2 — actualizar desde su ventana**: pregunta a Miraru qué versión trae

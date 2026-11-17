@@ -16,6 +16,9 @@
 // AnimeAV1 contesta bien, se lo cuenta a Miraru en tu PC (127.0.0.1:8765).
 // Si Miraru está cerrado, lo guarda y lo manda en cuanto vuelva a abrirse.
 
+importScripts('i18n.js');          // v1.7: idiomas
+const I18N = self.MiraruI18n;
+
 const URL_LISTA = 'https://*.animeav1.com/api/user/library*';   // *. incluye animeav1.com
 const PUERTO_POR_DEFECTO = 8765;
 const pendientes = new Map();       // requestId → cuerpo, hasta saber si fue bien
@@ -87,7 +90,8 @@ chrome.webRequest.onErrorOccurred.addListener(d => { sacarPendiente(d.requestId)
 // Cada evento lleva un id propio. Al enviar se relee la cola y solo se quitan
 // los enviados: si marcas otro episodio mientras se envía el anterior, no se
 // pierde (antes se sobrescribía la cola y ese segundo clic desaparecía).
-const MAX_INTENTOS = 60;            // ~1 h reintentando un fallo del servidor
+const MAX_COLA = 1000;             // lo guardado mientras Miraru está cerrado
+const CADUCA = 30 * 24 * 3600e3;   // 30 días esperando: se descarta
 
 // Todos los cambios de la cola, de uno en uno: dos clics casi a la vez leían
 // la cola vacía a la vez y el segundo pisaba al primero (o al revés).
@@ -120,17 +124,27 @@ async function _encolar(ev) {
   // Del mismo anime solo importa lo último que hiciste.
   const nueva = cola.filter(e => claveEv(e) !== k || ('status' in e) !== ('status' in ev));
   nueva.push(ev);
-  await chrome.storage.local.set({cola: nueva.slice(-200)});
+  await chrome.storage.local.set({cola: nueva.slice(-MAX_COLA)});
 }
 
-function quitarDeCola(ids, reintentar = []) { return enOrden(() => _quitarDeCola(ids, reintentar)); }
-async function _quitarDeCola(ids, reintentar) {
+// v1.7: lo que no se pudo mandar se queda guardado y se reintenta solo, sin
+// límite de intentos (antes se tiraba a la hora), con esperas crecientes si
+// Miraru contesta con error (30 s, 1 min, 2 min… hasta 30 min). Solo se
+// descarta lo que nunca podrá apuntarse (no es anime, para adultos…) y lo
+// que lleva más de 30 días esperando.
+function quitarDeCola(hechos, reintentar = []) { return enOrden(() => _quitarDeCola(hechos, reintentar)); }
+async function _quitarDeCola(hechos, reintentar) {
   const {cola = []} = await chrome.storage.local.get('cola');
   const r = new Set(reintentar);
+  const ahora = Date.now();
   await chrome.storage.local.set({cola: cola
-    .filter(e => !ids.has(e.id) || r.has(e.id))
-    .map(e => r.has(e.id) ? Object.assign(e, {intentos: (e.intentos || 0) + 1}) : e)
-    .filter(e => (e.intentos || 0) < MAX_INTENTOS)});
+    .filter(e => !hechos.has(e.id) || r.has(e.id))
+    .map(e => {
+      if (!r.has(e.id)) return e;
+      const intentos = (e.intentos || 0) + 1;
+      return Object.assign(e, {intentos, siguiente: ahora + Math.min(30 * 60e3, 30e3 * 2 ** Math.min(intentos - 1, 6))});
+    })
+    .filter(e => ahora - (e.cuando || ahora) < CADUCA)});
 }
 
 async function apuntarFallo(ev, motivo) {
@@ -141,50 +155,66 @@ async function apuntarFallo(ev, motivo) {
 }
 
 let enviando = null;
-function enviarCola() {
+function enviarCola(forzar = false) {
   // Si ya se está enviando, se encadena otra vuelta (no se descarta la petición).
-  enviando = (enviando || Promise.resolve()).then(enviarUnaVez).catch(() => {});
+  enviando = (enviando || Promise.resolve()).then(() => enviarUnaVez(forzar)).catch(() => {});
   return enviando;
 }
 
-async function enviarUnaVez() {
+// Icono mientras hay cosas guardadas: el número, en azul (no es un error).
+async function marcarGuardados(n) {
+  await I18N.cargar();
+  if (n > 0) await marcar(n > 99 ? '99+' : String(n), '#2563eb', I18N.tr('Miraru está cerrado: {n} guardado(s), se subirán al abrirlo', {n}));
+}
+
+async function enviarUnaVez(forzar = false) {
   const {cola = []} = await chrome.storage.local.get('cola');
   if (!cola.length) return;
   const base = `http://127.0.0.1:${await puerto()}`;
   const hechos = new Set(), reintentar = [];
-  for (const ev of cola) {
-    const {id, cuando, intentos, ruta, ...cuerpo} = ev;
-    let r;
-    try {
-      r = await fetch(base + (ruta || '/api/animeav1/evento'), {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json', 'X-Miraru-Extension': '1'},
-        body: JSON.stringify(cuerpo),
-      });
-    } catch (_) {
-      await marcar('!', '#dc2626', 'Miraru está cerrado: se apuntará cuando lo abras');
-      break;                       // Miraru cerrado: todo sigue en la cola
+  const ahora = Date.now();
+  await chrome.storage.session.set({enviando: ahora}).catch(() => {});
+  try {
+    for (const ev of cola) {
+      if (!forzar && ev.siguiente && ev.siguiente > ahora) continue;     // esperando su turno
+      const {id, cuando, intentos, siguiente, ruta, ...cuerpo} = ev;
+      let r;
+      try {
+        r = await fetch(base + (ruta || '/api/animeav1/evento'), {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json', 'X-Miraru-Extension': '1'},
+          body: JSON.stringify(cuerpo),
+        });
+      } catch (_) {
+        await marcarGuardados(cola.length - hechos.size + reintentar.length);
+        break;                       // Miraru cerrado: todo sigue guardado
+      }
+      hechos.add(id);
+      const d = await r.json().catch(() => ({}));
+      if (r.ok || r.status === 409) {
+        if (r.ok && d.nombre) {
+          const ultimo = {cuando: Date.now(), nombre: d.nombre || '', episodio: d.episodios_vistos,
+            accion: d.accion || '', estado: d.estado || '', imagen: d.imagen || '', capitulos: d.capitulos || '',
+            eps_emitidos: d.eps_emitidos || 0, servicio: ev.servicio || 'animeav1'};
+          const {historial = []} = await chrome.storage.local.get('historial');
+          await chrome.storage.local.set({ultimo, historial: [ultimo, ...historial.filter(h =>
+            !(h.nombre === ultimo.nombre && h.episodio === ultimo.episodio))].slice(0, 8)});
+          await I18N.cargar();
+          await marcar('✓', '#16a34a', I18N.tr('Apuntado en Miraru: {n}', {n: d.nombre || ''}));
+        }
+      } else if (r.status >= 500 || r.status === 429 || r.status === 408) {
+        reintentar.push(id);         // fallo pasajero (AnimeAV1 o AniList no contestan): se reintenta
+      } else {
+        // 4xx: no tiene arreglo reintentando. Se avisa en la ventana de la extensión.
+        await apuntarFallo(ev, d.detail || ('Error ' + r.status));
+        await I18N.cargar();
+        await marcar('?', '#d97706', I18N.tr('No se pudo apuntar: {d}', {d: d.detail || r.status}));
+      }
     }
-    hechos.add(id);
-    const d = await r.json().catch(() => ({}));
-    if (r.ok) {
-      const ultimo = {cuando: Date.now(), nombre: d.nombre || '', episodio: d.episodios_vistos,
-        accion: d.accion || '', estado: d.estado || '', imagen: d.imagen || '', capitulos: d.capitulos || '',
-        eps_emitidos: d.eps_emitidos || 0,
-        servicio: ev.servicio || 'animeav1'};
-      const {historial = []} = await chrome.storage.local.get('historial');
-      await chrome.storage.local.set({ultimo, historial: [ultimo, ...historial.filter(h =>
-        !(h.nombre === ultimo.nombre && h.episodio === ultimo.episodio))].slice(0, 8)});
-      await marcar('✓', '#16a34a', `Apuntado en Miraru: ${d.nombre || ''}`);
-    } else if (r.status >= 500) {
-      reintentar.push(id);         // fallo pasajero (AnimeAV1 o AniList no contestan)
-    } else {
-      // 4xx: no tiene arreglo reintentando. Se avisa en la ventana de la extensión.
-      await apuntarFallo(ev, d.detail || ('Error ' + r.status));
-      await marcar('?', '#d97706', 'No se pudo apuntar: ' + (d.detail || r.status));
-    }
+  } finally {
+    if (hechos.size) await quitarDeCola(hechos, reintentar);
+    await chrome.storage.session.remove('enviando').catch(() => {});
   }
-  if (hechos.size) await quitarDeCola(hechos, reintentar);
 }
 
 let ultimaMarca = 0;
@@ -245,12 +275,21 @@ async function sincronizarListas(forzar = false) {
   }
 }
 
-chrome.alarms.create('reintentar', {periodInMinutes: 1});
+chrome.alarms.create('reintentar', {periodInMinutes: 0.5});   // en cuanto Miraru vuelva, se sube lo guardado
 chrome.alarms.create('listas', {periodInMinutes: 180, delayInMinutes: 1});
 
 // Al instalarla: la guía de bienvenida (comprueba sola que todo está listo).
+// v1.7: con dirección corta (127.0.0.1:8765/extension) si Miraru está abierto.
+async function abrirGuia() {
+  const base = `http://127.0.0.1:${await puerto()}`;
+  let url = chrome.runtime.getURL('bienvenida.html');
+  try {
+    if ((await fetch(base + '/api/health', {cache: 'no-store'})).ok) { await saludar(); url = base + '/extension'; }
+  } catch (_) { /* Miraru cerrado: la de la extensión */ }
+  chrome.tabs.create({url});
+}
 chrome.runtime.onInstalled.addListener(({reason}) => {
-  if (reason === 'install') chrome.tabs.create({url: chrome.runtime.getURL('bienvenida.html')});
+  if (reason === 'install') abrirGuia();
   sincronizarListas();
 });
 chrome.alarms.onAlarm.addListener(a => {
@@ -283,17 +322,17 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
     if (tab != null) {
       chrome.tabs.sendMessage(tab, {tipo: 'streaming-datos'}, {frameId: 0})
         .then(apuntarStreaming)
-        .catch(() => marcar('?', '#d97706', 'No pude leer qué episodio era'));
+        .catch(async () => { await I18N.cargar(); marcar('?', '#d97706', I18N.tr('No pude leer qué episodio era')); });
     }
     return false;
   }
   if (msg && msg.tipo === 'streaming-sin-datos') {
-    apuntarFallo({titulo: {netflix: 'Netflix', animeflv: 'AnimeFLV'}[msg.servicio] || 'Crunchyroll'},
-                 'No pude leer el nombre del episodio en la página').then(() =>
-      marcar('?', '#d97706', 'No pude leer qué episodio era'));
+    I18N.cargar().then(() => apuntarFallo({titulo: {netflix: 'Netflix', animeflv: 'AnimeFLV'}[msg.servicio] || 'Crunchyroll'},
+                 I18N.tr('No pude leer el nombre del episodio en la página'))).then(() =>
+      marcar('?', '#d97706', I18N.tr('No pude leer qué episodio era')));
     return false;
   }
-  if (msg === 'reintentar') enviarCola().then(() => responder(true));
+  if (msg === 'reintentar') enviarCola(true).then(() => responder(true));
   else if (msg === 'listas') sincronizarListas(true).then(responder);
   return true;
 });
@@ -362,11 +401,13 @@ async function buscarActualizacion() {
     if (!r.ok) return null;
     const d = await r.json();
     const hay = versionMayor(d.version, mia);
+    saludar();
     await chrome.storage.local.set({actualizacion: hay ? {version: d.version, carpeta: d.carpeta, cuando: Date.now()} : null});
     if (hay) {
       await chrome.action.setBadgeBackgroundColor({color: '#2563eb'});
       await chrome.action.setBadgeText({text: '↑'});
-      await chrome.action.setTitle({title: `Miraru — versión ${d.version} de la extensión lista para instalar`});
+      await I18N.cargar();
+      await chrome.action.setTitle({title: 'Miraru — ' + I18N.tr('Versión {v} de la extensión lista para instalar', {v: d.version})});
     }
     return hay ? d.version : null;
   } catch (_) {
@@ -400,7 +441,8 @@ async function comprobarActualizacion() {
     resultadoActualizacion: {ok, version: mia, esperada: actualizando.a, carpeta: actualizando.carpeta, cuando: Date.now()}});
   if (ok) {
     await chrome.storage.local.set({actualizacion: null});
-    await marcar('✓', '#16a34a', `Extensión actualizada a la versión ${mia}`);
+    await I18N.cargar();
+    await marcar('✓', '#16a34a', I18N.tr('Extensión actualizada a la versión {v}', {v: mia}));
   }
 }
 comprobarActualizacion().then(buscarActualizacion);
@@ -411,3 +453,45 @@ chrome.runtime.onMessage.addListener((msg, _s, responder) => {
   if (msg === 'actualizar-extension') { actualizarExtension().then(responder); return true; }
   return false;
 });
+
+// ── v1.7: Miraru conoce a su extensión (para la guía en 127.0.0.1:8765/extension)
+// y la extensión usa el idioma de Miraru si no eliges otro.
+async function saludar() {
+  const base = `http://127.0.0.1:${await puerto()}`;
+  try {
+    await fetch(base + '/api/extension/hola', {method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-Miraru-Extension': '1'},
+      body: JSON.stringify({id: chrome.runtime.id, version: chrome.runtime.getManifest().version})});
+    const l = await (await fetch(base + '/api/lang', {cache: 'no-store'})).json();
+    if (l && l.lang) await chrome.storage.local.set({idiomaMiraru: l.lang});
+  } catch (_) { /* Miraru cerrado */ }
+}
+
+// La guía servida por Miraru (http://127.0.0.1:<puerto>/extension) habla con la
+// extensión por aquí: solo páginas de este PC (manifest: externally_connectable).
+async function sesionAnimeAV1() {
+  try {
+    const r = await fetch('https://animeav1.com/cuenta/listas/__data.json', {credentials: 'include', cache: 'no-store'});
+    if (r.status === 401 || r.status === 403) return 'no';
+    const j = await r.json();
+    const error = (j.nodes || []).some(n => n && n.type === 'error') || j.type === 'error' || j.type === 'redirect';
+    return !r.ok || error ? 'no' : 'si';
+  } catch (_) { return '?'; }
+}
+chrome.runtime.onMessageExternal.addListener((msg, sender, responder) => {
+  if (!/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?\//.test(sender.url || '')) return false;
+  if (msg && msg.tipo === 'guia-estado') {
+    chrome.storage.local.get(['ultimo', 'idioma', 'idiomaMiraru', 'cola']).then(d => responder({
+      version: chrome.runtime.getManifest().version, ultimo: d.ultimo || null,
+      idioma: d.idioma || '', idiomaMiraru: d.idiomaMiraru || '', guardados: (d.cola || []).length}));
+    return true;
+  }
+  if (msg && msg.tipo === 'guia-sesion-av1') { sesionAnimeAV1().then(responder); return true; }
+  if (msg && msg.tipo === 'guia-idioma') {
+    chrome.storage.local.set({idioma: ['es', 'en', 'fr', 'de'].includes(msg.idioma) ? msg.idioma : ''}).then(() => responder(true));
+    return true;
+  }
+  return false;
+});
+chrome.runtime.onStartup.addListener(saludar);
+saludar();

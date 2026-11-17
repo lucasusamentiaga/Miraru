@@ -626,6 +626,36 @@ body.sel-mode .ac .salir{display:none}
 .field textarea{resize:vertical;min-height:60px}
 .modal-actions{display:flex;gap:8px;margin-top:16px}
 
+/* v2.17.7: reportar un bug */
+.modal.reporte{max-width:500px;animation:repEntra .4s cubic-bezier(.16,1,.3,1) both}
+@keyframes repEntra{from{opacity:0;transform:translateY(12px) scale(.98)}}
+.rep-cab{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
+.rep-ico{display:grid;place-items:center;width:42px;height:42px;flex-shrink:0;border-radius:12px;font-size:21px;
+  background:rgba(var(--accent-rgb,124,58,237),.14);border:1px solid rgba(var(--accent-rgb,124,58,237),.35)}
+.rep-cab h3{margin:0 0 3px}
+.rep-sub{margin:0;font-size:12.5px;color:var(--muted);line-height:1.45}
+.rep-tipos{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.rep-tipos label{cursor:pointer}
+.rep-tipos input{position:absolute;opacity:0;pointer-events:none}
+.rep-tipos span{display:inline-block;padding:6px 12px;border-radius:99px;font-size:12.5px;font-weight:600;border:1px solid var(--border);
+  background:var(--card2);color:var(--fg);transition:background-color .2s,border-color .2s,color .2s}
+.rep-tipos label:hover span{border-color:var(--accent)}
+.rep-tipos input:checked+span{background:var(--accent);border-color:var(--accent);color:#fff}
+.rep-tipos input:focus-visible+span{outline:2px solid var(--light);outline-offset:2px}
+.rep-cuenta{text-align:right;font-size:10.5px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
+.rep-tec{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--muted);line-height:1.45;cursor:pointer}
+.rep-tec input{margin-top:2px;accent-color:var(--accent);flex-shrink:0}
+.rep-err{margin:12px 0 0;padding:9px 11px;border-radius:9px;font-size:12.5px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);color:#fca5a5}
+.rep-err a{color:inherit;font-weight:700}
+[data-theme=light] .rep-err{color:#b91c1c}
+.rep-hecho{text-align:center;padding:10px 4px 2px}
+.rep-hecho svg{width:64px;height:64px;margin:0 auto 10px;display:block}
+.rep-hecho circle{fill:none;stroke:#22c55e;stroke-width:3;stroke-dasharray:151;stroke-dashoffset:151;animation:repTrazo .6s cubic-bezier(.22,1,.36,1) forwards}
+.rep-hecho path{fill:none;stroke:#22c55e;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:36;stroke-dashoffset:36;animation:repTrazo .4s cubic-bezier(.22,1,.36,1) .45s forwards}
+@keyframes repTrazo{to{stroke-dashoffset:0}}
+.rep-hecho p{color:var(--muted);font-size:13px;margin:6px 0 0}
+@media (prefers-reduced-motion:reduce){.modal.reporte{animation:none}.rep-hecho circle,.rep-hecho path{animation:none;stroke-dashoffset:0}}
+
 /* Scores externas */
 .scores-grid{display:flex;gap:8px;flex-wrap:wrap}
 .score-chip{
@@ -773,10 +803,11 @@ body.sel-mode .ac .salir{display:none}
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
 <script src="/static/customize.js"></script>
-<script src="/static/novedades.js?v=2.17.6" defer></script>
-<script src="/static/selects.js?v=2.17.6" defer></script>
-<script src="/static/temporadas.js?v=2.17.6"></script>
-<script src="/static/tour.js?v=2.17.6" defer></script>
+<script src="/static/novedades.js?v=2.17.7" defer></script>
+<script src="/static/selects.js?v=2.17.7" defer></script>
+<script src="/static/temporadas.js?v=2.17.7"></script>
+<script src="/static/tour.js?v=2.17.7" defer></script>
+<script src="/static/navegador.js?v=2.17.7" defer></script>
 <script src="/static/i18n-dom.js" defer></script>
 <script src="/static/dialogos.js" defer></script>
 </head>
@@ -1044,6 +1075,46 @@ fetch('/api/version').then(r => r.json()).then(d => {
 </div>
 
 <!-- Modal: copia en la nube (v2.15) -->
+<!-- v2.17.7: reportar un bug o mandar una idea (llega al correo del autor) -->
+<div class="modal-bg" id="modal-reporte" onclick="if(event.target===this)cerrarModal('modal-reporte')">
+  <div class="modal reporte" role="dialog" aria-modal="true" aria-labelledby="rep-tit">
+    <form id="rep-form" onsubmit="enviarReporte(event)" novalidate>
+      <div class="rep-cab">
+        <span class="rep-ico" aria-hidden="true">🐞</span>
+        <div><h3 id="rep-tit">Reportar un bug</h3>
+          <p class="rep-sub">Me llega directamente a mí, el que hace Miraru. Lo leo todo.</p></div>
+      </div>
+      <div class="rep-tipos" role="radiogroup" aria-label="Tipo de mensaje">
+        <label><input type="radio" name="rep-tipo" value="bug" checked><span>🐞 Algo falla</span></label>
+        <label><input type="radio" name="rep-tipo" value="idea"><span>💡 Una idea</span></label>
+        <label><input type="radio" name="rep-tipo" value="otro"><span>💬 Otra cosa</span></label>
+      </div>
+      <div class="field">
+        <label for="rep-texto">¿Qué ha pasado?</label>
+        <textarea id="rep-texto" rows="5" maxlength="4000" placeholder="Qué hacías, qué esperabas que pasara y qué pasó. Cuanto más concreto, antes lo arreglo." required></textarea>
+        <div class="rep-cuenta"><span id="rep-n">0</span>/4000</div>
+      </div>
+      <div class="field">
+        <label for="rep-email">Tu correo (opcional)</label>
+        <input id="rep-email" type="email" maxlength="200" autocomplete="email" placeholder="Solo si quieres que te responda">
+      </div>
+      <label class="rep-tec"><input type="checkbox" id="rep-tec" checked>
+        <span>Incluir datos técnicos: versión de Miraru, sistema, navegador e idioma. Nada de tu lista.</span></label>
+      <p class="rep-err" id="rep-err" role="alert" hidden></p>
+      <div class="modal-actions">
+        <button class="btn btn-p" type="submit" id="rep-enviar">Enviar</button>
+        <button class="btn btn-g" type="button" onclick="cerrarModal('modal-reporte')">Cancelar</button>
+      </div>
+    </form>
+    <div class="rep-hecho" id="rep-hecho" hidden>
+      <svg viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="24"/><path d="M15 27l7.5 7.5L37 19"/></svg>
+      <h3>¡Recibido, gracias!</h3>
+      <p>Lo he recibido. Si has dejado tu correo, te contestaré allí.</p>
+      <div class="modal-actions" style="justify-content:center"><button class="btn btn-p" type="button" onclick="cerrarModal('modal-reporte')">Cerrar</button></div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="modal-copia" onclick="if(event.target===this)cerrarModal('modal-copia')">
   <div class="modal" style="max-width:480px;max-height:90vh;overflow-y:auto">
     <h3>☁ Copia en la nube</h3>
@@ -1189,37 +1260,6 @@ fetch('/api/version').then(r => r.json()).then(d => {
   </div>
 </div>
 
-<!-- Modal Watch Folder -->
-<div class="modal-bg" id="modal-watchfolder" onclick="if(event.target===this)cerrarModal('modal-watchfolder')">
-  <div class="modal-card" style="max-width:520px">
-    <h3 style="margin:0 0 8px">📂 Auto-detección de episodios</h3>
-    <p style="font-size:13px;color:var(--muted);margin:0 0 14px">
-      Miraru vigila una carpeta y marca automáticamente los episodios que descargas como vistos.
-    </p>
-    <div id="wf-status" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <span id="wf-dot" style="width:10px;height:10px;border-radius:50%;background:var(--muted);display:inline-block"></span>
-        <span id="wf-state" style="font-size:13px;font-weight:600">Inactivo</span>
-      </div>
-      <div id="wf-path-display" style="font-size:12px;color:var(--muted);word-break:break-all;display:none"></div>
-    </div>
-    <div id="wf-setup">
-      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Ruta de la carpeta de descargas:</label>
-      <input type="text" id="wf-path" placeholder="C:\Users\tu_usuario\Downloads\Anime" style="width:100%;margin-bottom:10px;font-size:13px">
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-primary" id="wf-btn-start" onclick="wfStart()">▶ Iniciar vigilancia</button>
-        <button class="btn btn-g" id="wf-btn-stop" onclick="wfStop()" style="display:none;color:var(--danger);border-color:var(--danger)">⏹ Detener</button>
-      </div>
-    </div>
-    <div id="wf-log-section" style="margin-top:14px;display:none">
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:6px">📋 Actividad reciente</div>
-      <div id="wf-log" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;max-height:150px;overflow-y:auto;font-size:12px;font-family:monospace;color:var(--muted)"></div>
-    </div>
-    <div class="modal-actions" style="margin-top:14px">
-      <button class="btn btn-g" onclick="cerrarModal('modal-watchfolder')">Cerrar</button>
-    </div>
-  </div>
-</div>
 
 <!-- Header -->
 <header>
@@ -1263,10 +1303,9 @@ fetch('/api/version').then(r => r.json()).then(d => {
         <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirAniList();toggleMenuMas(false)" title="Sincronizar con AniList" id="btn-anilist">🔗<span class="lbl">AniList</span></button>
         <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirExtension();toggleMenuMas(false)" title="Extensión del navegador: apunta sola lo que ves en AnimeAV1, Netflix y Crunchyroll" id="btn-extension" data-solo="anime">🧩<span class="lbl">Extensión del navegador</span></button>
         <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirCopia();toggleMenuMas(false)" title="Copia en la nube" id="btn-copia">☁<span class="lbl">Copia en la nube</span></button>
-        <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirWatchFolder();toggleMenuMas(false)" title="Auto-detección episodios" id="btn-watchfolder" data-solo="anime">📂<span class="lbl">Carpeta vigilada</span></button>
         <a href="/mobile" class="btn btn-ghost btn-sm" role="menuitem" title="Acceso móvil">📱<span class="lbl">Móvil</span></a>
         <div class="grupo">Aplicación</div>
-        <button class="btn btn-ghost btn-sm" id="btn-theme" role="menuitem" onclick="toggleTheme()" title="Cambiar tema"><span id="nav-theme">🌙</span></button>
+        <button class="btn btn-ghost btn-sm" role="menuitem" onclick="window.miraruElegirNavegador&&miraruElegirNavegador();toggleMenuMas(false)" title="En qué navegador se abre Miraru" id="btn-navegador">🧭<span class="lbl">Navegador</span></button>
         <div class="fila-idioma">🌐
           <select class="lang-select" id="lang-sel" onchange="cambiarIdioma(this.value)" aria-label="Idioma">
             <option value="es">ES</option>
@@ -1275,6 +1314,7 @@ fetch('/api/version').then(r => r.json()).then(d => {
             <option value="de">DE</option>
           </select>
         </div>
+        <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirReporte();toggleMenuMas(false)" title="Cuéntame un fallo o una idea" id="btn-reporte">🐞<span class="lbl">Reportar un bug</span></button>
         <a href="https://ko-fi.com/lucasuazz_" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" role="menuitem" title="Miraru es gratis y sin anuncios: si te gusta, puedes invitarme a un café">☕<span class="lbl">Apoyar Miraru</span></a>
         <a href="/setup" class="btn btn-ghost btn-sm" role="menuitem" title="Configuración">⚙<span class="lbl">Ajustes</span></a>
         <a href="/" class="btn btn-ghost btn-sm" role="menuitem" title="Menú inicio">⌂<span class="lbl">Menú de inicio</span></a>
@@ -1362,11 +1402,30 @@ fetch('/api/version').then(r => r.json()).then(d => {
       <span id="continuar-count" style="font-size:11px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400"></span>
     </h2>
     <div id="continuar-strip" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin"></div>
+    <style>
+      /* v2.17.7: más de 5 → cuadrícula que crece hacia abajo */
+      #continuar-strip.cont-rejilla{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));overflow:visible!important;padding-bottom:0}
+    </style>
   </section>
   <!-- v2.17: temporadas nuevas (o próximas) de lo que ya completaste -->
   <section id="secuelas-wrap" data-solo="anime" style="display:none;margin-bottom:18px">
     <h2 style="font-size:13px;font-weight:700;color:var(--light);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">🆕 <span id="secuelas-tit">Temporadas nuevas de lo que viste</span></h2>
-    <div id="secuelas-strip" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin"></div>
+    <div id="secuelas-strip"></div>
+    <style>
+      /* v2.17.7: temporadas nuevas en cuadrícula (crece hacia abajo) */
+      #secuelas-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+      #secuelas-strip .secuela{display:flex;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px;
+        align-items:center;min-width:0;transition:border-color .2s cubic-bezier(.22,1,.36,1);animation:secEntra .45s cubic-bezier(.16,1,.3,1) both}
+      #secuelas-strip .secuela:hover{border-color:var(--accent)}
+      #secuelas-strip .secuela:nth-child(2){animation-delay:.04s}#secuelas-strip .secuela:nth-child(3){animation-delay:.08s}
+      #secuelas-strip .secuela:nth-child(n+4){animation-delay:.12s}
+      @keyframes secEntra{from{opacity:.3;transform:translateY(6px)}}
+      .sec-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.3px;padding:1px 6px;border-radius:5px;vertical-align:1px}
+      .sec-tag.emision{background:rgba(34,197,94,.14);color:#4ade80}
+      .sec-tag.completa{background:rgba(var(--accent-rgb,124,58,237),.16);color:var(--light)}
+      [data-theme=light] .sec-tag.emision{color:#15803d}
+      @media (prefers-reduced-motion:reduce){#secuelas-strip .secuela{animation:none}}
+    </style>
   </section>
   <div id="copia-aviso" class="copia-aviso" style="display:none"></div>
   <div id="lista"></div>
@@ -3813,12 +3872,12 @@ async function cargarSecuelas() {
     items = (await r.json()).items || [];
   } catch (_) { return; }
   const ids = new Set(ANIMES.map(a => a.anilist_id).filter(Boolean));
-  items = items.filter(x => !ids.has(x.anilist_id)).slice(0, 6);
+  items = items.filter(x => !ids.has(x.anilist_id)).slice(0, 8);
   if (!items.length) { wrap.style.display = 'none'; return; }
   strip.innerHTML = '';
   items.forEach(x => {
     const card = document.createElement('div');
-    card.style.cssText = 'flex:0 0 300px;display:flex;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px;align-items:center;min-width:0';
+    card.className = 'secuela';
     const img = document.createElement('img');
     miraruPortada(img, x.imagen);
     img.style.cssText = 'width:44px;height:62px;object-fit:cover;border-radius:6px;flex-shrink:0;background:var(--card2)';
@@ -3830,7 +3889,15 @@ async function cargarSecuelas() {
     nom.textContent = x.nombre; nom.title = x.nombre; nom.setAttribute('data-no-i18n', '');
     const de = document.createElement('div');
     de.style.cssText = 'font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px';
-    de.textContent = (x.estado_anime === 'Sin estrenar' ? _tr('Próximamente') : _tr('En emisión')) + ' · ' + _tr('sigue a') + ' ' + x.de;
+    // v2.17.7: qué es (en emisión con N episodios / temporada nueva ya completa) y de qué viene
+    const eps = +x.eps_emitidos || 0;
+    const que = document.createElement('span');
+    que.className = 'sec-tag ' + (x.motivo === 'reciente' ? 'completa' : 'emision');
+    que.textContent = x.motivo === 'reciente' ? _tr('Completa') : _tr('En emisión');
+    const det = document.createElement('span');
+    det.textContent = (eps ? ' ' + eps + ' ' + _tr(x.motivo === 'reciente' ? 'episodios' : 'emitidos') + ' · ' : ' ') + _tr('sigue a') + ' ' + x.de;
+    de.append(que, det);
+    de.title = _tr('sigue a') + ' ' + x.de;
     const acc = document.createElement('div');
     acc.style.cssText = 'display:flex;gap:6px;margin-top:6px';
     const add = document.createElement('button');
@@ -4146,6 +4213,71 @@ async function animeAleatorio() {
 }
 
 // ── Modales helper ────────────────────────────────────────────────────────────
+// ── v2.17.7: reportar un bug ───────────────────────────────────────────────
+// Se manda desde aquí a Web3Forms, que lo reenvía al correo del autor. La
+// clave es pública (solo sirve para enviar a ese buzón).
+const REPORTE_CLAVE = 'e2ff41dd-4c5a-4c92-aa28-704987b3b844';
+let _ultimoReporte = 0;
+function abrirReporte() {
+  document.getElementById('rep-form').hidden = false;
+  document.getElementById('rep-hecho').hidden = true;
+  document.getElementById('rep-err').hidden = true;
+  abrirModalEl('modal-reporte');
+  setTimeout(() => document.getElementById('rep-texto').focus(), 60);
+}
+document.addEventListener('input', e => {
+  if (e.target && e.target.id === 'rep-texto') document.getElementById('rep-n').textContent = e.target.value.length;
+});
+async function enviarReporte(ev) {
+  ev.preventDefault();
+  const texto = document.getElementById('rep-texto').value.trim();
+  const email = document.getElementById('rep-email').value.trim();
+  const err = document.getElementById('rep-err');
+  const btn = document.getElementById('rep-enviar');
+  const fallo = msg => { err.textContent = msg; err.hidden = false; };
+  err.hidden = true;
+  if (texto.length < 10) { fallo(_tr('Cuéntame un poco más (al menos 10 letras).')); return; }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { fallo(_tr('Ese correo no parece válido.')); return; }
+  if (Date.now() - _ultimoReporte < 30000) { fallo(_tr('Espera unos segundos antes de mandar otro.')); return; }
+  const tipo = (document.querySelector('input[name="rep-tipo"]:checked') || {}).value || 'bug';
+  const datos = {access_key: REPORTE_CLAVE, from_name: 'Miraru',
+                 subject: '[Miraru] ' + ({bug: 'Bug', idea: 'Idea', otro: 'Mensaje'}[tipo]) + ': ' + texto.slice(0, 60).replace(/\s+/g, ' '),
+                 tipo, mensaje: texto, botcheck: ''};
+  if (email) { datos.email = email; datos.replyto = email; }
+  if (document.getElementById('rep-tec').checked) {
+    let ver = '';
+    try { ver = (await (await fetch('/api/health')).json()).version || ''; } catch (_) {}
+    datos.version = ver;
+    datos.sistema = navigator.userAgent;
+    datos.idioma = (typeof LANG !== 'undefined' ? LANG : '') + ' / ' + navigator.language;
+    datos.pagina = location.pathname + location.hash;
+    datos.pantalla = screen.width + 'x' + screen.height;
+  }
+  btn.disabled = true; btn.textContent = _tr('Enviando…');
+  try {
+    const r = await fetch('https://api.web3forms.com/submit', {method: 'POST',
+      headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}, body: JSON.stringify(datos)});
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.success === false) throw new Error(d.message || r.status);
+    _ultimoReporte = Date.now();
+    document.getElementById('rep-texto').value = '';
+    document.getElementById('rep-n').textContent = '0';
+    document.getElementById('rep-form').hidden = true;
+    document.getElementById('rep-hecho').hidden = false;
+  } catch (_) {
+    // Sin internet o el servicio no contesta: queda la vía de GitHub.
+    const url = 'https://github.com/lucasusamentiaga/Miraru/issues/new?title=' + encodeURIComponent(datos.subject.replace('[Miraru] ', ''))
+              + '&body=' + encodeURIComponent(texto + (datos.version ? '\n\n— Miraru ' + datos.version + ' · ' + (datos.sistema || '') : ''));
+    err.textContent = _tr('No se pudo enviar (¿sin internet?). Vuelve a intentarlo o ') ;
+    const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = _tr('mándalo por GitHub');
+    err.append(a, '.');
+    err.hidden = false;
+  } finally {
+    btn.disabled = false; btn.textContent = _tr('Enviar');
+  }
+}
+
 function abrirModalEl(id) { document.getElementById(id).classList.add('open'); }
 function cerrarModal(id)   { document.getElementById(id).classList.remove('open'); }
 document.addEventListener('keydown', e => {
@@ -4259,9 +4391,13 @@ async function cargarContinuar() {
     cnt.textContent = MODO_MANGA ? _tr(items.length + ' manga')
                     : items.length + (items.length === 1 ? ' anime' : ' animes');
     strip.innerHTML = '';
+    // v2.17.7: con más de 5, en filas hacia abajo (cuadrícula) en vez de una
+    // tira que hay que desplazar de lado.
+    const enRejilla = items.length > 5;
+    strip.classList.toggle('cont-rejilla', enRejilla);
     items.forEach(a => {
       const card = document.createElement('div');
-      card.style.cssText = 'flex:0 0 180px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px;display:flex;gap:8px;align-items:center;cursor:pointer;transition:border-color .15s';
+      card.style.cssText = (enRejilla ? 'min-width:0;' : 'flex:0 0 180px;') + 'background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px;display:flex;gap:8px;align-items:center;cursor:pointer;transition:border-color .15s';
       card.onmouseenter = () => card.style.borderColor = 'var(--accent)';
       card.onmouseleave = () => card.style.borderColor = 'var(--border)';
       card.onclick = () => abrirModal(encodeURIComponent(a.nombre));
@@ -6196,91 +6332,6 @@ function _alUpdateIndicator(s) {
   } catch(_){}
 })();
 
-// ── Watch Folder UI ─────────────────────────────────────────────────────────
-async function abrirWatchFolder() {
-  abrirModalEl('modal-watchfolder');
-  await wfRefresh();
-}
-
-async function wfRefresh() {
-  try {
-    const r = await fetch('/api/watch-folder/status');
-    const s = await r.json();
-    const dot = document.getElementById('wf-dot');
-    const state = document.getElementById('wf-state');
-    const pathDisp = document.getElementById('wf-path-display');
-    const btnStart = document.getElementById('wf-btn-start');
-    const btnStop = document.getElementById('wf-btn-stop');
-    const pathInput = document.getElementById('wf-path');
-
-    if (s.running) {
-      dot.style.background = '#22c55e';
-      state.textContent = '✓ Vigilando';
-      pathDisp.textContent = '📁 ' + (s.folder || '');
-      pathDisp.style.display = '';
-      btnStart.style.display = 'none';
-      btnStop.style.display = '';
-      pathInput.value = s.folder || '';
-    } else {
-      dot.style.background = 'var(--muted)';
-      state.textContent = 'Inactivo';
-      pathDisp.style.display = 'none';
-      btnStart.style.display = '';
-      btnStop.style.display = 'none';
-      if (s.folder) pathInput.value = s.folder;
-    }
-    // Cargar log
-    await wfLoadLog();
-  } catch(e) {
-    console.warn('wfRefresh error', e);
-  }
-}
-
-async function wfStart() {
-  const path = document.getElementById('wf-path').value.trim();
-  if (!path) { toast('Introduce una ruta de carpeta', 'warn'); return; }
-  const btn = document.getElementById('wf-btn-start');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spin"></span>';
-  try {
-    const r = await fetch('/api/watch-folder/start', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({carpeta: path})
-    });
-    const d = await r.json();
-    if (!r.ok) { toast(d.detail || 'Error', 'err'); return; }
-    toast('📂 Vigilancia iniciada');
-    await wfRefresh();
-  } catch(e) { toast('Error al iniciar', 'err'); }
-  finally { btn.disabled = false; btn.textContent = '▶ Iniciar vigilancia'; }
-}
-
-async function wfStop() {
-  try {
-    await fetch('/api/watch-folder/stop', {method:'POST'});
-    toast('Vigilancia detenida');
-    await wfRefresh();
-  } catch(e) { toast('Error', 'err'); }
-}
-
-async function wfLoadLog() {
-  const section = document.getElementById('wf-log-section');
-  const logEl = document.getElementById('wf-log');
-  try {
-    const r = await fetch('/api/watch-folder/log');
-    const d = await r.json();
-    const entries = d.log || [];
-    if (entries.length > 0) {
-      section.style.display = '';
-      logEl.innerHTML = entries.slice(-20).map(l =>
-        `<div style="padding:2px 0;border-bottom:1px solid var(--border)">${_escHtml(l)}</div>`
-      ).join('');
-      logEl.scrollTop = logEl.scrollHeight;
-    } else {
-      section.style.display = 'none';
-    }
-  } catch(_) { section.style.display = 'none'; }
-}
 </script>
 </body>
 </html>

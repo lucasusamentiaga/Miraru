@@ -2,7 +2,6 @@
 Tests para las nuevas features v2.9:
 - Motor de decisión "¿Qué veo esta noche?"
 - Notas por episodio
-- Auto-detección de archivos (watch_folder parser)
 - Página compartible HTML
 """
 from __future__ import annotations
@@ -187,94 +186,6 @@ class TestNotasEpisodio:
         r = client.post("/api/animes/Plus1 Nota/plus1?nota=Primer%20ep%20genial")
         assert r.status_code == 200
         assert [n["nota"] for n in db.obtener_notas_episodio("Plus1 Nota")] == ["Primer ep genial"]
-
-
-# ── Watch folder parser ──────────────────────────────────────────────────────
-
-class TestWatchFolderParser:
-    def test_subgroup_format(self):
-        import watch_folder
-        result = watch_folder._parsear_archivo("[SubGroup] Naruto Shippuden - 05 [1080p].mkv")
-        assert result is not None
-        nombre, ep = result
-        assert "Naruto" in nombre
-        assert ep == 5
-
-    def test_s01e05_format(self):
-        import watch_folder
-        result = watch_folder._parsear_archivo("Attack on Titan S01E05.mkv")
-        assert result is not None
-        _, ep = result
-        assert ep == 5
-
-    def test_ep_format(self):
-        import watch_folder
-        result = watch_folder._parsear_archivo("One Piece EP1050.mp4")
-        assert result is not None
-        nombre, ep = result
-        assert "One Piece" in nombre
-        assert ep == 1050
-
-    def test_dash_number_format(self):
-        import watch_folder
-        result = watch_folder._parsear_archivo("Jujutsu Kaisen - 12 (1080p).mkv")
-        assert result is not None
-        nombre, ep = result
-        assert "Jujutsu Kaisen" in nombre
-        assert ep == 12
-
-    def test_no_match_for_non_anime(self):
-        import watch_folder
-        result = watch_folder._parsear_archivo("vacation_video_2024.mp4")
-        # May or may not parse — but shouldn't crash
-        assert result is None or isinstance(result, tuple)
-
-    def test_limpiar_nombre(self):
-        import watch_folder
-        assert "Naruto Shippuden" in watch_folder._limpiar_nombre("Naruto.Shippuden [1080p]")
-
-    def test_buscar_coincidencia(self):
-        import watch_folder
-        animes = [
-            {"nombre": "Naruto Shippuden"},
-            {"nombre": "One Piece"},
-            {"nombre": "Bleach"},
-        ]
-        match = watch_folder._buscar_coincidencia("Naruto Shippuuden", animes)
-        assert match is not None
-        assert match["nombre"] == "Naruto Shippuden"
-
-    def test_no_coincidencia_baja(self):
-        import watch_folder
-        animes = [{"nombre": "Naruto"}]
-        match = watch_folder._buscar_coincidencia("algo completamente diferente", animes)
-        assert match is None
-
-
-# ── Watch folder API ─────────────────────────────────────────────────────────
-
-class TestWatchFolderAPI:
-    def test_status_sin_watcher(self, client):
-        r = client.get("/api/watch-folder/status")
-        assert r.status_code == 200
-        assert r.json()["activo"] is False
-
-    def test_start_con_carpeta_valida(self, client, app_dir):
-        watch_dir = app_dir / "descargas"
-        watch_dir.mkdir()
-        r = client.post("/api/watch-folder/start", json={"carpeta": str(watch_dir)})
-        assert r.status_code == 200
-        # Limpiar
-        client.post("/api/watch-folder/stop")
-
-    def test_start_carpeta_inexistente(self, client):
-        r = client.post("/api/watch-folder/start", json={"carpeta": "/no/existe/nada"})
-        assert r.status_code == 400
-
-    def test_log_vacio(self, client):
-        r = client.get("/api/watch-folder/log")
-        assert r.status_code == 200
-        assert r.json()["log"] == []
 
 
 # ── Puntuaciones externas ───────────────────────────────────────────────────

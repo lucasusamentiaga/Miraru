@@ -3,16 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Miraru — Bienvenida</title>
+<title>Miraru — extensión</title>
+<link rel="icon" href="iconos/32.png">
 <link rel="stylesheet" href="estilo.css">
 </head>
 <body class="bienvenida">
   <div class="fondo" aria-hidden="true"></div>
+  <div class="bv-idioma">
+    <label><span class="vh">Idioma</span>
+      <select id="idioma" aria-label="Idioma"><option value="">🌐</option></select></label>
+  </div>
   <main>
     <header class="hero">
       <img src="iconos/128.png" alt="" class="logo" width="76" height="76">
-      <h1>¡Listo! Ya está instalada <span class="fiesta" aria-hidden="true">🎉</span></h1>
-      <p class="sub">Lo que veas en estas webs se apuntará <strong>solo</strong> en tu Miraru, en ese mismo momento.</p>
+      <h1><span id="h-tit">¡Listo! Ya está instalada</span> <span class="fiesta" aria-hidden="true">🎉</span></h1>
+      <p class="sub">Lo que veas en estas webs se apuntará solo en tu Miraru, en ese mismo momento.</p>
       <ul class="webs" aria-label="Dónde funciona">
         <li data-s="animeav1">AnimeAV1</li><li data-s="animeflv">AnimeFLV</li>
         <li data-s="netflix">Netflix</li><li data-s="crunchyroll">Crunchyroll</li>
@@ -29,23 +34,33 @@
         </div>
       </li>
 
-      <!-- v1.6.2: cada web, cómo se apunta y si está lista -->
-      <li class="paso" id="p-webs">
+      <!-- v1.7: en la guía de Miraru (127.0.0.1:8765/extension) se comprueba también que la extensión esté puesta -->
+      <li class="paso" id="p-ext" hidden>
         <div class="num"><span>2</span><svg viewBox="0 0 24 24" fill="none" stroke="#06210f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+        <div class="cuerpo">
+          <h2>La extensión, en tu navegador</h2>
+          <p class="estado">Comprobando…</p>
+          <div class="acciones"><button class="btn" id="instalar" type="button">Instalar la extensión</button></div>
+          <p class="ayuda" id="instalar-ayuda" hidden>Allí: activa «Modo de desarrollador», pulsa «Cargar descomprimida» y pega con Ctrl+V. Esta página se pondrá en verde sola.</p>
+        </div>
+      </li>
+
+      <li class="paso" id="p-webs">
+        <div class="num"><span class="n-paso">2</span><svg viewBox="0 0 24 24" fill="none" stroke="#06210f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
         <div class="cuerpo">
           <h2>Cómo se apunta en cada web</h2>
           <p class="estado">No tienes que hacer nada más que ver tus episodios.</p>
           <ul class="servicios">
-            <li data-s="animeav1" id="s-av1">
+            <li data-s="animeav1">
               <span class="s-ico" aria-hidden="true">AV1</span>
               <div class="s-t"><b>AnimeAV1</b>
-                <p>Pulsa <span class="s-boton"><span aria-hidden="true">👁</span> Marcar como visto</span> debajo del vídeo. Desmarcarlo también se copia. Tus «Mis Listas» se pasan solas.</p></div>
+                <p>Pulsa «Marcar como visto» debajo del vídeo. Desmarcarlo también se copia. Tus «Mis Listas» se pasan solas.</p></div>
               <span class="s-est" id="s-av1-est">Comprobando…</span>
             </li>
             <li data-s="animeflv">
               <span class="s-ico" aria-hidden="true">FLV</span>
               <div class="s-t"><b>AnimeFLV</b>
-                <p>En la página del episodio sale una pastilla abajo a la derecha: <span class="s-boton">✓ Marcar visto</span>. Si no la pulsas, se apunta sola a los 15 min de reproductor.</p></div>
+                <p>En la página del episodio sale una pastilla abajo a la derecha: «✓ Marcar visto». Si no la pulsas, se apunta sola a los 15 min de reproductor.</p></div>
               <span class="s-est ok">Lista</span>
             </li>
             <li data-s="netflix">
@@ -61,12 +76,12 @@
               <span class="s-est ok">Lista</span>
             </li>
           </ul>
-          <p class="s-nota">Mientras ves algo en Netflix, Crunchyroll o AnimeFLV, el icono de Miraru enseña <b>«Viendo ahora»</b> con el episodio que ha leído y cuánto falta.</p>
+          <p class="s-nota">Mientras ves algo en Netflix, Crunchyroll o AnimeFLV, el icono de Miraru enseña «Viendo ahora» con el episodio que ha leído y cuánto falta.</p>
         </div>
       </li>
 
       <li class="paso" id="p-prueba">
-        <div class="num"><span>3</span><svg viewBox="0 0 24 24" fill="none" stroke="#06210f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+        <div class="num"><span class="n-paso">3</span><svg viewBox="0 0 24 24" fill="none" stroke="#06210f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
         <div class="cuerpo">
           <h2>Pruébalo con un episodio</h2>
           <p class="estado">Marca un episodio en AnimeAV1 o AnimeFLV (o termina uno en Netflix o Crunchyroll) y aparecerá aquí.</p>
@@ -74,7 +89,7 @@
             <img id="r-portada" alt="">
             <div>
               <div class="r-cab"><span class="r-ok">✓ ¡Funciona! Apuntado en Miraru</span><span class="serv" id="r-serv" hidden></span></div>
-              <div class="r-nombre" id="r-nombre"></div>
+              <div class="r-nombre" id="r-nombre" data-no-i18n></div>
               <div class="r-ep" id="r-ep"></div>
               <div class="barra"><span id="r-barra"></span></div>
             </div>
@@ -87,20 +102,26 @@
       <div class="nota">
         <span class="ico" aria-hidden="true">📌</span>
         <div><strong>Tenla a mano</strong>
-          <p>Pulsa la pieza de puzle 🧩 arriba a la derecha del navegador y la chincheta junto a «Miraru — episodios vistos». Su icono te avisa: <span class="chip ok">✓</span> apuntado, <span class="chip mal">!</span> Miraru cerrado (se apunta al abrirlo), <span class="chip warn">?</span> no se pudo.</p></div>
+          <p>Pulsa la pieza de puzle 🧩 arriba a la derecha del navegador y la chincheta junto a «Miraru — episodios vistos». Su icono te avisa: ✓ apuntado, un número = guardados hasta que abras Miraru, ? no se pudo.</p></div>
       </div>
       <div class="nota">
-        <span class="ico" aria-hidden="true">🔒</span>
-        <div><strong>Solo mira lo que ves</strong>
-          <p>En AnimeAV1 solo se entera de cuándo marcas un episodio. En AnimeFLV, del nombre y el número del episodio que abres. En Netflix y Crunchyroll, del nombre del episodio que tienes delante y de cuánto llevas. No lee tu historial ni tu cuenta, y se lo cuenta solo a Miraru, en tu propio PC.</p></div>
+        <span class="ico" aria-hidden="true">💾</span>
+        <div><strong>Si Miraru está cerrado</strong>
+          <p>No se pierde nada: lo que veas se guarda en la extensión y se sube solo, en orden, en cuanto abras Miraru.</p></div>
       </div>
       <div class="nota">
         <span class="ico" aria-hidden="true">↩</span>
         <div><strong>¿Se apuntó el que no era?</strong>
           <p>En la ventana de la extensión, «↩ Deshacer» lo quita (o «Marcar como no visto» en AnimeAV1). Y cuando haya una versión nueva de la extensión, la misma ventana te avisa y se instala con un botón.</p></div>
       </div>
+      <div class="nota">
+        <span class="ico" aria-hidden="true">🔒</span>
+        <div><strong>Solo mira lo que ves</strong>
+          <p>En AnimeAV1 solo se entera de cuándo marcas un episodio. En AnimeFLV, del nombre y el número del episodio que abres. En Netflix y Crunchyroll, del nombre del episodio que tienes delante y de cuánto llevas. No lee tu historial ni tu cuenta, y se lo cuenta solo a Miraru, en tu propio PC.</p></div>
+      </div>
     </section>
   </main>
+<script src="i18n.js"></script>
 <script src="bienvenida.js"></script>
 </body>
 </html>

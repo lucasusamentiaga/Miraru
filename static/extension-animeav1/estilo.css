@@ -247,3 +247,60 @@ a.s-est:hover{border-color:var(--warn)}
   .s-est{grid-column:2;justify-self:start;margin-top:0}
 }
 .hero .logo{display:block;width:clamp(60px,12vw,76px);height:auto;margin:0 auto 16px;filter:drop-shadow(0 6px 18px rgba(var(--acento-rgb),.5))}
+
+/* ── v1.7 ───────────────────────────────────────────────────────────────── */
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Estado de la conexión: «Conectando…» late suave hasta que contesta Miraru */
+.pastilla.espera i{background:var(--acento2);animation:late 1.2s var(--salida) infinite}
+.pastilla.ok{color:#bbf7d0;border-color:rgba(var(--ok-rgb),.35)}
+.pastilla.mal{color:#fecaca;border-color:rgba(239,68,68,.35)}
+
+/* Entrada escalonada de los bloques de la ventana (solo al abrirla) */
+.popup .cuerpo>*{animation:llega .5s var(--salida-expo) both}
+.popup .cuerpo>*:nth-child(2){animation-delay:.03s}.popup .cuerpo>*:nth-child(3){animation-delay:.06s}
+.popup .cuerpo>*:nth-child(4){animation-delay:.09s}.popup .cuerpo>*:nth-child(5){animation-delay:.12s}
+.popup .cuerpo>*:nth-child(n+6){animation-delay:.15s}
+
+/* Guardados mientras Miraru está cerrado */
+.guardados{padding:11px 12px;border-radius:12px;background:rgba(37,99,235,.09);border:1px solid rgba(96,165,250,.38)}
+.gd-cab{display:flex;align-items:center;gap:10px}
+.gd-ico{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;flex-shrink:0;background:#2563eb}
+.gd-ico svg{width:14px;height:14px;fill:#fff}
+.guardados.cerrado .gd-ico{animation:respira 2.4s var(--salida) infinite}
+@keyframes respira{50%{box-shadow:0 0 0 5px rgba(37,99,235,.18)}}
+.gd-t{flex:1;min-width:0}
+.gd-t b{display:block;font-size:13px}
+.gd-t small{display:block;font-size:12px;color:#bfdbfe;line-height:1.4}
+.gd-lista{list-style:none;margin:8px 0 0;padding:0}
+.gd-lista li{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:5px 2px;border-top:1px solid rgba(96,165,250,.16)}
+.gd-lista li span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gd-lista li span:last-child{color:var(--gris);flex-shrink:0}
+.gd-lista li.mas{color:var(--gris);justify-content:flex-start}
+.gd-lista .serv-l::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--c,var(--acento2))}
+.gd-barra{position:relative;height:3px;margin-top:8px;border-radius:99px;background:rgba(96,165,250,.18);overflow:hidden}
+.gd-barra span{position:absolute;top:0;bottom:0;width:35%;border-radius:inherit;background:#60a5fa;animation:corre 1.1s var(--salida) infinite}
+@keyframes corre{from{left:-35%}to{left:100%}}
+
+/* Ajustes */
+.ajustes .aj-fila{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 0;flex-wrap:wrap}
+.ajustes select{padding:5px 8px;border-radius:7px;border:1px solid var(--borde);background:var(--bg2);color:var(--fg);font:inherit;font-size:12px}
+.ajustes small{color:var(--gris)}
+.ajustes b{color:var(--fg);font-weight:600}
+.popup details summary{transition:color .2s}
+.popup details summary:hover{color:var(--fg)}
+
+/* Guía: selector de idioma y ayuda de instalación */
+.bv-idioma{position:fixed;top:14px;right:14px;z-index:2}
+.bv-idioma select{appearance:none;-webkit-appearance:none;padding:7px 30px 7px 12px;border-radius:99px;font:600 12.5px/1.2 var(--texto);
+  color:var(--fg);background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a49dc0' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+  border:1px solid var(--borde);cursor:pointer;transition:border-color .2s}
+.bv-idioma select:hover{border-color:var(--borde-hi)}
+.paso .ayuda{margin:10px 0 0;font-size:13px;color:var(--fg);padding:10px 12px;border-radius:10px;background:rgba(var(--acento-rgb),.12);border:1px solid rgba(var(--acento-rgb),.4)}
+.paso.ok .ayuda{display:none}
+.paso[hidden]{display:none}
+@media (max-width:480px){.bv-idioma{top:10px;right:10px}}
+
+@media (prefers-reduced-motion:reduce){
+  .pastilla.espera i,.guardados.cerrado .gd-ico,.gd-barra span{animation:none}
+}

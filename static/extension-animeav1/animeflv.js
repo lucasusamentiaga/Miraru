@@ -65,6 +65,8 @@
   }
 
   const datos = () => leerAnimeFLV(location.href, document);
+  const I18N = self.MiraruI18n || null;                  // i18n.js va antes en el manifiesto
+  const tr = (s, v) => (I18N ? I18N.tr(s, v) : s.replace(/\{(\w)\}/g, (_, k) => (v || {})[k] ?? ''));
   if (!datos()) return;
 
   // ── La pastilla (en un shadow DOM: los estilos de AnimeFLV no la tocan) ──
@@ -123,11 +125,11 @@
     $('nombre').textContent = d.serie;
     $('nombre').title = d.serie;
     $('p').classList.toggle('ok', estado === 'apuntado');
-    const ep = 'Ep ' + d.episodio + ' · ';
-    if (estado === 'apuntado') $('sub').textContent = ep + '✓ apuntado en Miraru';
-    else if (estado === 'deshecho') $('sub').textContent = ep + 'deshecho, sin ver';
-    else $('sub').textContent = ep + (segundos > 0 ? `se apunta solo en ${minutos(AUTO_SEG - segundos)} min` : 'se apunta solo a los 15 min');
-    $('b').textContent = estado === 'apuntado' ? 'Deshacer' : '✓ Marcar visto';
+    const v = {e: d.episodio, m: minutos(AUTO_SEG - segundos)};
+    $('sub').textContent = tr(estado === 'apuntado' ? 'Ep {e} · ✓ apuntado en Miraru'
+      : estado === 'deshecho' ? 'Ep {e} · deshecho, sin ver'
+      : segundos > 0 ? 'Ep {e} · se apunta solo en {m} min' : 'Ep {e} · se apunta solo a los 15 min', v);
+    $('b').textContent = tr(estado === 'apuntado' ? 'Deshacer' : '✓ Marcar visto');
     $('b').className = 'acc' + (estado === 'apuntado' ? ' sec' : '');
     const fr = estado === 'apuntado' ? 1 : Math.min(1, segundos / AUTO_SEG);
     $('av').style.strokeDashoffset = String(94.25 * (1 - fr));
@@ -145,7 +147,7 @@
       chrome.runtime.sendMessage({tipo: accion === 'desmarcar' ? 'streaming-desmarcar' : 'streaming-visto', datos: d})
         .catch(() => {});
     } catch (_) {
-      $('sub').textContent = 'Recarga la página (se actualizó la extensión)';
+      $('sub').textContent = tr('Recarga la página (se actualizó la extensión)');
     }
   }
   function apuntar() {
@@ -173,6 +175,12 @@
   $('anillo').addEventListener('click', () => plegar(!$('p').classList.contains('plegada')));
   try { if (localStorage.getItem(CLAVE)) plegar(true); } catch (_) { /* nada */ }
   pintar();
+  // v1.7: en tu idioma (el de la extensión o el de Miraru)
+  if (I18N) I18N.cargar().then(() => {
+    $('anillo').title = tr('Plegar o abrir Miraru');
+    $('x').title = tr('Plegar'); $('x').setAttribute('aria-label', tr('Plegar'));
+    pintar();
+  }).catch(() => {});
   (document.body || document.documentElement).appendChild(caja);
 
   // ── Automático: tiempo con el reproductor en marcha ────────────────────────

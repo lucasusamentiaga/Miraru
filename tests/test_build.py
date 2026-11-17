@@ -28,7 +28,7 @@ def _imports_locales(archivo: pathlib.Path) -> set[str]:
 
 def test_incluye_los_que_faltaban():
     nombres = {p.name for p in build.modulos_propios()}
-    assert {"metadatos.py", "anilist_sync.py", "watch_folder.py"} <= nombres
+    assert {"metadatos.py", "anilist_sync.py"} <= nombres
     assert "build.py" not in nombres and "launcher.py" not in nombres
 
 

@@ -297,7 +297,15 @@ def _abrir_navegador():
     if os.environ.get("MIRARU_NO_BROWSER") == "1":
         log("MIRARU_NO_BROWSER=1 — no se abre el navegador")
         return
-    webbrowser.open(f"http://{CONNECT_HOST}:{PORT}")
+    url = f"http://{CONNECT_HOST}:{PORT}"
+    # v2.17.7: en el navegador que elegiste (Más → Navegador); si no, el predeterminado.
+    try:
+        import navegadores
+        con = navegadores.abrir(url)
+        log(f"Navegador: {con or 'predeterminado'}")
+    except Exception as e:  # noqa: BLE001
+        log(f"navegadores: {e} — se usa el predeterminado")
+        webbrowser.open(url)
 
 
 def _pestana_ya_abierta(espera: float = 12.0, paso: float = 0.5,

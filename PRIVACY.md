@@ -1,6 +1,6 @@
 # Política de privacidad de Miraru / Miraru privacy policy
 
-*Última actualización / Last updated: 12 de noviembre de 2026*
+*Última actualización / Last updated: 17 de noviembre de 2026*
 
 ## Español
 
@@ -52,6 +52,10 @@ adultos.
   (127.0.0.1), que busca el título en AniList para saber qué anime es (lo que no es anime
   no se apunta). No lee tu historial, tu cuenta ni otras páginas, y no envía nada a
   terceros.
+- *Reportar un bug* («Más → Reportar un bug»): lo que escribes, el correo si lo pones y,
+  si dejas marcada la casilla, la versión de Miraru, el sistema, el navegador, el idioma y
+  el tamaño de pantalla se envían a través de Web3Forms (web3forms.com) al correo del autor,
+  solo cuando pulsas «Enviar». Nada de tu lista.
 - *Google Sheets*: copia tu lista a una hoja de cálculo de tu cuenta de Google.
 - *Notificaciones del navegador*: usan el servicio de notificaciones de tu navegador.
 - *Acceso desde el móvil*: al pulsar «Conectar el móvil», Miraru se abre a los
@@ -124,6 +128,10 @@ Miraru hides from searches any content those sources flag as adults-only.
   (127.0.0.1), which looks the title up on AniList to know which anime it is (anything
   that is not anime is not recorded). It does not read your history, your account or other
   pages, and sends nothing to third parties.
+- *Report a bug* ("More → Report a bug"): what you write, your email if you add it and,
+  if the box is ticked, the Miraru version, system, browser, language and screen size are
+  sent through Web3Forms (web3forms.com) to the author's email, only when you press "Send".
+  Nothing from your list.
 - *Google Sheets*: copies your list to a spreadsheet in your Google account.
 - *Browser notifications*: your browser's push service.
 - *Mobile access*: pressing "Connect your phone" opens Miraru to devices on your local

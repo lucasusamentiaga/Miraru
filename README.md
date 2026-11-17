@@ -61,7 +61,6 @@ o la [versión portable](https://github.com/lucasusamentiaga/Miraru/releases/lat
 
 **Más**
 - **Sincronización con AniList y AnimeAV1** en los dos sentidos, con barra de progreso
-- **Carpeta vigilada**: marca como visto el episodio que acabas de descargar
 - Sincronización con Google Sheets (opcional)
 - Acceso desde el **móvil** por la WiFi de casa, con PIN (instalable como app)
 - **Copia en la nube** (OneDrive, Google Drive, Dropbox): si formateas el PC, recuperas tu lista con un clic
