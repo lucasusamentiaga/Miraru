@@ -803,11 +803,11 @@ body.sel-mode .ac .salir{display:none}
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
 <script src="/static/customize.js"></script>
-<script src="/static/novedades.js?v=2.17.7" defer></script>
-<script src="/static/selects.js?v=2.17.7" defer></script>
-<script src="/static/temporadas.js?v=2.17.7"></script>
-<script src="/static/tour.js?v=2.17.7" defer></script>
-<script src="/static/navegador.js?v=2.17.7" defer></script>
+<script src="/static/novedades.js?v=2.17.8" defer></script>
+<script src="/static/selects.js?v=2.17.8" defer></script>
+<script src="/static/temporadas.js?v=2.17.8"></script>
+<script src="/static/tour.js?v=2.17.8" defer></script>
+<script src="/static/navegador.js?v=2.17.8" defer></script>
 <script src="/static/i18n-dom.js" defer></script>
 <script src="/static/dialogos.js" defer></script>
 </head>
@@ -1298,7 +1298,6 @@ fetch('/api/version').then(r => r.json()).then(d => {
         <button class="btn btn-ghost btn-sm" role="menuitem" onclick="exportarCSV();toggleMenuMas(false)">📊 <span class="lbl">Exportar CSV</span></button>
         <button class="btn btn-ghost btn-sm" role="menuitem" onclick="exportarJSON();toggleMenuMas(false)">📄 <span class="lbl">Exportar JSON</span></button>
         <button class="btn btn-sync" id="btn-sync" role="menuitem" onclick="sincronizar()">↑ Sync</button>
-        <button class="btn btn-ghost btn-sm" id="btn-random" role="menuitem" onclick="animeAleatorio();toggleMenuMas(false)">🎲<span class="lbl" id="lbl-random">Aleatorio</span></button>
         <div class="grupo">Conectar</div>
         <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirAniList();toggleMenuMas(false)" title="Sincronizar con AniList" id="btn-anilist">🔗<span class="lbl">AniList</span></button>
         <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirExtension();toggleMenuMas(false)" title="Extensión del navegador: apunta sola lo que ves en AnimeAV1, Netflix y Crunchyroll" id="btn-extension" data-solo="anime">🧩<span class="lbl">Extensión del navegador</span></button>
@@ -4188,29 +4187,7 @@ async function pedirQueVeo() {
   } catch(e) { toast(T('conn_error'), 'err'); }
 }
 
-async function animeAleatorio() {
-  try {
-    const r = await fetch('/api/animes/random?estado=pendiente&tipo=' + (TIPO));
-    if (!r.ok) { toast(T('no_animes_list'), 'warn'); return; }
-    const d = await r.json();
-    const a = d.anime;
-    if (!a) { toast(T('no_animes_list'), 'warn'); return; }
-    // Mostrar info del método usado
-    let msg = '🎲 ' + a.nombre;
-    if (d.basado_en && d.basado_en.length) {
-      msg += ' · ' + T('random_genres') + ': ' + d.basado_en.slice(0,2).join(', ');
-    }
-    toast(msg);
-    // Resaltar la tarjeta buscándola
-    document.getElementById('f-nombre').value = a.nombre;
-    document.getElementById('f-estado').value = '';
-    render();
-    setTimeout(() => {
-      document.getElementById('f-nombre').value = '';
-      render();
-    }, 3500);
-  } catch(e) { toast(T('conn_error'), 'err'); }
-}
+// v2.17.8: «Aleatorio» eliminado del menú «Más» y de la paleta (no se usaba).
 
 // ── Modales helper ────────────────────────────────────────────────────────────
 // ── v2.17.7: reportar un bug ───────────────────────────────────────────────
@@ -4878,7 +4855,6 @@ function _paletteCommands() {
     {icon: '🧭', label: 'Recorrido por la app', run: () => window.miraruTour && window.miraruTour.empezar(true)},
     {icon: '🏠', label: 'Inicio',        run: () => location.href = '/'},
     {icon: '🔄', label: T('sync') || 'Sincronizar', run: () => sincronizar()},
-    {icon: '🎲', label: T('random') || 'Anime aleatorio', run: () => animeAleatorio()},
     {icon: '🌓', label: T('theme') || 'Cambiar tema', run: () => { if (typeof toggleTheme === 'function') toggleTheme(); }},
     {icon: '🔧', label: 'Refrescar metadatos (arreglar cap. erróneos)', run: () => refrescarMetadatos()},
     {icon: '🔔', label: 'Probar notificación push', run: () => probarPush()},

@@ -104,7 +104,33 @@
     } catch (_) { /* español */ }
   }
 
-  async function abrirDialogo(datos) {
+  // v2.17.8: avisos al abrir Miraru DE UNO EN UNO (novedades, elegir navegador…).
+  // Cola común en window: cada aviso espera a que se cierre el anterior. Todo
+  // aviso nuevo que salga solo al abrir debe pasar por aquí.
+  function turno(fn) {
+    var antes = window.__miraruCola || Promise.resolve();
+    var p = antes.then(function () {
+      return new Promise(function (fin) {
+        var hecho = false;
+        var acabar = function () { if (!hecho) { hecho = true; fin(); } };
+        try { fn(acabar); } catch (e) { acabar(); }
+      });
+    });
+    window.__miraruCola = p.catch(function () {});
+    return p;
+  }
+  // Hay otra ventana a la vista (un modal, el recorrido, otro aviso)
+  function hayOtroAviso() {
+    return !!document.querySelector('.modal-bg.open, .mtour-on, .mdlg-fondo, .mnv-bg, .mnav-bg') ||
+      (document.getElementById('copia-aviso') || {style: {}}).style.display === 'flex';
+  }
+  function cuandoLibre(fn, n) {
+    n = n || 0;
+    if (hayOtroAviso() && n < 300) { setTimeout(function () { cuandoLibre(fn, n + 1); }, 700); return; }
+    fn();
+  }
+
+  async function abrirDialogo(datos, alCerrar) {
     await idioma();
     if (!document.getElementById('mnav-css')) {
       const st = document.createElement('style'); st.id = 'mnav-css'; st.textContent = CSS; document.head.appendChild(st);
@@ -155,7 +181,7 @@
     pintar();
     (botones.find(b => b.getAttribute('aria-checked') === 'true') || botones[0]).focus();
 
-    const cerrar = () => bg.remove();
+    const cerrar = () => { bg.remove(); if (alCerrar) { const f = alCerrar; alCerrar = null; f(); } };
     // «Ahora no» también cuenta como respondido: no se vuelve a preguntar (queda el predeterminado).
     luego.onclick = async () => {
       if (datos.preguntar) { try { await guardar(datos.elegido || '', false); } catch (_) { /* nada */ } }
@@ -206,11 +232,8 @@
     try {
       const d = await datos();
       if (!(d.preguntar && d.navegadores.length > 1)) return;
-      // Después de las novedades o el recorrido, si están abiertos (no uno encima de otro).
-      const ocupado = () => document.querySelector('.mnv-bg') || document.body.classList.contains('mtour-on');
-      let n = 0;
-      const esperar = () => (ocupado() && n++ < 240) ? setTimeout(esperar, 800) : abrirDialogo(d);
-      setTimeout(esperar, 900);
+      // De uno en uno con las novedades y cualquier otro aviso (nunca encima).
+      turno(fin => cuandoLibre(() => abrirDialogo(d, fin).catch(fin)));
     } catch (_) { /* nada */ }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', primeraVez);

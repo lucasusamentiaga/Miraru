@@ -44,10 +44,11 @@ def test_cabecera_con_menu_mas_y_series_y_pelis(db):
     main, c = _cliente()
     html = c.get("/app").text
     for falta in ('id="btn-menu-movil"', 'class="header-utils"', 'class="header-settings"', 'id="export-menu"', ">No Anime<",
-                  'id="btn-watchfolder"', 'id="modal-watchfolder"', 'id="btn-theme"'):
+                  'id="btn-watchfolder"', 'id="modal-watchfolder"', 'id="btn-theme"', 'id="btn-random"',
+                  "animeAleatorio("):
         assert falta not in html, falta
     menu = html.split('id="menu-mas"')[1].split("</header>")[0]
-    for id_ in ("btn-sync", "btn-anilist", "btn-copia", "btn-extension", "lang-sel", "btn-random"):
+    for id_ in ("btn-sync", "btn-anilist", "btn-copia", "btn-extension", "lang-sel", "btn-navegador", "btn-reporte"):
         assert f'id="{id_}"' in menu, id_
     assert "Series y pelis" in html and "¿Ya llevas tu lista en AniList o MyAnimeList?" in html
 

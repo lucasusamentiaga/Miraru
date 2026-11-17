@@ -10,6 +10,18 @@ from __future__ import annotations
 # icono: emoji · titulo: corto (≤ 40 letras) · texto: una frase.
 # accion (opcional): {"texto": "...", "url": "/app#..."} → botón dentro del punto.
 NOVEDADES: list[dict] = [
+    # silenciosa: solo arreglos; no abre la ventana de novedades.
+    {
+        "version": "2.17.8",
+        "silenciosa": True,
+        "titulo": "Arreglos",
+        "puntos": [
+            {"icono": "🪟", "titulo": "Un aviso cada vez",
+             "texto": "Las novedades y la elección de navegador ya no salen una encima de otra: primero una y, al cerrarla, la siguiente."},
+            {"icono": "🧹", "titulo": "Menú «Más» más limpio",
+             "texto": "Fuera «Aleatorio»."},
+        ],
+    },
     {
         "version": "2.17.7",
         "titulo": "Tu navegador, tus ideas y temporadas al día",

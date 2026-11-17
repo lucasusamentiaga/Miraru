@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.17.8 — Arreglos
+
+- **Avisos de uno en uno**: las novedades de la versión y «¿En qué navegador quieres usar
+  Miraru?» se solapaban. Ahora comparten una cola (`window.__miraruCola`, función `turno()` en
+  `novedades.js` y `navegador.js`): cada aviso espera a que se cierre el anterior y a que no haya
+  otro modal, el recorrido o la recuperación de copia a la vista. **Regla para el futuro: todo
+  aviso que salga solo al abrir Miraru pasa por esa cola.**
+- Fuera «Aleatorio» del menú «Más» y de la paleta de comandos.
+
 ## v2.17.7 — Tu navegador, tus ideas y temporadas al día
 
 - **Elegir navegador** (`navegadores.py`): detecta los navegadores instalados (rutas habituales y

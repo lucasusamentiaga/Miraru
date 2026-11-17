@@ -78,14 +78,35 @@
     return e;
   }
 
-  // Otro aviso abierto (modal, recorrido guiado, recuperar copia): espera.
-  function ocupado() {
-    return !!document.querySelector('.modal-bg.open, .mtour-on, .mdlg-fondo') ||
+  // v2.17.8: avisos al abrir Miraru DE UNO EN UNO (novedades, elegir navegador…).
+  // Cola común en window: cada aviso espera a que se cierre el anterior. Todo
+  // aviso nuevo que salga solo al abrir debe pasar por aquí.
+  function turno(fn) {
+    var antes = window.__miraruCola || Promise.resolve();
+    var p = antes.then(function () {
+      return new Promise(function (fin) {
+        var hecho = false;
+        var acabar = function () { if (!hecho) { hecho = true; fin(); } };
+        try { fn(acabar); } catch (e) { acabar(); }
+      });
+    });
+    window.__miraruCola = p.catch(function () {});
+    return p;
+  }
+  // Hay otra ventana a la vista (un modal, el recorrido, otro aviso)
+  function hayOtroAviso() {
+    return !!document.querySelector('.modal-bg.open, .mtour-on, .mdlg-fondo, .mnv-bg, .mnav-bg') ||
       (document.getElementById('copia-aviso') || {style: {}}).style.display === 'flex';
+  }
+  function cuandoLibre(fn, n) {
+    n = n || 0;
+    if (hayOtroAviso() && n < 300) { setTimeout(function () { cuandoLibre(fn, n + 1); }, 700); return; }
+    fn();
   }
 
   function visto() { fetch('/api/aviso-novedades/visto', {method: 'POST'}).catch(function () {}); }
 
+  var alCerrar = null;
   function pintar(d) {
     if (!document.getElementById('mnv-css')) {
       var st = document.createElement('style'); st.id = 'mnv-css'; st.textContent = CSS;
@@ -164,7 +185,7 @@
       visto();
       document.removeEventListener('keydown', tecla, true);
       bg.classList.add('sale');
-      setTimeout(function () { bg.remove(); try { antes && antes.focus && antes.focus(); } catch (_) {} }, 190);
+      setTimeout(function () { bg.remove(); try { antes && antes.focus && antes.focus(); } catch (_) {} if (alCerrar) { var f = alCerrar; alCerrar = null; f(); } }, 190);
     }
     function tecla(e) {
       if (e.key === 'Escape') { e.preventDefault(); cerrar(); }
@@ -180,10 +201,8 @@
     bg.addEventListener('click', function (e) { if (e.target === bg) cerrar(); });
   }
 
-  var intentos = 0;
   function probar(d) {
-    if (ocupado()) { if (++intentos < 60) setTimeout(function () { probar(d); }, 2000); return; }
-    pintar(d);
+    turno(function (fin) { cuandoLibre(function () { alCerrar = fin; pintar(d); }); });
   }
 
   function arrancar() {

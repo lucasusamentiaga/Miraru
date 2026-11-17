@@ -74,3 +74,13 @@ def test_progid_del_predeterminado():
     assert f("Opera GXStable") == "operagx" and f("OperaStable") == "opera"
     assert f("ChromeHTML") == "chrome" and f("MSEdgeHTM") == "edge" and f("FirefoxURL-308046B0AF4A39CB") == "firefox"
     assert f("AppXq0fevzme2pys62n3e0fbqa7peapykr8v") == ""
+
+
+def test_avisos_de_uno_en_uno():
+    """Novedades y «elegir navegador» comparten la cola de avisos (no se solapan)."""
+    from pathlib import Path
+    st = Path(__file__).resolve().parent.parent / "static"
+    for f in ("novedades.js", "navegador.js"):
+        src = (st / f).read_text(encoding="utf-8")
+        assert "window.__miraruCola" in src and "cuandoLibre(" in src, f
+        assert ".mnv-bg, .mnav-bg" in src, f
