@@ -909,7 +909,9 @@ async function loadHeatmap() {
       return `${y}-${m}-${da}`;
     };
 
-    // Celdas
+    // Celdas (el «N episodios» del recuadro, en el idioma de Miraru)
+    const EPS_TXT = ({en: ['episode', 'episodes'], fr: ['épisode', 'épisodes'], de: ['Folge', 'Folgen']})[
+      (document.documentElement.lang || 'es').slice(0, 2)] || ['episodio', 'episodios'];
     weeks.forEach((wk, wi) => {
       wk.forEach((day, di) => {
         const iso = localISO(day);
@@ -919,7 +921,7 @@ async function loadHeatmap() {
         const fechaTxt = day.toLocaleDateString(undefined, {weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'});
         const title = future
           ? fechaTxt
-          : (c === 1 ? `${fechaTxt}: 1 episodio` : `${fechaTxt}: ${c} episodios`);
+          : `${fechaTxt}: ${c} ${EPS_TXT[c === 1 ? 0 : 1]}`;
         svg += `<rect x="${OFFSET_LEFT + wi*(CELL+GAP)}" y="${OFFSET_TOP + di*(CELL+GAP)}" `
              + `width="${CELL}" height="${CELL}" rx="2" fill="${fill}">`
              + `<title>${title}</title></rect>`;

@@ -31,22 +31,60 @@ header h1{
 .back:hover{border-color:var(--accent);color:var(--light)}
 [data-theme=light] header{background:#fff;border-color:#d4d0ec}
 [data-theme=light] .back{background:#fff;color:#4b4b6b;border-color:#d4d0ec}
-main{max-width:800px;margin:0 auto;padding:20px}
-.day{margin-bottom:20px}
-.day-header{font-size:14px;font-weight:700;color:var(--light);margin-bottom:8px;display:flex;align-items:center;gap:8px}
-.day-header .today{background:var(--accent);color:#fff;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700}
-.ep-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:6px}
-.ep-card img{width:40px;height:56px;border-radius:6px;object-fit:cover;flex-shrink:0}
-.ep-card .info{flex:1;min-width:0}
-.ep-card .name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ep-card .meta{font-size:11px;color:var(--muted)}
-.ep-card .time{font-size:12px;font-weight:700;color:var(--success);flex-shrink:0}
-[data-theme=light] .ep-card{background:#fff;border-color:#d4d0ec}
-.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+main{max-width:1240px;margin:0 auto;padding:26px 20px 90px}
+/* v2.17.10: la semana entera, de un vistazo */
+.cab{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.cab h2{font:700 clamp(20px,2.4vw,26px)/1.2 "Space Grotesk",Inter,sans-serif;letter-spacing:-.01em;text-wrap:balance}
+.cab p{font-size:13.5px;color:var(--muted)}
+.cab p b{color:var(--fg);font-weight:600}
+.semana{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;align-items:start}
+.dia{display:flex;flex-direction:column;gap:8px;min-width:0;padding:10px;border-radius:14px;
+  background:var(--card2);border:1px solid var(--border);animation:sube .5s cubic-bezier(.16,1,.3,1) both;
+  animation-delay:calc(var(--i,0) * 45ms)}
+.dia.hoy{border-color:rgba(var(--accent-rgb,124,58,237),.6);background:rgba(var(--accent-rgb,124,58,237),.08)}
+.dia.vacio{opacity:.62}
+.dia-cab{display:flex;align-items:baseline;gap:6px;padding:2px 4px 4px}
+.dia-cab .dn{font-size:13px;font-weight:700;text-transform:capitalize}
+.dia-cab .dd{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dia-cab .marca{margin-left:auto;font-size:11px;font-weight:700;color:#fff;background:var(--accent);padding:2px 8px;border-radius:99px}
+.nada{font-size:12px;color:var(--muted);padding:6px 4px 4px}
+.ep{display:flex;flex-direction:column;border-radius:10px;overflow:hidden;background:var(--card);border:1px solid var(--border);
+  transition:border-color .2s cubic-bezier(.22,1,.36,1),background-color .2s}
+.ep:hover{border-color:rgba(var(--accent-rgb,124,58,237),.55)}
+.ep .portada{position:relative;aspect-ratio:4/5;background:var(--card2);overflow:hidden}
+.ep .portada img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.ep .hora{position:absolute;left:6px;bottom:6px;font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff;
+  background:rgba(8,6,14,.78);padding:3px 7px;border-radius:6px}
+.ep .falta{position:absolute;right:6px;bottom:6px;font-size:11px;font-weight:700;color:#06210f;background:var(--success);padding:3px 7px;border-radius:6px}
+.ep .tx{padding:8px 9px 9px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.ep .nm{font-size:12.5px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ep .num{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pie{margin-top:18px;font-size:12.5px;color:var(--muted)}
+.empty{text-align:center;padding:70px 20px;color:var(--muted)}
 .empty .icon{font-size:40px;margin-bottom:12px}
+.empty h3{color:var(--fg);font-size:17px;margin-bottom:6px}
+.empty a{display:inline-block;margin-top:16px;padding:9px 16px;border-radius:10px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;font-size:13.5px}
 .spin{width:24px;height:24px;border:3px solid rgba(124,58,237,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes sube{from{opacity:0;transform:translateY(8px)}}
 .loading{text-align:center;padding:50px;color:var(--muted)}
+/* Pantallas medianas: 4 + 3; móvil: un día por fila, con los episodios en horizontal */
+@media (max-width:1060px){.semana{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:680px){
+  .semana{grid-template-columns:1fr;gap:8px}
+  .dia{flex-direction:row;flex-wrap:wrap;align-items:center}
+  .dia-cab{flex-basis:100%}
+  .dia.vacio{flex-wrap:nowrap}.dia.vacio .dia-cab{flex-basis:auto}.dia.vacio .nada{padding:2px 4px;margin-left:auto}
+  .ep{flex-direction:row;flex:1 1 100%}
+  .ep .portada{aspect-ratio:auto;width:64px;min-height:84px;flex-shrink:0}
+  .ep .hora,.ep .falta{position:static;display:inline-block;margin-top:2px}
+  .ep .portada .hora,.ep .portada .falta{display:none}
+  .ep .tx .chips{display:flex;gap:6px;margin-top:3px}
+}
+@media (min-width:681px){.ep .tx .chips{display:none}}
+[data-theme=light] .ep{background:#fff}
+[data-theme=light] .dia{background:#f4f2fb}
+@media (prefers-reduced-motion:reduce){.dia{animation:none}.ep{transition:none}}
 </style>
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
@@ -64,104 +102,100 @@ main{max-width:800px;margin:0 auto;padding:20px}
 <script>
 try{if(localStorage.getItem('theme')==='light')document.documentElement.dataset.theme='light';}catch(_){}
 
-function _thumbUrl(url) { return url ? url.replace('/cover/large/', '/cover/medium/') : ''; }
-const DIAS_ES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+function _thumbUrl(url) { return url ? url.replace('/cover/small/', '/cover/medium/').replace('/cover/large/', '/cover/medium/') : ''; }
+
+// Textos de esta página (fechas y cuentas atrás con números: más fácil aquí que en el traductor general)
+const TX = {
+  es: {sem: 'Esta semana', res: (e, a) => `<b>${e}</b> ${e === 1 ? 'episodio' : 'episodios'} de lo que estás viendo`, hoy: 'Hoy', man: 'Mañana',
+       nada: 'Nada', ep: (n, t) => `Episodio ${n}` + (t && t !== '?' ? ` de ${t}` : ''), en: (h, m) => h ? `en ${h} h` : `en ${m} min`,
+       pie: 'Salen los animes que tienes en «Viendo». La hora es la de tu PC.', vacio: 'Esta semana no sale nada de lo que ves',
+       vacioTx: 'Aquí salen los episodios nuevos de los animes que tienes en «Viendo» durante los próximos 7 días.', ir: 'Ir a mi lista', err: 'No se pudo cargar el calendario'},
+  en: {sem: 'This week', res: (e) => `<b>${e}</b> ${e === 1 ? 'episode' : 'episodes'} of what you're watching`, hoy: 'Today', man: 'Tomorrow',
+       nada: 'Nothing', ep: (n, t) => `Episode ${n}` + (t && t !== '?' ? ` of ${t}` : ''), en: (h, m) => h ? `in ${h} h` : `in ${m} min`,
+       pie: 'Shows the anime you have in «Watching». Times are your PC\'s.', vacio: 'Nothing you watch airs this week',
+       vacioTx: 'New episodes of the anime you have in «Watching» show up here for the next 7 days.', ir: 'Go to my list', err: 'Could not load the calendar'},
+  fr: {sem: 'Cette semaine', res: (e) => `<b>${e}</b> ${e === 1 ? 'épisode' : 'épisodes'} de ce que tu regardes`, hoy: "Aujourd'hui", man: 'Demain',
+       nada: 'Rien', ep: (n, t) => `Épisode ${n}` + (t && t !== '?' ? ` sur ${t}` : ''), en: (h, m) => h ? `dans ${h} h` : `dans ${m} min`,
+       pie: "Affiche les anime que tu as dans «En cours». L'heure est celle de ton PC.", vacio: 'Rien de ce que tu regardes ne sort cette semaine',
+       vacioTx: 'Les nouveaux épisodes des anime que tu as dans «En cours» apparaissent ici pour les 7 prochains jours.', ir: 'Aller à ma liste', err: 'Impossible de charger le calendrier'},
+  de: {sem: 'Diese Woche', res: (e) => `<b>${e}</b> ${e === 1 ? 'Folge' : 'Folgen'} von dem, was du schaust`, hoy: 'Heute', man: 'Morgen',
+       nada: 'Nichts', ep: (n, t) => `Folge ${n}` + (t && t !== '?' ? ` von ${t}` : ''), en: (h, m) => h ? `in ${h} Std.` : `in ${m} Min.`,
+       pie: 'Zeigt die Anime, die du unter «Am Schauen» hast. Uhrzeit deines PCs.', vacio: 'Diese Woche kommt nichts von dem, was du schaust',
+       vacioTx: 'Neue Folgen der Anime unter «Am Schauen» erscheinen hier für die nächsten 7 Tage.', ir: 'Zu meiner Liste', err: 'Kalender konnte nicht geladen werden'},
+};
+const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+function el(tag, cls, txt) { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
 
 async function cargar() {
   const cont = document.getElementById('container');
+  let lang = 'es';
+  try { lang = ((await (await fetch('/api/lang')).json()).lang || 'es').slice(0, 2); } catch (_) {}
+  const T = TX[lang] || TX.es;
+  cont.setAttribute('data-no-i18n', '');          // los textos ya van en su idioma
   try {
     const r = await fetch('/api/calendario');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const d = await r.json();
+    cont.innerHTML = '';
     if (!d.total) {
-      cont.innerHTML = '<div class="empty"><div class="icon">📅</div><p>No hay episodios programados esta semana.</p><p style="font-size:12px;margin-top:8px;color:var(--muted)">Marca animes como "viendo" para ver su calendario aquí.</p></div>';
+      const e = el('div', 'empty');
+      e.append(el('div', 'icon', '📅'), el('h3', null, T.vacio), el('p', null, T.vacioTx));
+      const a = el('a', null, T.ir); a.href = '/app'; e.appendChild(a);
+      cont.appendChild(e);
       return;
     }
-    const frag = document.createDocumentFragment();
-    // v2.3: fecha local, no UTC. `toISOString` daba el día UTC y el badge
-    // "HOY" no aparecía en la celda correcta en zonas horarias negativas.
-    const _today = new Date();
-    const hoy = _today.getFullYear() + '-'
-              + String(_today.getMonth() + 1).padStart(2, '0') + '-'
-              + String(_today.getDate()).padStart(2, '0');
+    const cab = el('div', 'cab');
+    const h = el('h2', null, T.sem);
+    const res = el('p'); res.innerHTML = T.res(Number(d.total) || 0);
+    cab.append(h, res);
 
-    // v2.4: recordatorio proactivo — si hoy sale algún episodio, banner arriba.
-    const hoyEps = d.dias[hoy] || [];
-    if (hoyEps.length) {
-      const banner = document.createElement('div');
-      banner.style.cssText = 'background:linear-gradient(135deg,rgba(124,58,237,.22),rgba(124,58,237,.08));' +
-        'border:1px solid var(--accent);border-radius:12px;padding:14px 16px;margin-bottom:18px';
-      const t = document.createElement('div');
-      t.style.cssText = 'font-size:13px;font-weight:700;color:var(--light);margin-bottom:8px';
-      t.textContent = '🔔 Hoy sale ' + (hoyEps.length === 1 ? '1 episodio' : hoyEps.length + ' episodios');
-      banner.appendChild(t);
-      hoyEps.forEach(ep => {
-        const line = document.createElement('div');
-        line.style.cssText = 'font-size:12px;color:var(--muted);padding:2px 0';
-        line.textContent = '• Ep ' + ep.episodio + ' de ' + ep.nombre + (ep.hora ? ' · ' + ep.hora : '');
-        banner.appendChild(line);
-      });
-      frag.appendChild(banner);
-    }
-
-    for (const [dayKey, eps] of Object.entries(d.dias)) {
-      const dayDiv = document.createElement('div');
-      dayDiv.className = 'day';
-      const dt = new Date(dayKey + 'T12:00:00');
-      const header = document.createElement('div');
-      header.className = 'day-header';
-      // Día y fecha en nodos separados: el traductor reconoce «Domingo» suelto.
-      const dn = document.createElement('span'); dn.textContent = DIAS_ES[dt.getDay()];
-      header.append(dn, ' ' + dt.getDate() + '/' + (dt.getMonth()+1));
-      if (dayKey === hoy) {
-        const badge = document.createElement('span');
-        badge.className = 'today';
-        badge.textContent = 'HOY';
-        header.appendChild(badge);
-      }
-      dayDiv.appendChild(header);
+    const semana = el('div', 'semana');
+    const hoy = new Date(); hoy.setHours(12, 0, 0, 0);
+    const fmtDia = new Intl.DateTimeFormat(lang, {weekday: 'long'});
+    const fmtFecha = new Intl.DateTimeFormat(lang, {day: 'numeric', month: 'short'});
+    const ahora = Date.now();
+    for (let i = 0; i < 8; i++) {
+      const dia = new Date(hoy); dia.setDate(hoy.getDate() + i);
+      const eps = (d.dias || {})[iso(dia)] || [];
+      if (i === 7 && !eps.length) break;            // el 8.º día solo si cae algo justo a 7 días
+      const col = el('section', 'dia' + (i === 0 ? ' hoy' : '') + (eps.length ? '' : ' vacio'));
+      col.style.setProperty('--i', i);
+      const dc = el('div', 'dia-cab');
+      dc.append(el('span', 'dn', i === 0 ? T.hoy : i === 1 ? T.man : fmtDia.format(dia)), el('span', 'dd', fmtFecha.format(dia)));
+      col.setAttribute('aria-label', fmtDia.format(dia) + ' ' + fmtFecha.format(dia));
+      col.appendChild(dc);
+      if (!eps.length) col.appendChild(el('div', 'nada', T.nada));
       eps.forEach(ep => {
-        const card = document.createElement('div');
-        card.className = 'ep-card';
-        const img = document.createElement('img');
-        // src="" haría que el navegador se bajase esta misma página como imagen.
-        if (ep.imagen) { img.src = _thumbUrl(ep.imagen); img.loading = 'lazy'; }
-        else { img.style.display = 'none'; }
-        img.alt = '';
-        img.onerror = () => { img.style.display='none'; };
-        const info = document.createElement('div');
-        info.className = 'info';
-        const name = document.createElement('div');
-        name.className = 'name';
-        name.textContent = ep.nombre;
-        const meta = document.createElement('div');
-        meta.className = 'meta';
-        meta.textContent = 'Episodio ' + ep.episodio + (ep.total_eps ? ' / ' + ep.total_eps : '');
-        info.appendChild(name);
-        info.appendChild(meta);
-        const time = document.createElement('div');
-        time.className = 'time';
-        time.textContent = ep.hora || '';
-        card.appendChild(img);
-        card.appendChild(info);
-        card.appendChild(time);
-        dayDiv.appendChild(card);
+        const c = el('article', 'ep');
+        const por = el('div', 'portada');
+        if (ep.imagen) { const im = el('img'); im.src = _thumbUrl(ep.imagen); im.loading = 'lazy'; im.alt = ''; im.onerror = () => im.remove(); por.appendChild(im); }
+        // Cuenta atrás si sale hoy y aún no ha salido
+        let falta = '';
+        if (i === 0 && ep.hora) {
+          const [hh, mm] = ep.hora.split(':').map(Number);
+          const t = new Date(); t.setHours(hh, mm, 0, 0);
+          const min = Math.round((t - ahora) / 60000);
+          if (min > 0) falta = T.en(min >= 60 ? Math.floor(min / 60) : 0, min);
+        }
+        if (ep.hora) por.appendChild(el('span', 'hora', ep.hora));
+        if (falta) por.appendChild(el('span', 'falta', falta));
+        const tx = el('div', 'tx');
+        tx.append(el('div', 'nm', ep.nombre), el('div', 'num', T.ep(ep.episodio, ep.total_eps)));
+        const chips = el('div', 'chips');            // en el móvil la hora va aquí
+        if (ep.hora) chips.appendChild(el('span', 'hora', ep.hora));
+        if (falta) chips.appendChild(el('span', 'falta', falta));
+        tx.appendChild(chips);
+        c.title = ep.nombre;
+        c.append(por, tx);
+        col.appendChild(c);
       });
-      frag.appendChild(dayDiv);
+      semana.appendChild(col);
     }
+    cont.append(cab, semana, el('p', 'pie', T.pie));
+  } catch (e) {
     cont.innerHTML = '';
-    cont.appendChild(frag);
-  } catch(e) {
-    // v2.3: DOM seguro (antes inyectaba e.message en innerHTML).
-    cont.innerHTML = '';
-    const eb = document.createElement('div');
-    eb.className = 'empty';
-    const ic = document.createElement('div');
-    ic.className = 'icon';
-    ic.textContent = '⚠️';
-    const p = document.createElement('p');
-    p.textContent = 'Error: ' + (e.message || '');
-    eb.appendChild(ic); eb.appendChild(p);
+    const eb = el('div', 'empty');
+    eb.append(el('div', 'icon', '⚠️'), el('h3', null, T.err), el('p', null, e.message || ''));
     cont.appendChild(eb);
   }
 }

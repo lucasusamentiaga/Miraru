@@ -1,9 +1,17 @@
 # Changelog
 
-## v2.17.10 — Nueva dirección de Ko-fi
+## v2.17.10 — Calendario nuevo, pantallas más claras y nuevo Ko-fi
 
 - **Nueva dirección de Ko-fi**: «Apoyar Miraru» (menú «Más», menú de inicio, README y FUNDING) apunta a
   https://ko-fi.com/miraru.
+- **Calendario semanal nuevo**: los 7 días en columnas (4+3 en pantallas medianas, lista por día en el
+  móvil), hora y «en N h» para lo de hoy, días vacíos en gris, textos y fechas en el idioma de Miraru.
+- **Importar y Móvil, más claros**: AniList/MyAnimeList primero con pasos numerados; «Pega una lista»
+  plegado debajo; en Móvil, tres pasos y la frase de la WiFi traducida (la negrita la partía).
+- **Debugging masivo**: rastreo de todas las páginas en 4 idiomas y móvil, todas las API, todos los
+  botones de la app y de las fichas, y lint del JS. Arreglado: tooltip del calendario de actividad en
+  español en todos los idiomas; menú de inicio 3–42 px más ancho que el móvil (rejilla sin
+  `minmax(0,1fr)`); la barra flotante tapaba lo último de cada página (hueco de 76 px al final).
 
 ## v2.17.9 — Saltar openings en AnimeAV1 y cierre ordenado en Windows
 

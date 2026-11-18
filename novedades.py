@@ -12,12 +12,22 @@ from __future__ import annotations
 # donde (opcional): ["Más", "Navegador"] → «Dónde está: Más › Navegador».
 # pasos (opcional): frases cortas → «Cómo empezar», numeradas.
 NOVEDADES: list[dict] = [
-    # silenciosa: solo cambia un enlace; no abre la ventana de novedades.
     {
         "version": "2.17.10",
-        "silenciosa": True,
-        "titulo": "Arreglos",
+        "titulo": "Calendario nuevo y pantallas más claras",
         "puntos": [
+            {"icono": "📅", "titulo": "La semana entera, de un vistazo",
+             "texto": "El calendario enseña los siete días con lo que sale cada uno, la hora y cuánto falta para lo de hoy. Los días sin nada salen en gris, así sabes cuándo toca.",
+             "donde": ["Anime", "Calendario"],
+             "accion": {"texto": "Abrir el calendario", "url": "/calendario"}},
+            {"icono": "📥", "titulo": "Importar, más claro",
+             "texto": "Traer tu lista desde AniList o MyAnimeList va primero y con pasos numerados. Pegar una lista de nombres sigue ahí, plegado debajo.",
+             "donde": ["Más", "Importar"]},
+            {"icono": "📱", "titulo": "Conectar el móvil, paso a paso",
+             "texto": "La pantalla del móvil explica en tres pasos cómo conectarlo, y ya sale entera en tu idioma.",
+             "donde": ["Más", "Móvil"]},
+            {"icono": "🧹", "titulo": "Arreglos",
+             "texto": "Los botones de abajo a la derecha ya no tapan lo último de cada página, el menú de inicio cabe en el móvil y el calendario de actividad de tus estadísticas sale en tu idioma."},
             {"icono": "☕", "titulo": "Apoyar Miraru, nueva dirección",
              "texto": "«Más → Apoyar Miraru» lleva ahora a ko-fi.com/miraru.",
              "donde": ["Más", "Apoyar Miraru"]},

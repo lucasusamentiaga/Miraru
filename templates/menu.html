@@ -43,9 +43,9 @@ body{background:#080810;color:#e2e2e8;font-family:"Segoe UI",system-ui,sans-seri
 .sw{display:inline-block;font-size:12px;letter-spacing:3.5px;text-transform:uppercase;color:var(--light,#a78bfa);opacity:0;transform:translateY(100%)}
 
 /* v2.17.1: puertas a los apartados (con el color del tema) */
-.puertas{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:10px;width:min(620px,94vw);
+.puertas{display:grid;grid-template-columns:1.25fr minmax(0,1fr) minmax(0,1fr);gap:10px;width:min(620px,94vw);
   opacity:0;animation:fadeUp .8s .95s cubic-bezier(.16,1,.3,1) forwards}
-.puerta{display:flex;align-items:center;gap:11px;padding:13px 14px;border-radius:16px;text-decoration:none;text-align:left;
+.puerta{display:flex;align-items:center;gap:11px;min-width:0;padding:13px 14px;border-radius:16px;text-decoration:none;text-align:left;
   color:var(--fg,#edecf4);background:rgba(var(--accent-rgb,124,58,237),.08);border:1px solid rgba(var(--accent-rgb,124,58,237),.28);
   backdrop-filter:blur(10px);transition:transform .25s cubic-bezier(.22,1,.36,1),border-color .2s,background .2s,box-shadow .25s}
 .puerta:hover{transform:translateY(-3px);border-color:rgba(var(--accent-rgb,124,58,237),.7);background:rgba(var(--accent-rgb,124,58,237),.14)}
@@ -60,7 +60,7 @@ body{background:#080810;color:#e2e2e8;font-family:"Segoe UI",system-ui,sans-seri
 .p-txt b{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .p-txt small{font-size:11.5px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 .p-ir{font-size:18px;transition:transform .2s}.puerta:hover .p-ir{transform:translateX(4px)}
-@media (max-width:560px){.puertas{grid-template-columns:1fr 1fr}.puerta.principal{grid-column:1/-1}.ui{padding-top:64px}.sw{font-size:10.5px;letter-spacing:2.5px}}
+@media (max-width:560px){.puertas{grid-template-columns:repeat(2,minmax(0,1fr))}.puerta.principal{grid-column:1/-1}.ui{padding-top:64px}.sw{font-size:10.5px;letter-spacing:2.5px}}
 @media (prefers-reduced-motion:reduce){.puerta,.hc,.p-ir{transition:none}}
 
 /* Stats */

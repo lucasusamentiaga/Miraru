@@ -346,7 +346,11 @@
       "#miraru-dock .md-b svg{width:17px;height:17px;fill:currentColor}" +
       "#miraru-dock .md-ap{background:var(--card,#181426);color:var(--fg,#edecf4);border-color:var(--border,#2b2542)}" +
       "@media (max-width:640px){#miraru-dock .md-red{display:none}#miraru-dock{right:14px;bottom:14px}}" +
-      "@media (prefers-reduced-motion:reduce){#miraru-dock .md-b{transition:none}}";
+      "@media (prefers-reduced-motion:reduce){#miraru-dock .md-b{transition:none}}" +
+      // v2.17.10: hueco al final de la página para que la barra no tape lo último
+      // (p. ej. el «+ Añadir» de la última portada). El menú de inicio no se desplaza.
+      (location.pathname === "/" || location.pathname === "/m" ? "" :
+        "body::after{content:'';display:block;height:76px;pointer-events:none}");
     document.head.appendChild(css);
     var d = document.createElement("div");
     d.id = "miraru-dock";

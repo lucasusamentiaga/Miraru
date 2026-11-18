@@ -59,6 +59,20 @@ input:focus{outline:2px solid var(--accent);border-color:transparent}
 #qr-img{border-radius:10px;border:2px solid var(--border)}
 .err{color:var(--danger);font-size:13px;margin-top:6px;display:none}
 .btn-grande{width:100%;justify-content:center;padding:14px 20px;font-size:15px;border-radius:12px}
+/* v2.17.10: la tarjeta de inicio cuenta cómo va, en tres pasos */
+#card-off{padding:28px 26px 24px}
+.off-cab{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.off-ico{width:52px;height:52px;flex-shrink:0;display:grid;place-items:center;font-size:26px;border-radius:15px;
+  background:rgba(var(--accent-rgb,124,58,237),.15);border:1px solid rgba(var(--accent-rgb,124,58,237),.3)}
+#card-off h2{font:700 clamp(19px,2.6vw,22px)/1.25 "Space Grotesk",Inter,sans-serif;color:var(--fg);margin:0;text-wrap:balance}
+#card-off>p{font-size:14px;margin-bottom:18px;text-wrap:pretty}
+.como{list-style:none;counter-reset:c;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 18px;padding:0}
+.como li{counter-increment:c;display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;background:var(--card2,#12121a);
+  border:1px solid var(--border);font-size:13px;line-height:1.4;color:var(--fg)}
+.como li::before{content:counter(c);width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:700;
+  color:#fff;background:var(--accent)}
+@media (max-width:520px){.como{grid-template-columns:1fr}.como li{flex-direction:row;align-items:center}}
+[data-theme=light] .como li{background:#f4f2fb}
 .nota{font-size:12px!important;color:var(--muted);margin:10px 0 0!important}
 .manual{margin:6px 0 10px;font-size:13px;color:var(--muted)}
 .manual summary{cursor:pointer;text-align:center;padding:6px}
@@ -83,6 +97,7 @@ input:focus{outline:2px solid var(--accent);border-color:transparent}
 [data-theme=light] body{background:var(--bg);color:var(--fg)}
 [data-theme=light] .card{background:#fff;border-color:#d4d0ec}
 [data-theme=light] .card h2{color:#4f46e5}
+[data-theme=light] #card-off h2{color:#1e1e2e}
 [data-theme=light] .step{background:#f0eef8;border-color:#d4d0ec}
 [data-theme=light] .ip-box{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}
 [data-theme=light] input[type=password]{background:#f8f7fc;border-color:#d4d0ec;color:#1e1e2e}
@@ -104,8 +119,13 @@ input:focus{outline:2px solid var(--accent);border-color:transparent}
 <main>
   <!-- v2.17: un botón. Sin PIN, sin reiniciar: el QR ya lleva el código. -->
   <div class="card" id="card-off">
-    <h2>Usa Miraru en el móvil</h2>
-    <p>Tu lista en el navegador del móvil, sin instalar nada. Funciona con el móvil en la <strong>misma WiFi</strong> que este PC.</p>
+    <div class="off-cab"><span class="off-ico" aria-hidden="true">📱</span><h2>Usa Miraru en el móvil</h2></div>
+    <p>Tu lista en el navegador del móvil, sin instalar nada. Funciona con el móvil en la misma WiFi que este PC.</p>
+    <ol class="como">
+      <li>Pulsa «Conectar el móvil».</li>
+      <li>Escanea el código con la cámara del móvil.</li>
+      <li>Listo: no te lo vuelve a pedir.</li>
+    </ol>
     <button class="btn btn-p btn-grande" id="btn-conectar" onclick="conectar()">📱 Conectar el móvil</button>
     <p class="nota">Solo se abre a tu red de casa y cada móvil entra con un código que solo ves aquí.</p>
     <p class="err" id="err-off"></p>
