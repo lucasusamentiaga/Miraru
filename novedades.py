@@ -17,7 +17,7 @@ NOVEDADES: list[dict] = [
             {"icono": "⏭️", "titulo": "Saltar opening",
              "texto": "Con la extensión, en AnimeAV1 sale «Saltar opening» en el reproductor (y puede saltarlo solo). Funciona también a pantalla completa.",
              "accion": {"texto": "Ver la extensión", "url": "/extension"}},
-            {"icono": "⏩", "titulo": "Siguiente episodio automático",
+            {"icono": "⏩", "titulo": "Siguiente automático",
              "texto": "A los 2 segundos de empezar el ending pasa solo al siguiente episodio (con «Cancelar») y marca el que acabas de ver."},
             {"icono": "🪟", "titulo": "Abrir y cerrar, más fino",
              "texto": "Al abrir Miraru sale «Abriendo Miraru…» mientras arranca, y se cierra bien al apagar el PC o al actualizarse desde la Store."},

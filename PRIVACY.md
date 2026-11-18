@@ -52,7 +52,7 @@ adultos.
   (127.0.0.1), que busca el título en AniList para saber qué anime es (lo que no es anime
   no se apunta). No lee tu historial, tu cuenta ni otras páginas, y no envía nada a
   terceros. En animeflv.net y animeflv.or.at lee el nombre y el número del episodio que
-  abres. Si activas «Saltar opening» o «Siguiente episodio automático» en AnimeAV1, pide a
+  abres. Si activas «Saltar opening» o «Siguiente automático» en AnimeAV1, pide a
   AniSkip (api.aniskip.com) los tiempos del opening y el ending con el número de
   MyAnimeList del anime y el del episodio (nada tuyo), y controla el vídeo dentro del
   reproductor de la página.

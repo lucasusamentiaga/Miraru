@@ -2,7 +2,7 @@
 //
 // La página de AnimeAV1 (animeav1-player.js) le pasa cuándo es el opening y el
 // ending y qué tienes activado. Aquí, donde está el vídeo:
-// - Durante el opening sale «⏭ Saltar opening» (si lo tienes activado, salta
+// - Durante el opening sale «Saltar opening» (si lo tienes activado, salta
 //   solo). Si no hay tiempos para ese episodio, el botón salta 85 s.
 // - Con «Siguiente automático»: a los 2 s de empezar el ending sale «Siguiente
 //   episodio en…» con «Cancelar»; si no lo cancelas, avisa a la página para
@@ -17,7 +17,7 @@
 
   // Qué toca hacer en el segundo `t` (función pura, para las pruebas).
   function decidir(c, t, dur, mem) {
-    const out = {botonSaltar: false, saltarA: null, cuenta: null, siguiente: false};
+    const out = {botonSaltar: false, saltarA: null, cuenta: null, restante: null, siguiente: false};
     if (!c || !(dur > 0)) return out;
     if (c.op) {
       const [a, b] = c.op;
@@ -31,9 +31,9 @@
     if (c.auto && c.haySiguiente && !mem.cancelado) {
       const inicioEd = c.ed ? c.ed[0] : (dur > 600 ? dur - ED_SIN_DATOS : null);
       if (inicioEd != null && t >= inicioEd) {
-        const falta = Math.ceil(inicioEd + ESPERA_ED - t);
-        if (falta <= 0) out.siguiente = true;
-        else out.cuenta = falta;
+        const resta = inicioEd + ESPERA_ED - t;
+        if (resta <= 0) out.siguiente = true;
+        else { out.cuenta = Math.ceil(resta); out.restante = resta; }
       }
     }
     return out;
@@ -57,38 +57,67 @@
   const hola = () => { try { window.parent.postMessage({miraru: 'hola'}, '*'); } catch (_) { /* nada */ } };
 
   // ── Botones encima del vídeo ──────────────────────────────────────────────
+  // Como los de las plataformas de streaming: oscuros y legibles sobre
+  // cualquier imagen; al pasar el ratón, el de saltar se vuelve blanco.
   const caja = document.createElement('div');
-  caja.style.cssText = 'position:absolute;right:22px;bottom:72px;z-index:2147483646;pointer-events:none';
+  caja.style.cssText = 'position:absolute;right:clamp(14px,2.4vw,28px);bottom:clamp(64px,11%,96px);z-index:2147483646;pointer-events:none';
   const sombra = caja.attachShadow({mode: 'closed'});
+  const R = 15, VUELTA = 2 * Math.PI * R;
   sombra.innerHTML = `<style>
     :host{all:initial}
-    .w{display:flex;flex-direction:column;align-items:flex-end;gap:8px;font:600 14px/1.2 "Segoe UI",system-ui,sans-serif}
-    button,.cuenta{pointer-events:auto;display:inline-flex;align-items:center;gap:10px;color:#fff;border-radius:10px;
-      background:rgba(14,11,22,.82);border:1px solid rgba(196,177,255,.45);padding:11px 16px;backdrop-filter:blur(6px);
-      animation:entra .3s cubic-bezier(.16,1,.3,1) both}
-    button{font:inherit;cursor:pointer;transition:background-color .2s,border-color .2s,transform .15s}
-    button:hover{background:rgba(124,58,237,.9);border-color:#c4b1ff}
-    button:active{transform:scale(.97)}
+    .w{display:flex;flex-direction:column;align-items:flex-end;gap:10px;
+      font:600 clamp(14px,1.25vw,17px)/1.2 Satoshi,"Segoe UI",system-ui,sans-serif;color:#fff;-webkit-font-smoothing:antialiased}
+    .pieza{pointer-events:auto;display:inline-flex;align-items:center;border-radius:8px;
+      background:rgba(12,12,18,.78);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+      box-shadow:0 2px 6px rgba(0,0,0,.35);animation:entra .35s cubic-bezier(.16,1,.3,1) both}
+    button{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:10px;border-radius:6px;
+      transition:background-color .18s cubic-bezier(.22,1,.36,1),color .18s,transform .12s}
     button:focus-visible{outline:2px solid #c4b1ff;outline-offset:2px}
-    .cuenta{gap:12px;padding:8px 8px 8px 16px}
-    .cuenta button{padding:7px 12px;background:rgba(255,255,255,.12);border-color:transparent;animation:none}
-    .cuenta button:hover{background:rgba(255,255,255,.22)}
-    .barra{width:120px;height:3px;border-radius:99px;background:rgba(255,255,255,.2);overflow:hidden}
-    .barra i{display:block;height:100%;width:100%;background:#a855f7;transform-origin:left;animation:baja 2s linear forwards}
-    @keyframes baja{to{transform:scaleX(0)}}
-    .toast{pointer-events:none;color:#fff;background:rgba(14,11,22,.82);border-radius:10px;padding:9px 14px;font-weight:600;animation:entra .3s cubic-bezier(.16,1,.3,1) both}
-    @keyframes entra{from{opacity:0;transform:translateY(8px)}}
+    button:active{transform:scale(.97)}
+    svg{flex-shrink:0}
+    /* Saltar opening */
+    #saltar{padding:.8em 1.25em .8em 1.05em}
+    #saltar svg{width:1.15em;height:1.15em;fill:currentColor}
+    #saltar:hover{background:#fff;color:#0c0c12;border-color:#fff}
+    /* Aviso «Opening saltado · Ver opening» */
+    .toast{gap:4px;padding:5px 5px 5px 14px;font-weight:500;font-size:.9em}
+    .toast button{padding:7px 10px;color:#d6c8ff;font-weight:600}
+    .toast button:hover{background:rgba(255,255,255,.12);color:#fff}
+    /* Cuenta atrás */
+    .cuenta{gap:12px;padding:8px 8px 8px 10px}
+    .anillo{position:relative;width:40px;height:40px;display:grid;place-items:center;flex-shrink:0}
+    .anillo svg{position:absolute;inset:0;width:40px;height:40px;transform:rotate(-90deg)}
+    .anillo circle{fill:none;stroke-width:3}
+    .anillo .fondo{stroke:rgba(255,255,255,.18)}
+    .anillo .lleno{stroke:#a78bfa;stroke-linecap:round;stroke-dasharray:${VUELTA.toFixed(2)};stroke-dashoffset:0}
+    .anillo b{font-size:15px;font-variant-numeric:tabular-nums}
+    .anillo.gira svg{animation:gira .9s linear infinite}
+    .ct{display:flex;flex-direction:column;gap:3px;min-width:9.5em}
+    .ct small{font-size:.8em;font-weight:500;color:rgba(255,255,255,.68);font-variant-numeric:tabular-nums}
+    #cancelar{padding:.6em .9em;background:rgba(255,255,255,.1);font-size:.92em}
+    #cancelar:hover{background:rgba(255,255,255,.2)}
+    @keyframes entra{from{opacity:0;transform:translateY(6px)}}
+    @keyframes gira{to{transform:rotate(270deg)}}
     [hidden]{display:none!important}
-    @media (prefers-reduced-motion:reduce){button,.cuenta,.toast,.barra i{animation:none}}
+    @media (prefers-reduced-motion:reduce){.pieza,.anillo.gira svg{animation:none}button{transition:none}}
   </style><div class="w">
-    <div class="toast" id="toast" hidden></div>
-    <div class="cuenta" id="cuenta" hidden><span id="cuenta-t"></span><span class="barra"><i id="cuenta-b"></i></span><button type="button" id="cancelar"></button></div>
-    <button type="button" id="saltar" hidden></button>
+    <div class="pieza toast" id="toast" role="status" hidden><span id="toast-t"></span><button type="button" id="ver-op"></button></div>
+    <div class="pieza cuenta" id="cuenta" role="status" hidden>
+      <span class="anillo" id="anillo"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="fondo" cx="20" cy="20" r="${R}"/><circle class="lleno" id="lleno" cx="20" cy="20" r="${R}"/></svg><b id="cuenta-n"></b></span>
+      <span class="ct"><span id="cuenta-t"></span><small id="cuenta-s"></small></span>
+      <button type="button" id="cancelar"></button>
+    </div>
+    <button type="button" class="pieza" id="saltar" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5v13l8.5-6.5z"/><path d="M12 5.5v13l8.5-6.5z"/></svg><span id="saltar-t"></span></button>
   </div>`;
   const $ = id => sombra.getElementById(id);
-  let toastHasta = 0;
-  function toast(txt) {
-    $('toast').textContent = txt; $('toast').hidden = false; toastHasta = Date.now() + 1800;
+  const textos = () => (config && config.textos) || {};
+  let toastHasta = 0, volverA = null;
+  function toast(txt, puedeVolver) {
+    $('toast-t').textContent = txt;
+    $('ver-op').hidden = !puedeVolver;
+    $('ver-op').textContent = textos().verOp || '';
+    $('toast').hidden = false;
+    toastHasta = Date.now() + (puedeVolver ? 5000 : 1800);
   }
   function colocar() {
     // A pantalla completa solo se ve lo que está dentro del elemento a pantalla completa.
@@ -108,6 +137,11 @@
     mem.saltadoOp = true;
     $('saltar').hidden = true;
   });
+  $('ver-op').addEventListener('click', () => {
+    const v = video();
+    if (v && volverA != null) v.currentTime = volverA;   // sigue «saltado»: no vuelve a saltar solo
+    toastHasta = 0; $('toast').hidden = true;
+  });
   $('cancelar').addEventListener('click', () => { mem.cancelado = true; $('cuenta').hidden = true; });
 
   let ultimaCuenta = null;
@@ -116,32 +150,53 @@
     colocar();
     const v = video();
     if (!v) return;
+    const tx = textos();
     if (config.reproducir && !mem.reproducido) {      // llegaste con «Siguiente automático»
       mem.reproducido = true;
       v.play().catch(() => { /* el navegador no deja: hay que darle al play */ });
     }
     const d = decidir(config, v.currentTime, v.duration, mem);
     if (d.saltarA != null) {
+      volverA = config.op ? config.op[0] : v.currentTime;
       v.currentTime = d.saltarA;
       mem.saltadoOp = true;
-      toast((config.textos || {}).saltado || 'Opening saltado');
+      toast(tx.saltado || 'Opening saltado', true);
     }
     $('saltar').hidden = !d.botonSaltar;
-    if (d.botonSaltar) $('saltar').textContent = config.op ? config.textos.saltar : config.textos.saltarSin;
+    if (d.botonSaltar) $('saltar-t').textContent = config.op ? tx.saltar : tx.saltarSin;
     if (d.cuenta != null) {
-      if ($('cuenta').hidden) {                       // reinicia la barra
-        $('cuenta-b').style.animation = 'none'; void $('cuenta-b').offsetWidth; $('cuenta-b').style.animation = '';
+      const lleno = $('lleno');
+      if ($('cuenta').hidden) {                       // el anillo se vacía en lo que falta, de verdad
+        $('anillo').classList.remove('gira');
+        lleno.style.transition = 'none'; lleno.style.strokeDashoffset = '0'; void getComputedStyle(lleno).strokeDashoffset;
+        const reducido = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          lleno.style.transition = reducido ? 'none' : `stroke-dashoffset ${d.restante.toFixed(2)}s linear`;
+          lleno.style.strokeDashoffset = VUELTA.toFixed(2);
+        }));
+        toastHasta = 0; $('toast').hidden = true;      // nunca dos avisos a la vez
+        $('cancelar').hidden = false;
       }
       $('cuenta').hidden = false;
-      if (d.cuenta !== ultimaCuenta) $('cuenta-t').textContent = config.textos.siguiente.replace('{s}', d.cuenta);
-      $('cancelar').textContent = config.textos.cancelar;
+      if (d.cuenta !== ultimaCuenta) {
+        $('cuenta-n').textContent = d.cuenta;
+        $('cuenta-t').textContent = tx.siguiente || '';
+        $('cuenta-s').textContent = tx.en || '';
+      }
+      $('cancelar').textContent = tx.cancelar || '';
       ultimaCuenta = d.cuenta;
     } else if (!d.siguiente) {
       $('cuenta').hidden = true; ultimaCuenta = null;
     }
     if (d.siguiente && !mem.avisado) {
       mem.avisado = true;
-      $('cuenta-t').textContent = config.textos.pasando;
+      $('cuenta').hidden = false;
+      $('cuenta-n').textContent = '';
+      $('anillo').classList.add('gira');
+      $('lleno').style.transition = 'none'; $('lleno').style.strokeDashoffset = (VUELTA * .7).toFixed(2);
+      $('cuenta-t').textContent = tx.pasando || '';
+      $('cuenta-s').textContent = '';
+      $('cancelar').hidden = true;
       try { window.parent.postMessage({miraru: 'siguiente'}, origenPadre); } catch (_) { /* nada */ }
     }
     // Si vuelves atrás (antes del opening o del ending), todo vuelve a valer.
