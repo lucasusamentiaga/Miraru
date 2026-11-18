@@ -4,8 +4,6 @@
 
 - **Nueva dirección de Ko-fi**: «Apoyar Miraru» (menú «Más», menú de inicio, README y FUNDING) apunta a
   https://ko-fi.com/miraru.
-- **Saltar openings y siguiente automático en AnimeAV1** (llegan con esta versión a la Store, ver 2.17.9).
-- **Cierre ordenado en Windows**: arregla el «no responde» de la Store (ver 2.17.9).
 
 ## v2.17.9 — Saltar openings en AnimeAV1 y cierre ordenado en Windows
 
