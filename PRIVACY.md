@@ -1,6 +1,6 @@
 # Política de privacidad de Miraru / Miraru privacy policy
 
-*Última actualización / Last updated: 17 de noviembre de 2026*
+*Última actualización / Last updated: 18 de noviembre de 2026*
 
 ## Español
 
@@ -51,7 +51,11 @@ adultos.
   temporada y el número de episodio. Se lo comunica a Miraru en tu propio ordenador
   (127.0.0.1), que busca el título en AniList para saber qué anime es (lo que no es anime
   no se apunta). No lee tu historial, tu cuenta ni otras páginas, y no envía nada a
-  terceros.
+  terceros. En animeflv.net y animeflv.or.at lee el nombre y el número del episodio que
+  abres. Si activas «Saltar opening» o «Siguiente episodio automático» en AnimeAV1, pide a
+  AniSkip (api.aniskip.com) los tiempos del opening y el ending con el número de
+  MyAnimeList del anime y el del episodio (nada tuyo), y controla el vídeo dentro del
+  reproductor de la página.
 - *Reportar un bug* («Más → Reportar un bug»): lo que escribes, el correo si lo pones y,
   si dejas marcada la casilla, la versión de Miraru, el sistema, el navegador, el idioma y
   el tamaño de pantalla se envían a través de Web3Forms (web3forms.com) al correo del autor,
@@ -127,7 +131,11 @@ Miraru hides from searches any content those sources flag as adults-only.
   series name, season and episode number. It tells Miraru on your own computer
   (127.0.0.1), which looks the title up on AniList to know which anime it is (anything
   that is not anime is not recorded). It does not read your history, your account or other
-  pages, and sends nothing to third parties.
+  pages, and sends nothing to third parties. On animeflv.net and animeflv.or.at it reads the
+  name and number of the episode you open. If you turn on "Skip opening" or "Autoplay next
+  episode" on AnimeAV1, it asks AniSkip (api.aniskip.com) for the opening and ending times
+  using the anime's MyAnimeList number and the episode number (nothing about you), and
+  controls the video inside the page's player.
 - *Report a bug* ("More → Report a bug"): what you write, your email if you add it and,
   if the box is ticked, the Miraru version, system, browser, language and screen size are
   sent through Web3Forms (web3forms.com) to the author's email, only when you press "Send".

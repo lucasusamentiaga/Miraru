@@ -441,11 +441,22 @@ def main():
 
     hilo = iniciar_servidor_hilo()
 
+    # v2.17.9 (Windows): «Abriendo Miraru…» mientras arranca (ver ventana_windows.py)
+    listo = threading.Event()
+    try:
+        import ventana_windows
+        ventana_windows.pantalla_de_arranque(
+            listo, FROZEN_DIR / "static" / "extension-animeav1" / "iconos" / "48.png", log=log)
+    except Exception as e:  # noqa: BLE001
+        ventana_windows = None
+        log(f"ventana_windows: {e}")
+
     # Esperar hasta que el servidor señalice inicio o fallo (máx 10s)
     # _server_ready se activa justo antes de uvicorn.run()
     # _server_failed se activa si hay una excepción (antes o después de _server_ready)
     started = _server_ready.wait(timeout=10)
     if not started or _server_failed.is_set():
+        listo.set()
         mostrar_error(
             "Error al iniciar Miraru",
             f"El servidor no pudo arrancar:\n\n{_server_error[:600]}\n\n"
@@ -456,9 +467,10 @@ def main():
     # Esperar a que el puerto esté disponible, comprobando también _server_failed
     # (race condition: uvicorn puede fallar DESPUÉS de que _server_ready se active)
     fin = time.time() + 40
-    listo = False
+    puerto_listo = False
     while time.time() < fin:
         if _server_failed.is_set():
+            listo.set()
             mostrar_error(
                 "Error al iniciar Miraru",
                 f"El servidor se cerró inesperadamente:\n\n{_server_error[:600]}\n\n"
@@ -466,11 +478,12 @@ def main():
             )
             sys.exit(1)
         if puerto_en_uso(PORT):
-            listo = True
+            puerto_listo = True
             break
         time.sleep(0.3)
 
-    if not listo:
+    if not puerto_listo:
+        listo.set()
         mostrar_error(
             "Miraru — Tiempo agotado",
             f"El servidor no respondió en 40 segundos.\n\n"
@@ -485,6 +498,23 @@ def main():
         log("Servidor listo — abriendo navegador")
         _abrir_navegador()
 
+    listo.set()
+
+    # v2.17.9 (Windows): ventana oculta que contesta a Windows al apagar, reiniciar
+    # o actualizar desde la Store (antes, sin ventana, contaba como «no responde»).
+    def _al_cerrar(motivo: str) -> None:
+        try:
+            import sqlite3
+            con = sqlite3.connect(str(APP_DIR / "anime_tracker.db"), timeout=2)
+            con.execute("PRAGMA wal_checkpoint(TRUNCATE)")   # la base de datos, entera en disco
+            con.close()
+        except Exception:  # noqa: BLE001
+            pass
+    try:
+        if ventana_windows and ventana_windows.bucle_de_mensajes(hilo.is_alive, _al_cerrar, log=log):
+            return
+    except Exception as e:  # noqa: BLE001
+        log(f"bucle de mensajes: {e}")
     try:
         while hilo.is_alive():
             time.sleep(1)

@@ -304,3 +304,9 @@ a.s-est:hover{border-color:var(--warn)}
 @media (prefers-reduced-motion:reduce){
   .pastilla.espera i,.guardados.cerrado .gd-ico,.gd-barra span{animation:none}
 }
+
+/* v1.8: ajustes de AnimeAV1 en la ventana */
+.aj-av1{border:1px solid var(--borde);border-radius:10px;padding:8px 10px 10px;margin:10px 0 0}
+.aj-av1 legend{padding:0 4px;font-weight:600;color:var(--fg);font-size:12px}
+.aj-av1 label{display:flex;gap:8px;align-items:flex-start;margin-top:6px;cursor:pointer;line-height:1.4}
+.aj-av1 input{accent-color:var(--acento);margin-top:2px;flex-shrink:0}

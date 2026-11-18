@@ -1,5 +1,22 @@
 # Changelog
 
+## v2.17.9 — Saltar openings en AnimeAV1 y cierre ordenado en Windows
+
+- **«No responde» en la Store (hang rate 88,89 %, 19 de 19 equipos)**: Miraru no tenía ninguna
+  ventana, así que no podía contestar cuando Windows pregunta a las apps si pueden cerrarse
+  (apagar/reiniciar, cerrar sesión, o la Store actualizando la app, que siempre está abierta
+  de fondo); Windows lo cerraba a la fuerza y lo contaba como «no responde». Nuevo
+  `ventana_windows.py`: ventana oculta con bucle de mensajes en el hilo principal
+  (WM_QUERYENDSESSION → sí; WM_ENDSESSION/WM_CLOSE → guarda la base de datos y se cierra) y
+  ventanita «Abriendo Miraru…» mientras arranca (también da una señal al abrir desde Inicio).
+- **Extensión 1.8.0 — AnimeAV1**: interruptores «⏭ Saltar opening» y «⏩ Siguiente episodio
+  automático» debajo del vídeo (y en Ajustes de la extensión). Tiempos de AniSkip por el id de
+  MyAnimeList que da la página; sin tiempos, el botón salta 85 s y el ending se toma como los
+  últimos 90 s. Botones dentro del reproductor (también a pantalla completa). A los 2 s del
+  ending: cuenta atrás con «Cancelar», marca el episodio como visto en AnimeAV1 (opcional) y pasa
+  al siguiente. Reproductor «HLS» (player.zilla-networks.com).
+- Privacidad: AniSkip.
+
 ## v2.17.8 — Arreglos
 
 - **Avisos de uno en uno**: las novedades de la versión y «¿En qué navegador quieres usar

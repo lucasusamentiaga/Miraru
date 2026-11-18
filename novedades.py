@@ -10,6 +10,19 @@ from __future__ import annotations
 # icono: emoji · titulo: corto (≤ 40 letras) · texto: una frase.
 # accion (opcional): {"texto": "...", "url": "/app#..."} → botón dentro del punto.
 NOVEDADES: list[dict] = [
+    {
+        "version": "2.17.9",
+        "titulo": "Saltar openings en AnimeAV1",
+        "puntos": [
+            {"icono": "⏭️", "titulo": "Saltar opening",
+             "texto": "Con la extensión, en AnimeAV1 sale «Saltar opening» en el reproductor (y puede saltarlo solo). Funciona también a pantalla completa.",
+             "accion": {"texto": "Ver la extensión", "url": "/extension"}},
+            {"icono": "⏩", "titulo": "Siguiente episodio automático",
+             "texto": "A los 2 segundos de empezar el ending pasa solo al siguiente episodio (con «Cancelar») y marca el que acabas de ver."},
+            {"icono": "🪟", "titulo": "Abrir y cerrar, más fino",
+             "texto": "Al abrir Miraru sale «Abriendo Miraru…» mientras arranca, y se cierra bien al apagar el PC o al actualizarse desde la Store."},
+        ],
+    },
     # silenciosa: solo arreglos; no abre la ventana de novedades.
     {
         "version": "2.17.8",

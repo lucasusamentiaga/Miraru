@@ -235,6 +235,18 @@ async function iniciar() {
     location.reload();
   });
 
+  // AnimeAV1: saltar opening y siguiente automático (v1.8; mismos ajustes que los interruptores de la página)
+  const AV1_DEF = {saltarOpening: false, siguienteAuto: false, marcarAlPasar: true};
+  const {av1Reproductor = {}} = await chrome.storage.local.get('av1Reproductor');
+  const av1 = Object.assign({}, AV1_DEF, av1Reproductor);
+  [['av1-op', 'saltarOpening'], ['av1-sig', 'siguienteAuto'], ['av1-marcar', 'marcarAlPasar']].forEach(([id, k]) => {
+    $(id).checked = !!av1[k];
+    $(id).addEventListener('change', async () => {
+      const {av1Reproductor: actual = {}} = await chrome.storage.local.get('av1Reproductor');
+      await chrome.storage.local.set({av1Reproductor: Object.assign({}, AV1_DEF, actual, {[k]: $(id).checked})});
+    });
+  });
+
   $('btn-listas').addEventListener('click', async () => {
     const b = $('btn-listas');
     b.disabled = true; b.textContent = tr('Leyendo…');

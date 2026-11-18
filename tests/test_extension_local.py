@@ -87,7 +87,7 @@ def test_extension_en_cuatro_idiomas():
         claves = set(textos)
         assert all(len(v) == 3 and all(v) for v in textos.values())
     usados = set()
-    for f in ("popup.js", "bienvenida.js", "background.js", "animeflv.js"):
+    for f in ("popup.js", "bienvenida.js", "background.js", "animeflv.js", "animeav1-player.js"):
         src = (ext / f).read_text(encoding="utf-8")
         usados |= set(re.findall(r"\btr\('((?:[^'\\]|\\.)+)'", src))
     faltan = {u for u in usados if u not in claves}
