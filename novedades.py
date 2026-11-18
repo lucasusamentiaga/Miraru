@@ -12,6 +12,17 @@ from __future__ import annotations
 # donde (opcional): ["Más", "Navegador"] → «Dónde está: Más › Navegador».
 # pasos (opcional): frases cortas → «Cómo empezar», numeradas.
 NOVEDADES: list[dict] = [
+    # silenciosa: solo cambia un enlace; no abre la ventana de novedades.
+    {
+        "version": "2.17.10",
+        "silenciosa": True,
+        "titulo": "Arreglos",
+        "puntos": [
+            {"icono": "☕", "titulo": "Apoyar Miraru, nueva dirección",
+             "texto": "«Más → Apoyar Miraru» lleva ahora a ko-fi.com/miraru.",
+             "donde": ["Más", "Apoyar Miraru"]},
+        ],
+    },
     {
         "version": "2.17.9",
         "titulo": "Saltar openings en AnimeAV1",

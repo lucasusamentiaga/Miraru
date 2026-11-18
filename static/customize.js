@@ -320,7 +320,7 @@
   };
 
   // v2.17.2: Ko-fi (apoyar Miraru). Primero de la fila y también en el móvil.
-  var KOFI = "https://ko-fi.com/lucasuazz_";
+  var KOFI = "https://ko-fi.com/miraru";
   window.MIRARU_KOFI = KOFI;
   var REDES = [
     {id: "kofi", t: "Apoya Miraru en Ko-fi", url: KOFI, bg: "#ff5e5b", siempre: true,
