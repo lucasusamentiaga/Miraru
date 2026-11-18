@@ -15,6 +15,11 @@
   últimos 90 s. Botones dentro del reproductor (también a pantalla completa). A los 2 s del
   ending: cuenta atrás con «Cancelar», marca el episodio como visto en AnimeAV1 (opcional) y pasa
   al siguiente. Reproductor «HLS» (player.zilla-networks.com).
+- Botones de AnimeAV1 pulidos: visten como los de la web (8 px, 40 px, su gris), iconos en vez de
+  emojis, a la derecha cuándo empiezan opening y ending; en el vídeo, «Ver opening» tras saltarlo
+  solo y cuenta atrás con anillo y el número del episodio siguiente. Nunca dos avisos a la vez.
+- Ventana de novedades más extensa: cada punto puede llevar «Dónde está» (Más › Navegador…) y
+  «Cómo empezar» (pasos numerados); el camino no se repite si es el mismo que el del punto anterior.
 - Privacidad: AniSkip.
 
 ## v2.17.8 — Arreglos

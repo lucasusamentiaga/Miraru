@@ -7,20 +7,33 @@ la 2.16) ve las novedades de todas las que se perdió, la más nueva primero.
 from __future__ import annotations
 
 # Para añadir una versión: una entrada nueva ARRIBA del todo.
-# icono: emoji · titulo: corto (≤ 40 letras) · texto: una frase.
+# icono: emoji · titulo: corto (≤ 40 letras) · texto: una o dos frases (qué hace y para qué).
 # accion (opcional): {"texto": "...", "url": "/app#..."} → botón dentro del punto.
+# donde (opcional): ["Más", "Navegador"] → «Dónde está: Más › Navegador».
+# pasos (opcional): frases cortas → «Cómo empezar», numeradas.
 NOVEDADES: list[dict] = [
     {
         "version": "2.17.9",
         "titulo": "Saltar openings en AnimeAV1",
         "puntos": [
             {"icono": "⏭️", "titulo": "Saltar opening",
-             "texto": "Con la extensión, en AnimeAV1 sale «Saltar opening» en el reproductor (y puede saltarlo solo). Funciona también a pantalla completa.",
-             "accion": {"texto": "Ver la extensión", "url": "/extension"}},
+             "texto": "Cuando empieza el opening sale «Saltar opening» dentro del vídeo, también a pantalla completa. Si dejas el interruptor encendido, lo salta solo y te ofrece «Ver opening» por si querías verlo.",
+             "donde": ["Extensión", "AnimeAV1", "Debajo del vídeo"],
+             "pasos": ["Abre la ventana de la extensión y pulsa «Actualizar» si te lo pide.",
+                       "En AnimeAV1, abre un episodio y elige el servidor «HLS».",
+                       "Enciende «Saltar opening» debajo del vídeo."],
+             "accion": {"texto": "Ver la guía de la extensión", "url": "/extension"}},
             {"icono": "⏩", "titulo": "Siguiente automático",
-             "texto": "A los 2 segundos de empezar el ending pasa solo al siguiente episodio (con «Cancelar») y marca el que acabas de ver."},
+             "texto": "A los 2 segundos de empezar el ending sale una cuenta atrás y pasa solo al siguiente episodio. Antes marca como visto el que acabas de terminar, así que se apunta en Miraru sin hacer nada. «Cancelar» lo detiene.",
+             "donde": ["Extensión", "AnimeAV1", "Debajo del vídeo"]},
+            {"icono": "⏱️", "titulo": "Sabe cuándo empieza cada cosa",
+             "texto": "Al lado de los interruptores ves cuándo empiezan el opening y el ending de ese episodio. Si un episodio no tiene tiempos guardados, el botón salta 85 segundos.",
+             "donde": ["Extensión", "AnimeAV1", "Debajo del vídeo"]},
+            {"icono": "⚙️", "titulo": "Todo se puede apagar",
+             "texto": "En los ajustes de la extensión eliges si salta los openings solo, si pasa al siguiente episodio y si marca como visto al pasar.",
+             "donde": ["Extensión", "Ajustes", "AnimeAV1"]},
             {"icono": "🪟", "titulo": "Abrir y cerrar, más fino",
-             "texto": "Al abrir Miraru sale «Abriendo Miraru…» mientras arranca, y se cierra bien al apagar el PC o al actualizarse desde la Store."},
+             "texto": "Mientras Miraru arranca sale una ventanita «Abriendo Miraru…». Y al apagar el PC, cerrar sesión o actualizarse desde la Store, Miraru se cierra guardando todo, sin que Windows diga que no responde."},
         ],
     },
     # silenciosa: solo arreglos; no abre la ventana de novedades.
@@ -40,13 +53,17 @@ NOVEDADES: list[dict] = [
         "titulo": "Tu navegador, tus ideas y temporadas al día",
         "puntos": [
             {"icono": "🧭", "titulo": "Elige tu navegador",
-             "texto": "Miraru se abre en el navegador que elijas. Puedes cambiarlo cuando quieras en «Más → Navegador»."},
+             "texto": "Miraru se abre en el navegador que elijas. Puedes cambiarlo cuando quieras en «Más → Navegador».",
+             "donde": ["Más", "Navegador"]},
             {"icono": "🐞", "titulo": "Reportar un bug",
-             "texto": "En «Más → Reportar un bug» puedes contarme un fallo o una idea: me llega directamente."},
+             "texto": "En «Más → Reportar un bug» puedes contarme un fallo o una idea: me llega directamente.",
+             "donde": ["Más", "Reportar un bug"]},
             {"icono": "🆕", "titulo": "Temporadas nuevas, a fondo",
-             "texto": "Miraru sigue toda la cadena de secuelas de lo que ves o has visto, y enseña las que ya se emiten o acaban de terminar."},
+             "texto": "Miraru sigue toda la cadena de secuelas de lo que ves o has visto, y enseña las que ya se emiten o acaban de terminar.",
+             "donde": ["Anime", "Temporadas nuevas de lo que viste"]},
             {"icono": "🧩", "titulo": "Extensión en tu idioma",
              "texto": "La extensión habla español, inglés, francés y alemán, guarda lo que ves aunque Miraru esté cerrado y su guía tiene dirección corta: 127.0.0.1:8765/extension.",
+             "donde": ["Extensión", "Ajustes", "Idioma"],
              "accion": {"texto": "Ver la extensión", "url": "/extension"}},
         ],
     },
@@ -55,7 +72,8 @@ NOVEDADES: list[dict] = [
         "titulo": "La extensión se actualiza sola",
         "puntos": [
             {"icono": "⬆️", "titulo": "Actualizar desde la extensión",
-             "texto": "Cuando haya una versión nueva de la extensión, su ventana te avisa y se instala con un botón, sin ir a la página de extensiones."},
+             "texto": "Cuando haya una versión nueva de la extensión, su ventana te avisa y se instala con un botón, sin ir a la página de extensiones.",
+             "donde": ["Extensión", "Ventana de la extensión"]},
             {"icono": "🧩", "titulo": "También en animeflv.or.at",
              "texto": "La pastilla «✓ Marcar visto» sale en los episodios de animeflv.or.at y cuenta el tiempo desde que pulsas el reproductor.",
              "accion": {"texto": "Ver la extensión", "url": "/app#extension"}},

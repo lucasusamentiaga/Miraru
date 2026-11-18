@@ -11,7 +11,7 @@
     '.mnv-bg{position:fixed;inset:0;z-index:var(--z-aviso,1100);display:grid;place-items:center;padding:16px;',
     ' background:rgba(6,4,12,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);',
     ' animation:mnv-fade .32s cubic-bezier(.22,1,.36,1) both}',
-    '.mnv{position:relative;width:min(540px,100%);max-height:min(86vh,760px);display:flex;flex-direction:column;',
+    '.mnv{position:relative;width:min(600px,100%);max-height:min(88vh,820px);display:flex;flex-direction:column;',
     ' background:var(--card,#181426);color:var(--fg,#edecf4);border:1px solid var(--border,#2b2542);',
     ' border-radius:16px;overflow:hidden;',
     ' font-family:Inter,system-ui,sans-serif;animation:mnv-in .5s cubic-bezier(.16,1,.3,1) both}',
@@ -36,15 +36,35 @@
     '.mnv-antes[open] summary::before{transform:rotate(45deg)}',
     '.mnv-antes summary:hover{color:var(--fg,#edecf4);background:rgba(255,255,255,.035)}',
     '.mnv-antes summary:focus-visible{outline:2px solid var(--light,#c4b1ff);outline-offset:2px}',
-    '.mnv-lista{list-style:none;margin:0;padding:0;display:grid;gap:4px}',
+    '.mnv-lista{list-style:none;margin:0;padding:0;display:grid;gap:6px}',
     '.mnv-p{display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start;padding:10px 8px;border-radius:14px;',
     ' animation:mnv-sube .55s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(120ms + var(--i,0) * 55ms);',
     ' transition:background .2s}',
     '.mnv-p:hover{background:rgba(255,255,255,.035)}',
+    // Al desplegar «versiones que te saltaste»: entran ya, sin la espera de la lista de arriba.
+    '.mnv-antes .mnv-p{animation-duration:.4s;animation-delay:calc(var(--j,0) * 35ms)}',
     '.mnv-ico{width:44px;height:44px;display:grid;place-items:center;font-size:22px;border-radius:13px;',
     ' background:rgba(var(--accent-rgb,124,58,237),.14);border:1px solid rgba(var(--accent-rgb,124,58,237),.28)}',
     '.mnv-p strong{display:block;font-size:15px;font-weight:650;line-height:1.3;margin-top:2px}',
-    '.mnv-p p{margin:3px 0 0;font-size:13.5px;line-height:1.5;color:var(--muted,#a49dc0);text-wrap:pretty}',
+    '.mnv-p p{margin:4px 0 0;font-size:13.5px;line-height:1.55;color:var(--muted,#a49dc0);text-wrap:pretty;max-width:62ch}',
+    // «Dónde está: Extensión › AnimeAV1 › Debajo del vídeo»
+    '.mnv-donde{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:9px;font-size:12.5px;color:var(--muted,#a49dc0)}',
+    '.mnv-donde svg{width:14px;height:14px;flex-shrink:0;color:var(--light,#c4b1ff)}',
+    '.mnv-dl{font-weight:600}',
+    '.mnv-ruta{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:0;padding:0;list-style:none}',
+    '.mnv-ruta li{display:inline-flex;align-items:center;gap:4px}',
+    '.mnv-ruta li+li::before{content:"›";color:var(--muted,#a49dc0);opacity:.7;margin-right:1px}',
+    '.mnv-ruta span{padding:3px 8px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid var(--border,#2b2542);',
+    ' color:var(--fg,#edecf4);font-weight:600;white-space:nowrap}',
+    // «Cómo empezar»: pasos numerados
+    '.mnv-pasos{margin-top:10px;padding:10px 12px 10px 10px;border-radius:10px;background:rgba(var(--accent-rgb,124,58,237),.07);',
+    ' border:1px solid rgba(var(--accent-rgb,124,58,237),.2)}',
+    '.mnv-pl{display:block;font-size:12.5px;font-weight:650;color:var(--light,#c4b1ff);margin:0 0 6px 2px}',
+    '.mnv-pasos ol{margin:0;padding:0;list-style:none;counter-reset:paso;display:grid;gap:6px}',
+    '.mnv-pasos li{counter-increment:paso;display:grid;grid-template-columns:20px 1fr;gap:8px;align-items:start;',
+    ' font-size:13px;line-height:1.45;color:var(--fg,#edecf4);text-wrap:pretty}',
+    '.mnv-pasos li::before{content:counter(paso);width:20px;height:20px;border-radius:50%;display:grid;place-items:center;',
+    ' font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff;background:var(--accent,#7c3aed)}',
     '.mnv-acc{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:6px 12px;border-radius:9px;',
     ' font-size:13px;font-weight:600;color:var(--light,#c4b1ff);text-decoration:none;',
     ' background:rgba(var(--accent-rgb,124,58,237),.12);border:1px solid rgba(var(--accent-rgb,124,58,237),.3);',
@@ -66,7 +86,8 @@
     '@keyframes mnv-in{from{opacity:0;transform:translateY(14px) scale(.98)}}',
     '@keyframes mnv-sube{from{opacity:0;transform:translateY(8px)}}',
     '@media (max-width:520px){.mnv-cab{padding:22px 18px 14px}.mnv-cuerpo{padding:2px 18px 6px}',
-    ' .mnv-pie{padding:14px 18px 18px}.mnv h2{font-size:21px}.mnv-todo{display:none}.mnv-ok{flex:1}}',
+    ' .mnv-pie{padding:14px 18px 18px}.mnv h2{font-size:21px}.mnv-todo{display:none}.mnv-ok{flex:1}',
+    ' .mnv-p{grid-template-columns:34px 1fr;gap:11px;padding:10px 4px}.mnv-ico{width:34px;height:34px;font-size:17px;border-radius:10px}}',
     '@media (prefers-reduced-motion:reduce){.mnv-bg,.mnv,.mnv-p{animation:none}}'
   ].join('\n');
 
@@ -142,11 +163,34 @@
         destino = plegadas;
       }
       var ul = el('ul', 'mnv-lista');
-      (v.puntos || []).forEach(function (p) {
+      var dondeAntes = '';
+      (v.puntos || []).forEach(function (p, j) {
         var li = el('li', 'mnv-p'); li.style.setProperty('--i', String(Math.min(i++, 10)));
+        li.style.setProperty('--j', String(Math.min(j, 8)));
         var ico = el('span', 'mnv-ico', p.icono || '✨'); ico.setAttribute('aria-hidden', 'true');
         var tx = el('div');
         tx.append(el('strong', null, p.titulo), el('p', null, p.texto));
+        // «Dónde está» solo si cambia respecto al punto anterior (no repetir el mismo camino).
+        var dondeEste = (p.donde || []).join('›');
+        var mismoSitio = dondeEste && dondeEste === dondeAntes;
+        dondeAntes = dondeEste;
+        if (p.donde && p.donde.length && !mismoSitio) {
+          var dd = el('div', 'mnv-donde');
+          dd.insertAdjacentHTML('beforeend', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>');
+          dd.appendChild(el('span', 'mnv-dl', 'Dónde está'));
+          var ruta = el('ol', 'mnv-ruta'); ruta.setAttribute('aria-label', t('Dónde está'));
+          p.donde.forEach(function (seg) { var li = el('li'); li.appendChild(el('span', null, seg)); ruta.appendChild(li); });
+          dd.appendChild(ruta);
+          tx.appendChild(dd);
+        }
+        if (p.pasos && p.pasos.length) {
+          var ps = el('div', 'mnv-pasos');
+          ps.appendChild(el('span', 'mnv-pl', 'Cómo empezar'));
+          var ol = el('ol');
+          p.pasos.forEach(function (x) { ol.appendChild(el('li', null, x)); });
+          ps.appendChild(ol);
+          tx.appendChild(ps);
+        }
         if (p.accion && p.accion.url) {
           var a = el('a', 'mnv-acc', p.accion.texto); a.href = p.accion.url;
           a.appendChild(el('span', null, '→'));

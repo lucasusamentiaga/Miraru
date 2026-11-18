@@ -45,3 +45,20 @@ def test_claves_normalizadas_sin_colisiones():
     d = i18n_ui.ui_para("en")["map"]
     assert len(d) == len(i18n_ui.UI)
     assert all("  " not in k and k == k.strip() for k in d)
+
+
+def test_novedades_recientes_traducidas():
+    """La ventana de novedades de las últimas versiones sale entera en cada idioma
+    (títulos, textos, «Dónde está» y «Cómo empezar»)."""
+    import novedades
+    from i18n_ui import UI, _norm
+    claves = {_norm(k) for k in UI}
+    propios = {"Anime", "AnimeAV1"}
+    falta = []
+    for v in novedades.pendientes("2.17.6", "99"):
+        for p in v["puntos"]:
+            textos = [v["titulo"], p["titulo"], p["texto"], *p.get("donde", []), *p.get("pasos", [])]
+            if p.get("accion"):
+                textos.append(p["accion"]["texto"])
+            falta += [x for x in textos if x not in propios and _norm(x) not in claves]
+    assert not falta, falta
