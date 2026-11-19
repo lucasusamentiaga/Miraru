@@ -12,6 +12,12 @@
   botones de la app y de las fichas, y lint del JS. Arreglado: tooltip del calendario de actividad en
   español en todos los idiomas; menú de inicio 3–42 px más ancho que el móvil (rejilla sin
   `minmax(0,1fr)`); la barra flotante tapaba lo último de cada página (hueco de 76 px al final).
+- **Segunda ronda**: 3.000+ peticiones con datos malos a todas las API (0 fallos), contraste de todo
+  el texto en tema claro y oscuro, la web del móvil emparejada de verdad y Miraru vacío (usuario
+  nuevo). Arreglado: **la web del móvil salía siempre en español** (no cargaba el traductor y
+  `/api/i18n/ui` pedía token desde la WiFi; ahora es pública: solo son textos) y le faltaban textos;
+  «Ep 8 en 0h» en Novedades (ahora minutos); en tema claro, la nota ⭐, el «⏰ Ep…» y el rango de
+  Estadísticas no se leían; etiquetas de Crunchyroll y Amazon con poco contraste.
 
 ## v2.17.9 — Saltar openings en AnimeAV1 y cierre ordenado en Windows
 

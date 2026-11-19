@@ -2220,7 +2220,7 @@ function render() {
         `<div class="atitle">${_esc(_nomVis(a.nombre))}</div>` +
         `<div class="ameta">` +
           `<span style="font-size:10px;color:var(--muted)">${_esc(caps)}</span>` +
-          (a.puntuacion ? `<span style="font-size:10px;color:#fbbf24">${_esc(T('score', {n: a.puntuacion}))}</span>` : '') +
+          (a.puntuacion ? `<span class="nota-estrella" style="font-size:10px">${_esc(T('score', {n: a.puntuacion}))}</span>` : '') +
           (showProg && vistos > 0 && !EM.emitidos ? `<span style="font-size:10px;color:var(--muted)">${vistos}/${capNum}</span>` : '') +
           (EM.emitidos ? `<span style="font-size:10px;color:var(--muted)" title="${_esc(_tr('Episodios ya emitidos') + (capNum ? ' · ' + capNum + ' ' + _tr('en total') : ''))}">${EM.alDia ? '✓ ' : ''}${vistos}/${EM.emitidos} ${_esc(_tr('emitidos'))}</span>` : '') +
           (!showProg && conMas1 && vistos > 0 ? `<span style="font-size:10px;color:var(--muted)">${isManga ? 'Cap' : 'Ep'} ${vistos}</span>` : '') +

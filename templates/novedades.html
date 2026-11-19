@@ -56,8 +56,8 @@ main{max-width:1100px;margin:0 auto;padding:20px}
 .card .plats{position:absolute;bottom:0;inset-x:0;background:linear-gradient(transparent,rgba(0,0,0,.9));
              padding:6px 8px 5px;display:flex;gap:3px;flex-wrap:wrap}
 .plat-tag{font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;text-transform:uppercase}
-.pt-cr{background:#f47521;color:#fff}.pt-nf{background:#e50914;color:#fff}
-.pt-am{background:#00a8e1;color:#fff}.pt-dp{background:#006e99;color:#fff}.pt-ot{background:#444;color:#fff}
+.pt-cr{background:#c2410c;color:#fff}.pt-nf{background:#e50914;color:#fff}
+.pt-am{background:#0369a1;color:#fff}.pt-dp{background:#006e99;color:#fff}.pt-ot{background:#444;color:#fff}
 .card .info{padding:8px 10px 10px}
 .card .title{font-size:12px;font-weight:600;line-height:1.3;margin-bottom:4px;
              display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -65,6 +65,7 @@ main{max-width:1100px;margin:0 auto;padding:20px}
 .genre-tag{font-size:10px;color:var(--light);background:rgba(124,58,237,.1);
            border:1px solid rgba(124,58,237,.2);border-radius:4px;padding:1px 5px}
 .next-ep{font-size:10px;color:var(--success);margin-top:4px;font-weight:600}
+[data-theme=light] .next-ep{color:#047857}
 
 .add-btn{display:flex;align-items:center;justify-content:center;gap:4px;
          background:var(--accent);color:#fff;border:none;border-radius:6px;
@@ -323,6 +324,7 @@ function nextEpText(next) {
   const diff = d - now;
   if (diff < 0) return `Ep ${next.episode} ya disponible`;
   const hrs = Math.floor(diff / 3600000);
+  if (hrs < 1) return `Ep ${next.episode} en ${Math.max(1, Math.round(diff / 60000))}min`;   // antes «en 0h»
   if (hrs < 24) return `Ep ${next.episode} en ${hrs}h`;
   const days = Math.floor(hrs / 24);
   return `Ep ${next.episode} en ${days}d`;

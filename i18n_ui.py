@@ -108,7 +108,16 @@ UI: dict[str, tuple[str, str, str]] = {
     'Conectar el móvil, paso a paso': ('Connecting your phone, step by step', 'Connecter le mobile, étape par étape', 'Handy verbinden, Schritt für Schritt'),
     'La pantalla del móvil explica en tres pasos cómo conectarlo, y ya sale entera en tu idioma.': ('The phone screen explains how to connect it in three steps, and it is now fully in your language.', "L'écran du mobile explique en trois étapes comment le connecter, et il est maintenant entièrement dans votre langue.", 'Die Handy-Ansicht erklärt in drei Schritten, wie du es verbindest, und ist jetzt komplett in deiner Sprache.'),
     'Arreglos': ('Fixes', 'Corrections', 'Korrekturen'),
-    'Los botones de abajo a la derecha ya no tapan lo último de cada página, el menú de inicio cabe en el móvil y el calendario de actividad de tus estadísticas sale en tu idioma.': ('The buttons at the bottom right no longer cover the end of each page, the home menu fits on phones, and the activity calendar in your statistics is in your language.', "Les boutons en bas à droite ne cachent plus la fin de chaque page, le menu d'accueil tient sur mobile et le calendrier d'activité de vos statistiques est dans votre langue.", 'Die Knöpfe unten rechts verdecken nicht mehr das Ende jeder Seite, das Startmenü passt aufs Handy und der Aktivitätskalender in deinen Statistiken ist in deiner Sprache.'),
+    'La versión del móvil ya sale en tu idioma, los botones de abajo a la derecha no tapan lo último de cada página, el menú de inicio cabe en el móvil, el tema claro se lee mejor y lo que sale en menos de una hora dice los minutos que faltan.': ('The phone version is now in your language, the buttons at the bottom right no longer cover the end of each page, the home menu fits on phones, the light theme is easier to read, and anything airing in under an hour shows the minutes left.', "La version mobile est maintenant dans votre langue, les boutons en bas à droite ne cachent plus la fin de chaque page, le menu d'accueil tient sur mobile, le thème clair se lit mieux et ce qui sort dans moins d'une heure indique les minutes restantes.", 'Die Handy-Version ist jetzt in deiner Sprache, die Knöpfe unten rechts verdecken nicht mehr das Ende jeder Seite, das Startmenü passt aufs Handy, das helle Design ist besser lesbar und was in weniger als einer Stunde erscheint, zeigt die verbleibenden Minuten.'),
+    'Perfil': ('Profile', 'Profil', 'Profil'),
+    'Buscar en mi lista…': ('Search my list…', 'Rechercher dans ma liste…', 'In meiner Liste suchen…'),
+    'O escribe el código de 6 cifras': ('Or type the 6-digit code', 'Ou tape le code à 6 chiffres', 'Oder gib den 6-stelligen Code ein'),
+    '↓ Soltar para refrescar': ('↓ Release to refresh', '↓ Relâcher pour actualiser', '↓ Loslassen zum Aktualisieren'),
+    'Puntuación': ('Score', 'Note', 'Bewertung'),
+    'Top género': ('Top genre', 'Genre principal', 'Top-Genre'),
+    'Top géneros': ('Top genres', 'Genres principaux', 'Top-Genres'),
+    'Información personal': ('Personal information', 'Informations personnelles', 'Persönliche Informationen'),
+    'Conexión al PC': ('Connection to the PC', 'Connexion au PC', 'Verbindung zum PC'),
     'Dónde está': ('Where to find it', 'Où le trouver', 'Wo du es findest'),
     'Cómo empezar': ('How to start', 'Pour commencer', 'So fängst du an'),
     'Ventana de la extensión': ('Extension window', "Fenêtre de l'extension", 'Fenster der Erweiterung'),
@@ -1323,6 +1332,7 @@ UI: dict[str, tuple[str, str, str]] = {
 
 # Textos con números u otras partes variables. Se prueban en orden.
 PATTERNS: list[tuple[str, tuple[str, str, str]]] = [
+    (r"^(✓ )?(\d+)/(\d+) emitidos · (\S+) en total$", ("$1$2/$3 aired · $4 in total", "$1$2/$3 diffusés · $4 au total", "$1$2/$3 ausgestrahlt · $4 insgesamt")),
     (r"^Además, (\d+) mangas? · ([\d.,]+) capítulos leídos \(no cuentan como episodios ni horas de anime\)\.$", (
         "Plus $1 manga · $2 chapters read (they don't count as anime episodes or hours).",
         "En plus, $1 manga(s) · $2 chapitres lus (ils ne comptent pas comme épisodes ni heures d'anime).",

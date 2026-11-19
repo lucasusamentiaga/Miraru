@@ -389,3 +389,7 @@ input:focus,textarea:focus,select:focus{ outline:none; border-color:var(--accent
     scroll-behavior:auto !important;
   }
 }
+
+/* v2.17.10: la nota ⭐ de las tarjetas; en claro, un ámbar más oscuro para que se lea */
+.nota-estrella{color:#fbbf24}
+[data-theme=light] .nota-estrella{color:#b45309}

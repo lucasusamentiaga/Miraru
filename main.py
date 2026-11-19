@@ -1060,6 +1060,9 @@ _PUBLIC_LAN_PATHS = {
     "/api/mobile/auth",
     "/api/mobile/emparejar",
     "/api/health",
+    # v2.17.10: los textos de la interfaz en tu idioma (sin datos tuyos): la web
+    # del móvil salía siempre en español porque esto pedía token.
+    "/api/i18n/ui",
 }
 
 # Útiles para desarrollar en este PC, pero no hay razón para publicarlas a la

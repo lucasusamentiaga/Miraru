@@ -27,7 +27,7 @@ NOVEDADES: list[dict] = [
              "texto": "La pantalla del móvil explica en tres pasos cómo conectarlo, y ya sale entera en tu idioma.",
              "donde": ["Más", "Móvil"]},
             {"icono": "🧹", "titulo": "Arreglos",
-             "texto": "Los botones de abajo a la derecha ya no tapan lo último de cada página, el menú de inicio cabe en el móvil y el calendario de actividad de tus estadísticas sale en tu idioma."},
+             "texto": "La versión del móvil ya sale en tu idioma, los botones de abajo a la derecha no tapan lo último de cada página, el menú de inicio cabe en el móvil, el tema claro se lee mejor y lo que sale en menos de una hora dice los minutos que faltan."},
             {"icono": "☕", "titulo": "Apoyar Miraru, nueva dirección",
              "texto": "«Más → Apoyar Miraru» lleva ahora a ko-fi.com/miraru.",
              "donde": ["Más", "Apoyar Miraru"]},
