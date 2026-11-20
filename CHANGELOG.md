@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.17.11 — Del ending al siguiente, solo (extensión 1.9.0)
+
+- **Siguiente automático encendido por defecto** (y migración única en `onInstalled`): al empezar el
+  ending, pulsa «Marcar como visto» en AnimeAV1 y además manda el episodio a Miraru por la cola de
+  la extensión (`av1-visto` → `/api/animeav1/evento`), así se apunta aunque no haya sesión en AnimeAV1.
+- **Saltar opening en más servidores**: `reproductor.js` entra también en Byse (n1mwq.org, marco
+  anidado), VidHide, MP4Upload, YourUpload, UPNShare, Voe y StreamTape; habla con `window.top` y la
+  página contesta a quien dice «hola». Solo actúa dentro de AnimeAV1 (`location.ancestorOrigins`).
+- **Portadas de respaldo**: lo que AniList no identifica (o tiene portada de AnimeFLV) busca portada
+  en Kitsu solo si el título coincide ≥ 88 % y sin empate (`fuentes_respaldo.portada_segura`).
+- **Arreglos**: el calendario usa tantas columnas como días (salía un 8.º día en otra fila); en /m el
+  aviso de «tirar para refrescar» asomaba siempre por arriba.
+- Store: ficha en francés y alemán y capturas nuevas (calendario y móvil) en los 4 idiomas.
+
 ## v2.17.10 — Calendario nuevo, pantallas más claras y nuevo Ko-fi
 
 - **Nueva dirección de Ko-fi**: «Apoyar Miraru» (menú «Más», menú de inicio, README y FUNDING) apunta a

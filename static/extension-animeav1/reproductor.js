@@ -46,6 +46,10 @@
   if (window.top === window) return;              // solo dentro de la página del episodio
 
   const PADRE = /^https:\/\/(www\.)?animeav1\.com$/;
+  // v1.9: estos reproductores también salen en otras webs: solo si están dentro
+  // de AnimeAV1 (directamente o dentro de otro reproductor, como Byse).
+  const ANC = location.ancestorOrigins;
+  if (ANC && ANC.length && ![...ANC].some(o => PADRE.test(o))) return;
   let config = null, origenPadre = '*';
   const mem = {saltadoOp: false, cancelado: false, avisado: false, reproducido: false};
 
@@ -54,7 +58,7 @@
     origenPadre = e.origin;
     config = e.data;
   });
-  const hola = () => { try { window.parent.postMessage({miraru: 'hola'}, '*'); } catch (_) { /* nada */ } };
+  const hola = () => { try { window.top.postMessage({miraru: 'hola'}, '*'); } catch (_) { /* nada */ } };
 
   // ── Botones encima del vídeo ──────────────────────────────────────────────
   // Como los de las plataformas de streaming: oscuros y legibles sobre
@@ -119,13 +123,17 @@
     $('toast').hidden = false;
     toastHasta = Date.now() + (puedeVolver ? 5000 : 1800);
   }
-  function colocar() {
+  function colocar(v) {
     // A pantalla completa solo se ve lo que está dentro del elemento a pantalla completa.
-    const dentro = document.fullscreenElement || document.getElementById('player') || document.body;
+    // v1.9: cada servidor tiene su reproductor (JW Player, Video.js…): la caja va
+    // en el suyo, para quedar encima del vídeo.
+    const dentro = document.fullscreenElement
+      || (v && v.closest('.jwplayer,.video-js,.plyr,#player,[data-player]'))
+      || document.getElementById('player') || (v && v.parentElement) || document.body;
     if (caja.parentNode !== dentro) dentro.appendChild(caja);
     if (getComputedStyle(dentro).position === 'static' && dentro !== document.body) dentro.style.position = 'relative';
   }
-  document.addEventListener('fullscreenchange', colocar);
+  document.addEventListener('fullscreenchange', () => colocar(video()));
 
   function video() {
     return [...document.querySelectorAll('video')].find(v => v.duration > 0) || null;
@@ -147,9 +155,9 @@
   let ultimaCuenta = null;
   function vuelta() {
     if (!config) { hola(); return; }
-    colocar();
     const v = video();
-    if (!v) return;
+    if (!v) return;                                  // p. ej. el marco de fuera de Byse
+    colocar(v);
     const tx = textos();
     if (config.reproducir && !mem.reproducido) {      // llegaste con «Siguiente automático»
       mem.reproducido = true;
@@ -197,7 +205,7 @@
       $('cuenta-t').textContent = tx.pasando || '';
       $('cuenta-s').textContent = '';
       $('cancelar').hidden = true;
-      try { window.parent.postMessage({miraru: 'siguiente'}, origenPadre); } catch (_) { /* nada */ }
+      try { window.top.postMessage({miraru: 'siguiente'}, origenPadre); } catch (_) { /* nada */ }
     }
     // Si vuelves atrás (antes del opening o del ending), todo vuelve a valer.
     if (config.op && v.currentTime < config.op[0] - 2) mem.saltadoOp = false;

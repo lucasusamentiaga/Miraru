@@ -13,6 +13,23 @@ from __future__ import annotations
 # pasos (opcional): frases cortas → «Cómo empezar», numeradas.
 NOVEDADES: list[dict] = [
     {
+        "version": "2.17.11",
+        "titulo": "Del ending al siguiente, solo",
+        "puntos": [
+            {"icono": "⏩", "titulo": "Siguiente automático, encendido",
+             "texto": "En AnimeAV1, cuando empieza el ending, la extensión marca el episodio como visto (también en Miraru, aunque no tengas la sesión de AnimeAV1 abierta) y pasa sola al siguiente. Se puede apagar.",
+             "donde": ["Extensión", "AnimeAV1", "Debajo del vídeo"],
+             "pasos": ["Abre la ventana de la extensión y pulsa «Actualizar» si te lo pide."]},
+            {"icono": "⏭️", "titulo": "Saltar opening en más servidores",
+             "texto": "Ya no hace falta elegir «HLS»: también funciona en Byse, VidHide, MP4Upload, YourUpload y otros que usan un vídeo normal.",
+             "donde": ["Extensión", "AnimeAV1", "Debajo del vídeo"]},
+            {"icono": "🖼️", "titulo": "Portadas que faltaban",
+             "texto": "Si un anime se quedó sin portada porque no se encontraba, Miraru la busca en otra fuente y solo la pone si el título coincide de verdad."},
+            {"icono": "🧹", "titulo": "Arreglos",
+             "texto": "El calendario ya no deja un día suelto en otra fila y, en la versión del móvil, el aviso de «tira para refrescar» ya no asoma por arriba."},
+        ],
+    },
+    {
         "version": "2.17.10",
         "titulo": "Calendario nuevo y pantallas más claras",
         "puntos": [

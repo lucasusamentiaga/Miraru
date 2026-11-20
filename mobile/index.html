@@ -900,9 +900,12 @@ function _setupPullToRefresh() {
   if (!cont) return;
   let sy = 0, pulling = false;
   const indicator = document.createElement('div');
-  indicator.style.cssText = 'position:fixed;top:8px;left:50%;transform:translateX(-50%) translateY(-40px);'
+  // v2.17.11: escondido del todo hasta que tiras (antes asomaba por arriba siempre).
+  const OCULTO = 'translateX(-50%) translateY(calc(-100% - 16px))';
+  indicator.style.cssText = 'position:fixed;top:8px;left:50%;transform:' + OCULTO + ';opacity:0;'
     + 'background:var(--accent);color:#fff;border-radius:99px;padding:7px 16px;'
-    + 'font-size:12px;font-weight:700;z-index:50;transition:transform .2s;pointer-events:none';
+    + 'font-size:12px;font-weight:700;z-index:50;transition:transform .2s,opacity .2s;pointer-events:none';
+  const esconder = () => { indicator.style.transform = OCULTO; indicator.style.opacity = '0'; };
   indicator.textContent = '↓ Soltar para refrescar';
   document.body.appendChild(indicator);
 
@@ -914,23 +917,25 @@ function _setupPullToRefresh() {
     if (!pulling) return;
     const dy = e.touches[0].clientY - sy;
     if (dy > 40) {
+      indicator.style.opacity = '1';
       indicator.style.transform = `translateX(-50%) translateY(${Math.min(60, dy * 0.4) - 40}px)`;
       indicator.textContent = dy > 100 ? '↑ Soltar para refrescar' : '↓ Sigue tirando…';
     } else {
-      indicator.style.transform = 'translateX(-50%) translateY(-40px)';
+      esconder();
     }
   }, {passive: true});
   cont.addEventListener('touchend', async e => {
     if (!pulling) return;
     pulling = false;
     const dy = e.changedTouches[0].clientY - sy;
-    indicator.style.transform = 'translateX(-50%) translateY(-40px)';
+    esconder();
     if (dy > 100) {
       indicator.textContent = 'Refrescando…';
+      indicator.style.opacity = '1';
       indicator.style.transform = 'translateX(-50%) translateY(8px)';
       try { await cargarAnimes(); toast('✓ Actualizado'); }
       catch(_) { toast('Error al refrescar', 'err'); }
-      setTimeout(() => indicator.style.transform = 'translateX(-50%) translateY(-40px)', 600);
+      setTimeout(esconder, 600);
     }
   });
 }

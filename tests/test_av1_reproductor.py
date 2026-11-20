@@ -54,7 +54,7 @@ def test_aniskip_y_datos_de_la_pagina():
     datos = {"nodes": [None, {"type": "data", "data": [{"user": 1}, None]},
                        {"type": "data", "data": [{"media": 1, "episode": 4}, {"id": 2, "malId": 3, "episodesCount": 4},
                                                  4459, 52991, 28]}]}
-    assert _js("animeav1-player.js", f"s.leerMedia({json.dumps(datos)})") == {"malId": 52991, "episodios": 28}
+    assert _js("animeav1-player.js", f"s.leerMedia({json.dumps(datos)})") == {"mediaId": 4459, "malId": 52991, "episodios": 28}
 
 
 def test_manifest():
@@ -62,5 +62,19 @@ def test_manifest():
     cs = {tuple(c["js"]): c for c in m["content_scripts"]}
     assert cs[("i18n.js", "animeav1-player.js")]["matches"] == ["https://animeav1.com/*"]
     rep = cs[("reproductor.js",)]
-    assert rep["all_frames"] and rep["matches"] == ["https://player.zilla-networks.com/*"]
+    assert rep["all_frames"]
+    assert "https://*.zilla-networks.com/*" in rep["matches"]
     assert len(m["description"]) <= 132
+
+
+def test_servidores_de_animeav1_iguales_en_manifest_y_script():
+    """v1.9: «Saltar opening» en más servidores (Byse, VidHide, MP4Upload…). La lista
+    de animeav1-player.js (a quién habla) y la del manifest (dónde entra) van a la par."""
+    import re
+    m = json.loads((EXT / "manifest.json").read_text(encoding="utf-8"))
+    rep = next(c for c in m["content_scripts"] if c["js"] == ["reproductor.js"])
+    en_manifest = {re.sub(r"^https://(\*\.)?|/\*$", "", x) for x in rep["matches"]}
+    js = (EXT / "animeav1-player.js").read_text(encoding="utf-8")
+    en_js = set(re.findall(r"'([a-z0-9.-]+\.[a-z]+)'", js[js.index("HOSTS_REPRODUCTOR"):js.index("];", js.index("HOSTS_REPRODUCTOR"))]))
+    assert en_js and en_js == en_manifest
+    assert {"zilla-networks.com", "n1mwq.org", "mp4upload.com"} <= en_js

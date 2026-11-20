@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Miraru — episodios vistos",
   "short_name": "Miraru",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Lo que ves en AnimeAV1, AnimeFLV, Netflix y Crunchyroll se apunta en tu Miraru. En AnimeAV1 salta openings y sigue solo.",
   "icons": {
     "16": "iconos/16.png",
@@ -80,7 +80,28 @@
     },
     {
       "matches": [
-        "https://player.zilla-networks.com/*"
+        "https://zilla-networks.com/*",
+        "https://*.zilla-networks.com/*",
+        "https://uns.bio/*",
+        "https://*.uns.bio/*",
+        "https://turboembed.com/*",
+        "https://*.turboembed.com/*",
+        "https://voe.sx/*",
+        "https://*.voe.sx/*",
+        "https://byselapuix.com/*",
+        "https://*.byselapuix.com/*",
+        "https://n1mwq.org/*",
+        "https://*.n1mwq.org/*",
+        "https://yourupload.com/*",
+        "https://*.yourupload.com/*",
+        "https://mp4upload.com/*",
+        "https://*.mp4upload.com/*",
+        "https://ryderjet.com/*",
+        "https://*.ryderjet.com/*",
+        "https://callistanise.com/*",
+        "https://*.callistanise.com/*",
+        "https://streamtape.com/*",
+        "https://*.streamtape.com/*"
       ],
       "js": [
         "reproductor.js"

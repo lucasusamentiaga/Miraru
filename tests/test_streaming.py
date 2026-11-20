@@ -135,7 +135,7 @@ def test_extension_declara_netflix_y_crunchyroll():
     scripts = [x for c in m["content_scripts"] for x in c["matches"]]
     assert "https://www.netflix.com/*" in scripts and "https://static.crunchyroll.com/*" in scripts
     assert any(c.get("all_frames") for c in m["content_scripts"])      # el reproductor de Crunchyroll va en un marco
-    assert m["version"] == "1.8.0"
+    assert m["version"] == "1.9.0"
 
 
 # ── v1.6 (Miraru 2.17.3): AnimeFLV, la ficha de Netflix y «Deshacer» ──────────
@@ -223,10 +223,10 @@ def test_extension_se_actualiza_desde_miraru(db, tmp_path, monkeypatch):
     monkeypatch.setenv("MIRARU_EXT_DIR", str(tmp_path / "ext"))
     c = TestClient(main.app, client=("127.0.0.1", 1))
     v = c.get("/api/extension/version").json()
-    assert v["version"] == "1.8.0" and v["en_carpeta"] == ""
+    assert v["version"] == "1.9.0" and v["en_carpeta"] == ""
     assert c.post("/api/extension/actualizar").status_code == 403               # sin la cabecera, no
     r = c.post("/api/extension/actualizar", headers={"X-Miraru-Extension": "1"}).json()
-    assert r["ok"] and r["version"] == "1.8.0" and (tmp_path / "ext" / "manifest.json").is_file()
-    assert c.get("/api/extension/version").json()["en_carpeta"] == "1.8.0"
+    assert r["ok"] and r["version"] == "1.9.0" and (tmp_path / "ext" / "manifest.json").is_file()
+    assert c.get("/api/extension/version").json()["en_carpeta"] == "1.9.0"
     lejos = TestClient(main.app, client=("192.168.1.50", 1))
     assert lejos.post("/api/extension/actualizar", headers={"X-Miraru-Extension": "1"}).status_code == 403

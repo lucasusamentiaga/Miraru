@@ -651,6 +651,7 @@ def _enriquecer_desde_anilist(animes: list[dict], anilist,
         if ne or ni:
             pend.append((a, ne, ni))
     eps_fixed = img_fixed = 0
+    con_portada: set = set()
 
     def _aplicar(a, r, ne, ni):
         nonlocal eps_fixed, img_fixed
@@ -661,6 +662,8 @@ def _enriquecer_desde_anilist(animes: list[dict], anilist,
         if ok:
             eps_fixed += "capitulos" in cambios
             img_fixed += "imagen" in cambios
+            if "imagen" in cambios:
+                con_portada.add(a["nombre"])
 
     for tipo, mtype in (("anime", "ANIME"), ("manga", "MANGA")):
         con_id = [p for p in pend if p[0].get("anilist_id")
@@ -704,7 +707,41 @@ def _enriquecer_desde_anilist(animes: list[dict], anilist,
             db.set_config("resolver_fallos", json.dumps(fallos, ensure_ascii=False))
         except Exception:  # noqa: BLE001
             pass
+
+    # v2.17.11: los animes que AniList no identifica se quedaban para siempre sin
+    # portada (o con la de AnimeFLV, que no carga). Kitsu, solo si el título casi
+    # coincide (fuentes_respaldo.portada_segura). Una vez por semana cada uno.
+    img_fixed += _portadas_de_respaldo(pend, con_portada, sleep)
     return eps_fixed, img_fixed
+
+
+def _portadas_de_respaldo(pend: list, ya: set, sleep=_time.sleep) -> int:
+    import fuentes_respaldo
+    try:
+        intentos = json.loads(db.get_config("portada_respaldo") or "{}")
+        intentos = intentos if isinstance(intentos, dict) else {}
+    except ValueError:
+        intentos = {}
+    ahora = _time.time()
+    faltan = [a for a, _ne, ni in pend
+              if ni and a["nombre"] not in ya and not a.get("anilist_id")
+              and (a.get("tipo") or "anime") == "anime"
+              and ahora - float(intentos.get(a["nombre"], 0) or 0) > 7 * 86400]
+    arregladas = 0
+    for a in faltan[:30]:
+        img = fuentes_respaldo.portada_segura(a["nombre"])
+        if img and not any(h in img.lower() for h in _HOSTS_PORTADA_POCO_FIABLE):
+            ok, _ = db.refrescar_metadata_anime(a["nombre"], {"imagen": img})
+            arregladas += bool(ok)
+        else:
+            intentos[a["nombre"]] = ahora
+        sleep(1)
+    if faltan:
+        try:
+            db.set_config("portada_respaldo", json.dumps(intentos, ensure_ascii=False))
+        except Exception:  # noqa: BLE001
+            pass
+    return arregladas
 
 
 _RESOLVER_IDS_POR_ARRANQUE = 40

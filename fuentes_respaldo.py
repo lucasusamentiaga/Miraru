@@ -253,6 +253,42 @@ def _clave(t: str) -> str:
     return "".join(ch for ch in n if ch.isalnum())
 
 
+def portada_segura(nombre: str, minimo: float = 0.88, s=None) -> str:
+    """v2.17.11: portada de Kitsu para un anime que AniList no identifica.
+
+    Solo si uno de sus títulos se parece de verdad al nombre (≥ `minimo`, sin
+    contar mayúsculas ni signos) y no hay otro casi igual de parecido: mejor sin
+    portada que con la de otra temporada. "" si no hay o falla. Nunca lanza."""
+    import difflib
+    k = _clave(nombre)
+    if len(k) < 4:
+        return ""
+    try:
+        s = s or make_session(total=1, backoff=0.3)
+        r = s.get(f"{KITSU}/anime", headers=_HEADERS, timeout=(5, 12), params={
+            "filter[text]": nombre, "page[limit]": 5,
+            "fields[anime]": "canonicalTitle,titles,posterImage,nsfw,ageRating"})
+        r.raise_for_status()
+        datos = adulto.filtrar(r.json().get("data") or [])
+    except Exception:  # noqa: BLE001
+        return ""
+    notas = []
+    for a in datos:
+        at = a.get("attributes") or {}
+        titulos = [t for t in [at.get("canonicalTitle")] + list((at.get("titles") or {}).values()) if t]
+        if not titulos:
+            continue
+        parecido = max(difflib.SequenceMatcher(None, k, _clave(t)).ratio() for t in titulos)
+        img = (at.get("posterImage") or {}).get("large") or (at.get("posterImage") or {}).get("medium") or ""
+        notas.append((parecido, img))
+    notas.sort(key=lambda x: x[0], reverse=True)
+    if not notas or notas[0][0] < minimo or not notas[0][1]:
+        return ""
+    if len(notas) > 1 and notas[1][0] >= notas[0][0] - 0.03:
+        return ""          # dos casi igual de parecidos: no se sabe cuál es
+    return notas[0][1]
+
+
 def anilist_id_por_kitsu(nombre: str, s=None) -> int:
     """ID de AniList de un anime buscándolo en Kitsu, que guarda el enlace
     a AniList («mappings»). Sirve para nombres que el buscador de AniList no

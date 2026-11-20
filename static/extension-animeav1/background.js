@@ -291,7 +291,18 @@ async function abrirGuia() {
 chrome.runtime.onInstalled.addListener(({reason}) => {
   if (reason === 'install') abrirGuia();
   sincronizarListas();
+  activarSiguienteAuto();
 });
+// v1.9: «Siguiente automático» pasa a estar encendido para todos (una sola vez:
+// si luego lo apagas, se queda apagado).
+async function activarSiguienteAuto() {
+  try {
+    const {av1Mig19, av1Reproductor = {}} = await chrome.storage.local.get(['av1Mig19', 'av1Reproductor']);
+    if (av1Mig19) return;
+    await chrome.storage.local.set({av1Mig19: true,
+      av1Reproductor: Object.assign({}, av1Reproductor, {siguienteAuto: true, marcarAlPasar: true})});
+  } catch (_) { /* nada */ }
+}
 chrome.alarms.onAlarm.addListener(a => {
   if (a.name === 'reintentar') enviarCola();
   if (a.name === 'listas') sincronizarListas();
@@ -312,6 +323,15 @@ async function apuntarStreaming(d, accion) {
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, responder) => {
+  // v1.9: AnimeAV1 → «Siguiente automático» marca el episodio también aquí,
+  // por si no tienes la sesión de AnimeAV1 abierta (si la tienes, llegan los dos
+  // y Miraru se queda con uno: es el mismo anime y episodio).
+  if (msg && msg.tipo === 'av1-visto' && Number(msg.mediaId) > 0 && Number(msg.episode) > 0) {
+    encolar({mediaId: Number(msg.mediaId), episode: Number(msg.episode), accion: 'marcar',
+             slug: String(msg.slug || '').slice(0, 200), titulo: String(msg.titulo || '').slice(0, 300)})
+      .then(enviarCola).catch(() => {});
+    return false;
+  }
   if (msg && msg.tipo === 'streaming-visto') { apuntarStreaming(msg.datos); return false; }
   if (msg && msg.tipo === 'streaming-ahora') { guardarAhora(msg, sender); return false; }
   if (msg && msg.tipo === 'streaming-desmarcar') { apuntarStreaming(msg.datos, 'desmarcar'); return false; }

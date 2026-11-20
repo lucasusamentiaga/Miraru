@@ -31,13 +31,14 @@ header h1{
 .back:hover{border-color:var(--accent);color:var(--light)}
 [data-theme=light] header{background:#fff;border-color:#d4d0ec}
 [data-theme=light] .back{background:#fff;color:#4b4b6b;border-color:#d4d0ec}
-main{max-width:1240px;margin:0 auto;padding:26px 20px 90px}
+main{max-width:1480px;margin:0 auto;padding:26px 20px 90px}
 /* v2.17.10: la semana entera, de un vistazo */
 .cab{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
 .cab h2{font:700 clamp(20px,2.4vw,26px)/1.2 "Space Grotesk",Inter,sans-serif;letter-spacing:-.01em;text-wrap:balance}
 .cab p{font-size:13.5px;color:var(--muted)}
 .cab p b{color:var(--fg);font-weight:600}
-.semana{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;align-items:start}
+/* tantas columnas como días (7, u 8 si algo sale justo dentro de una semana) */
+.semana{display:grid;grid-template-columns:repeat(var(--dias,7),minmax(0,1fr));gap:10px;align-items:start}
 .dia{display:flex;flex-direction:column;gap:8px;min-width:0;padding:10px;border-radius:14px;
   background:var(--card2);border:1px solid var(--border);animation:sube .5s cubic-bezier(.16,1,.3,1) both;
   animation-delay:calc(var(--i,0) * 45ms)}
@@ -191,6 +192,7 @@ async function cargar() {
       });
       semana.appendChild(col);
     }
+    semana.style.setProperty('--dias', semana.children.length);
     cont.append(cab, semana, el('p', 'pie', T.pie));
   } catch (e) {
     cont.innerHTML = '';

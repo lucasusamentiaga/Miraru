@@ -37,9 +37,9 @@
       const m = d[d[0].media];
       if (!m || typeof m !== 'object') continue;
       const val = k => (m[k] != null ? d[m[k]] : null);
-      return {malId: Number(val('malId')) || 0, episodios: Number(val('episodesCount')) || 0};
+      return {mediaId: Number(val('id')) || 0, malId: Number(val('malId')) || 0, episodios: Number(val('episodesCount')) || 0};
     }
-    return {malId: 0, episodios: 0};
+    return {mediaId: 0, malId: 0, episodios: 0};
   }
 
   if (EN_PRUEBAS) {
@@ -49,8 +49,14 @@
 
   const I18N = self.MiraruI18n || null;
   const tr = (s, v) => (I18N ? I18N.tr(s, v) : s.replace(/\{(\w)\}/g, (_, k) => (v || {})[k] ?? ''));
-  const ORIGEN_REPRODUCTOR = /^https:\/\/([\w-]+\.)*zilla-networks\.com$/;
-  const AJUSTES = {saltarOpening: false, siguienteAuto: false, marcarAlPasar: true};
+  // v1.9: además de «HLS», los servidores que usan un vídeo normal (los demás
+  // simplemente no contestan y no pasa nada). Los mismos que en manifest.json.
+  const HOSTS_REPRODUCTOR = ['zilla-networks.com', 'uns.bio', 'turboembed.com', 'voe.sx', 'byselapuix.com',
+    'n1mwq.org', 'yourupload.com', 'mp4upload.com', 'ryderjet.com', 'callistanise.com', 'streamtape.com'];
+  const ORIGEN_REPRODUCTOR = new RegExp('^https://([\\w-]+\\.)*(' +
+    HOSTS_REPRODUCTOR.map(h => h.replace(/\./g, '\\.')).join('|') + ')$');
+  const ventanas = new Set();          // reproductores que han dicho «hola» en este episodio
+  const AJUSTES = {saltarOpening: false, siguienteAuto: true, marcarAlPasar: true};   // v1.9: siguiente, por defecto
 
   let estado = null;              // datos del episodio actual
   let ajustes = Object.assign({}, AJUSTES);
@@ -68,7 +74,9 @@
   async function preparar() {
     const u = enUrl();
     if (!u) { estado = null; return; }
-    const yo = estado = {slug: u.slug, ep: u.ep, malId: 0, episodios: 0, op: null, ed: null, listo: false};
+    const yo = estado = {slug: u.slug, ep: u.ep, mediaId: 0, malId: 0, episodios: 0, op: null, ed: null, listo: false, seguir: false};
+    // ¿Llegaste aquí con «Siguiente automático»? Se lee una vez (Byse tiene dos marcos).
+    try { yo.seguir = sessionStorage.getItem('miraru-seguir') === String(u.ep); sessionStorage.removeItem('miraru-seguir'); } catch (_) { /* nada */ }
     pintarBarra();                // «Buscando tiempos…» mientras tanto
     try {
       const j = await (await fetch(`/media/${u.slug}/${u.ep}/__data.json`, {cache: 'no-store'})).json();
@@ -94,24 +102,29 @@
 
   // ── Hablar con el reproductor (marco del vídeo) ───────────────────────────
   function marcoReproductor() {
-    return [...document.querySelectorAll('iframe')].find(f => /zilla-networks\.com/.test(f.src || ''));
+    const fs = [...document.querySelectorAll('iframe')];
+    const host = f => { try { return new URL(f.src).origin; } catch (_) { return ''; } };
+    return fs.find(f => ORIGEN_REPRODUCTOR.test(host(f)))
+      || fs.find(f => { const r = f.getBoundingClientRect(); return r.width >= 400 && r.height >= 220; });
   }
   function mandarConfig() {
     const f = marcoReproductor();
-    if (!f || !f.contentWindow || !estado || !estado.listo) return;
-    let seguir = false;
-    try { seguir = sessionStorage.getItem('miraru-seguir') === String(estado.ep); sessionStorage.removeItem('miraru-seguir'); } catch (_) { /* nada */ }
-    f.contentWindow.postMessage({miraru: 'config', op: estado.op, ed: estado.ed,
+    if (!estado || !estado.listo) return;
+    const dest = new Set(ventanas);
+    if (f && f.contentWindow) dest.add(f.contentWindow);
+    if (!dest.size) return;
+    const msg = {miraru: 'config', op: estado.op, ed: estado.ed,
       saltar: !!ajustes.saltarOpening, auto: !!ajustes.siguienteAuto, haySiguiente: !!siguienteUrl(),
-      reproducir: seguir,
+      reproducir: !!estado.seguir,
       textos: {saltar: tr('Saltar opening'), saltarSin: tr('Saltar opening · +85 s'), saltado: tr('Opening saltado'),
                verOp: tr('Ver opening'), siguiente: tr('Siguiente episodio'), en: tr('Episodio {e}', {e: estado.ep + 1}),
-               cancelar: tr('Cancelar'), pasando: tr('Pasando al siguiente…')}}, '*');
+               cancelar: tr('Cancelar'), pasando: tr('Pasando al siguiente…')}};
+    dest.forEach(w => { try { w.postMessage(msg, '*'); } catch (_) { /* nada */ } });
   }
 
   window.addEventListener('message', async e => {
     if (!ORIGEN_REPRODUCTOR.test(e.origin) || !e.data || typeof e.data !== 'object') return;
-    if (e.data.miraru === 'hola') mandarConfig();
+    if (e.data.miraru === 'hola') { if (e.source) ventanas.add(e.source); mandarConfig(); }
     if (e.data.miraru === 'siguiente') pasarAlSiguiente();
   });
 
@@ -121,13 +134,22 @@
     const url = siguienteUrl();
     if (!url) return;
     pasando = true;
-    // Marcar como visto en AnimeAV1 (y así en Miraru), si no lo estaba ya.
+    // Marcar como visto antes de pasar (v1.9: en AnimeAV1 y, además, directamente
+    // en Miraru: así se apunta aunque no tengas la sesión de AnimeAV1 abierta, y
+    // si Miraru está cerrado se guarda en la cola de la extensión).
     if (ajustes.marcarAlPasar) {
       // El botón del ojo: «Marcar como visto» (en el texto, aria-label o title).
       // Si ya está visto dice «…no visto» y no se toca.
       const nombre = x => ((x.textContent || '').trim() || x.getAttribute('aria-label') || x.title || '').trim();
       const b = [...document.querySelectorAll('button')].find(x => /^Marcar como visto$/i.test(nombre(x)));
-      if (b) { b.click(); await new Promise(r => setTimeout(r, 1500)); }
+      if (b) b.click();
+      if (estado.mediaId) {
+        try {
+          chrome.runtime.sendMessage({tipo: 'av1-visto', mediaId: estado.mediaId, episode: estado.ep,
+            slug: estado.slug, titulo: document.title});
+        } catch (_) { /* extensión recargada: queda el botón de AnimeAV1 */ }
+      }
+      await new Promise(r => setTimeout(r, 1500));
     }
     try { sessionStorage.setItem('miraru-seguir', String(estado.ep + 1)); } catch (_) { /* nada */ }
     location.href = url;
@@ -229,6 +251,7 @@
     if (location.href !== urlAntes) {
       urlAntes = location.href;
       pasando = false;
+      ventanas.clear();
       if (barra && barra.host) { barra.host.remove(); barra = null; }
       await preparar();
     }

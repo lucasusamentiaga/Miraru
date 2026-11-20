@@ -45,6 +45,8 @@ def main_mod(db, monkeypatch):
     monkeypatch.setattr(main.db, "refrescar_metadata_anime",
                         lambda n, c: (calls.append((n, c)), (True, "ok"))[1])
     main._calls = calls
+    import fuentes_respaldo  # sin red en los tests: la portada de respaldo, nada
+    monkeypatch.setattr(fuentes_respaldo, "portada_segura", lambda n, **k: "")
     return main
 
 
@@ -281,3 +283,57 @@ def test_resolve_ids_usa_variantes_tipo_y_limite(db, monkeypatch):
     assert db.obtener_anime("Black Clover (TV)")["anilist_id"] == 97940
     assert db.obtener_anime("Berserk")["anilist_id"] == 30002
     assert db.obtener_anime("Otro")["anilist_id"] == 0
+
+
+# ── v2.17.11: portada de respaldo (Kitsu) para lo que AniList no identifica ──
+def test_portada_de_respaldo_si_anilist_no_lo_encuentra(main_mod, monkeypatch):
+    import fuentes_respaldo
+    pedidas = []
+    monkeypatch.setattr(fuentes_respaldo, "portada_segura",
+                        lambda n, **k: (pedidas.append(n), "https://media.kitsu.app/p.jpg")[1])
+    animes = [{"nombre": "Haikyuu!! Movie: Gomisuteba no Kessen", "capitulos": "1",
+               "imagen": "https://www3.animeflv.net/uploads/animes/covers/4087.jpg", "anilist_id": 0}]
+    eps, imgs = main_mod._enriquecer_desde_anilist(animes, _FakeAniList(), sleep=lambda s: None)
+    assert imgs == 1 and pedidas == ["Haikyuu!! Movie: Gomisuteba no Kessen"]
+    assert ("Haikyuu!! Movie: Gomisuteba no Kessen", {"imagen": "https://media.kitsu.app/p.jpg"}) in main_mod._calls
+    # Una semana sin volver a preguntar si no se encontró
+    monkeypatch.setattr(fuentes_respaldo, "portada_segura", lambda n, **k: (pedidas.append(n), "")[1])
+    animes[0]["nombre"] = "Otro sin portada"
+    main_mod._enriquecer_desde_anilist(animes, _FakeAniList(), sleep=lambda s: None)
+    main_mod._enriquecer_desde_anilist(animes, _FakeAniList(), sleep=lambda s: None)
+    assert pedidas.count("Otro sin portada") == 1
+
+
+def test_no_pide_respaldo_si_anilist_ya_la_puso(main_mod, monkeypatch):
+    import fuentes_respaldo
+    pedidas = []
+    monkeypatch.setattr(fuentes_respaldo, "portada_segura", lambda n, **k: (pedidas.append(n), "x")[1])
+    animes = [{"nombre": "A1", "capitulos": "?", "imagen": "", "anilist_id": 1}]
+    main_mod._enriquecer_desde_anilist(animes, _FakeAniList(by_id={1: _ad(12)}), sleep=lambda s: None)
+    assert pedidas == []
+
+
+class _Resp:
+    def __init__(self, data): self._d = {"data": data}
+    def raise_for_status(self): pass
+    def json(self): return self._d
+
+
+class _Sesion:
+    def __init__(self, data): self.data = data
+    def get(self, *a, **k): return _Resp(self.data)
+
+
+def _k(titulo, img="https://media.kitsu.app/x.jpg"):
+    return {"attributes": {"canonicalTitle": titulo, "titles": {}, "posterImage": {"large": img}}}
+
+
+def test_portada_segura_solo_si_el_titulo_casi_coincide():
+    import fuentes_respaldo as f
+    assert f.portada_segura("Kimetsu no Yaiba: Mugen Ressha-hen Arc TV",
+                            s=_Sesion([_k("Kimetsu no Yaiba: Mugen Ressha-hen")])) == "https://media.kitsu.app/x.jpg"
+    # Otra temporada que se parece poco: mejor sin portada
+    assert f.portada_segura("Gotoubun no Hanayome 2nd Season", s=_Sesion([_k("5-toubun no Hanayome ∬")])) == ""
+    # Dos casi igual de parecidos: no se sabe cuál es
+    assert f.portada_segura("Mi Anime", s=_Sesion([_k("Mi Anime 2"), _k("Mi Anime 3")])) == ""
+    assert f.portada_segura("abc", s=_Sesion([_k("abc")])) == ""     # nombre demasiado corto
