@@ -173,6 +173,8 @@ def bucle_de_mensajes(sigue_vivo: Callable[[], bool], al_cerrar: Callable[[str],
         if not hwnd:
             log("No se pudo crear la ventana oculta")
             return False
+        global _HWND
+        _HWND = int(hwnd)                    # v2.18: la Store la necesita para su ventana de compra
         user32.SetTimer(hwnd, 1, 1000, None)
         msg = wintypes.MSG()
         while user32.GetMessageW(ctypes.byref(msg), None, 0, 0) > 0:
@@ -183,3 +185,11 @@ def bucle_de_mensajes(sigue_vivo: Callable[[], bool], al_cerrar: Callable[[str],
     except Exception as e:  # noqa: BLE001
         log(f"Bucle de mensajes: {e}")
         return False
+
+
+_HWND = 0
+
+
+def hwnd_principal() -> int:
+    """v2.18: la ventana (oculta) de Miraru, para los diálogos de la Store. 0 si no hay."""
+    return _HWND

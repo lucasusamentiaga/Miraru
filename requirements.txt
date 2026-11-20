@@ -26,4 +26,11 @@ google-api-python-client==2.196.0
 # ── Notificaciones Web Push (llegan con la pestaña cerrada) ──────────────────
 pywebpush>=2.0.0
 
+# ── Miraru Plus (v2.18): preguntar a la Microsoft Store si hay suscripción ──────
+# Solo se importa en la versión de la Store (MSIX). En otras plataformas no se instala.
+winrt-runtime>=3.0 ; sys_platform == "win32"
+winrt-Windows.Foundation>=3.0 ; sys_platform == "win32"
+winrt-Windows.Foundation.Collections>=3.0 ; sys_platform == "win32"
+winrt-Windows.Services.Store>=3.0 ; sys_platform == "win32"
+
 # ── Opcionales ────────────────────────────────────────────────────────────────

@@ -395,7 +395,7 @@ def buscar_duplicados() -> list[list[str]]:
     return [g for g in grupos.values() if len(g) > 1]
 
 
-_RANGO_ESTADO = {"completado": 5, "viendo": 4, "en pausa": 3, "pausado": 3,
+_RANGO_ESTADO = {"completado": 5, "viendo": 4, "pausa": 3, "en pausa": 3, "pausado": 3,
                  "pendiente": 2, "abandonado": 1}
 
 
@@ -710,6 +710,17 @@ def listar_con_notif() -> list[dict]:
 # v2.16.1: el mapa de actividad, las rachas y «Mi año» cuentan EPISODIOS de
 # anime; los capítulos de manga leídos no son horas de anime.
 _SIN_MANGA = "nombre NOT IN (SELECT nombre FROM animes WHERE tipo='manga')"
+
+
+def max_episodio_registrado(nombre: str) -> int:
+    """v2.17.12: el episodio más alto que se apuntó de uno en uno (ep_log). 0 si
+    ninguno: entonces el progreso llegó de golpe (importar una lista)."""
+    try:
+        with get_conn() as conn:
+            r = conn.execute("SELECT MAX(episodio) FROM ep_log WHERE nombre=?", (nombre,)).fetchone()
+            return int(r[0] or 0) if r else 0
+    except Exception:  # noqa: BLE001
+        return 0
 
 
 def log_episode(nombre: str, episodio: int):

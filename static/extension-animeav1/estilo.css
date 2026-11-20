@@ -310,3 +310,5 @@ a.s-est:hover{border-color:var(--warn)}
 .aj-av1 legend{padding:0 4px;font-weight:600;color:var(--fg);font-size:12px}
 .aj-av1 label{display:flex;gap:8px;align-items:flex-start;margin-top:6px;cursor:pointer;line-height:1.4}
 .aj-av1 input{accent-color:var(--acento);margin-top:2px;flex-shrink:0}
+.aj-av1 input:disabled+span{opacity:.55}
+.aj-plus{margin:8px 0 0;font-size:12px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}

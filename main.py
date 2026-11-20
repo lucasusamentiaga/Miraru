@@ -135,6 +135,9 @@ async def _lifespan(app: FastAPI):
         pass
     if not _sin_hilos_de_fondo():
         copia_nube.iniciar_hilo()
+        import plus as _plus
+        import sincro_pcs
+        sincro_pcs.iniciar_hilo(_plus.activo)    # v2.18: Plus, entre PCs
         # Google Sheets: cualquier cambio de la lista llega a la hoja (v2.16).
         sheets_sync.vigilar(_get_sheets_config, lambda: db._cache_gen,
                             db.listar_animes, _record_sync)
@@ -192,6 +195,7 @@ if STATIC_DIR.exists():
 from routers import gamificacion as gamificacion_router  # noqa: E402
 from routers import media as media_router  # noqa: E402  (tras crear `app`)
 from routers import noticias as noticias_router  # noqa: E402
+from routers import plus as plus_router  # noqa: E402
 from routers import push as push_router  # noqa: E402
 from routers import themes as themes_router  # noqa: E402
 
@@ -200,6 +204,7 @@ app.include_router(gamificacion_router.router)
 app.include_router(noticias_router.router)
 app.include_router(themes_router.router)
 app.include_router(push_router.router)
+app.include_router(plus_router.router)
 
 
 # ── Middleware: cuando modo móvil está activo, exigir token en LAN ───────────
@@ -862,9 +867,14 @@ def _notif_cargar_visto() -> dict[str, int]:
 
 def _comprobar_nuevos_episodios() -> list[tuple[str, int]]:
     """Una pasada del daemon. Devuelve [(nombre, ultimo_emitido)] avisados."""
+    import avisos_movil
+    import plus
     import push_web
     activos = db.listar_con_notif()
-    if not activos or not push_web.num_suscripciones():
+    # Avisos en el móvil (Plus): también cuentan como «alguien escucha».
+    movil = avisos_movil.estado()["activo"] and plus.activo()
+    hay_push = push_web.num_suscripciones() > 0
+    if not activos or not (hay_push or movil):
         return []
     info = _fetch_ultimos_episodios(activos)
     visto = _notif_cargar_visto()
@@ -886,15 +896,18 @@ def _comprobar_nuevos_episodios() -> list[tuple[str, int]]:
             visto[a["nombre"]] = ultimo_emitido
             avisados.append((a["nombre"], ultimo_emitido))
             pendientes = ultimo_emitido - vistos
-            try:
-                push_web.enviar(
-                    f"📺 {a['nombre']}",
-                    f"Episodio {vistos + 1} disponible" if pendientes == 1
-                    else f"{pendientes} episodios sin ver (hasta el {ultimo_emitido})",
-                    url="/app", tag=f"anime-{a['nombre']}-{ultimo_emitido}",
-                    icono=a.get("imagen") or None)
-            except Exception as e:
-                _sync_log.warning("push: %s", e)
+            titulo = f"📺 {a['nombre']}"
+            texto = (f"Episodio {vistos + 1} disponible" if pendientes == 1
+                     else f"{pendientes} episodios sin ver (hasta el {ultimo_emitido})")
+            if hay_push:
+                try:
+                    push_web.enviar(titulo, texto, url="/app",
+                                    tag=f"anime-{a['nombre']}-{ultimo_emitido}",
+                                    icono=a.get("imagen") or None)
+                except Exception as e:
+                    _sync_log.warning("push: %s", e)
+            if movil:
+                avisos_movil.enviar(a["nombre"], texto)
     if avisados:
         db.set_config(_CFG_NOTIF_VISTO, json.dumps(visto))
     return avisados
@@ -4842,15 +4855,30 @@ async def animeav1_evento(req: AnimeAV1EventoRequest, request: Request):
     if req.status == -1:
         # Quitado de tus listas en AnimeAV1: en Miraru no se borra nada.
         return {"ok": True, "accion": "nada", "nombre": nombre}
-    cambios = animeav1_sync.cambios_por_evento(local, req.episode, req.status, req.accion)
+    cambios = animeav1_sync.cambios_por_evento(local, req.episode, req.status, req.accion,
+                                               registrado=db.max_episodio_registrado(nombre))
     if cambios:
         # Por el mismo camino que editar a mano: registro de actividad (mapa,
         # racha), Google Sheets y AniList.
         await actualizar_anime(nombre, ActualizarRequest(**cambios), estricto=False)
-    animeav1_sync.guardar_ultimo_evento(nombre, req.episode, "actualizado" if cambios else "sin cambios")
+    accion = _accion_evento(local, cambios, req.episode)
+    animeav1_sync.guardar_ultimo_evento(nombre, req.episode, accion)
     await _emitidos_si_faltan(nombre)
     # imagen, capitulos y emitidos: la ventana de la extensión enseña la portada y el progreso
-    return _respuesta_evento(nombre, local, "actualizado" if cambios else "sin cambios")
+    return _respuesta_evento(nombre, local, accion, marcado=req.episode)
+
+
+def _accion_evento(local: dict, cambios: dict, ep) -> str:
+    """v2.17.12: qué pasó, para que la ventana de la extensión lo diga bien.
+    «corregido»: Miraru lo tenía más avanzado por una lista importada y ahora
+    va por el episodio que marcaste. «ya visto»: ya ibas por delante (p. ej.
+    revisionándolo) y no se toca: la ventana ofrece ponerlo en ese episodio."""
+    vistos = int(local.get("episodios_vistos") or 0)
+    if cambios:
+        return "corregido" if ep and int(ep) < vistos else "actualizado"
+    if ep and 0 < int(ep) < vistos:
+        return "ya visto"
+    return "sin cambios"
 
 
 # ── v2.17: Netflix y Crunchyroll (la misma extensión) ─────────────────────────
@@ -4945,12 +4973,14 @@ async def streaming_evento(req: StreamingEventoRequest, request: Request):
     if str(local.get("capitulos") or "") == "película":
         cambios = {} if local.get("estado_usuario") == "completado" else {"estado_usuario": "completado"}
     else:
-        cambios = animeav1_sync.cambios_por_evento(local, ep, None, "marcar")
+        cambios = animeav1_sync.cambios_por_evento(local, ep, None, "marcar",
+                                                   registrado=db.max_episodio_registrado(nombre))
     if cambios:
         await actualizar_anime(nombre, ActualizarRequest(**cambios), estricto=False)
-    animeav1_sync.guardar_ultimo_evento(nombre, ep, "actualizado" if cambios else "sin cambios")
+    accion = _accion_evento(local, cambios, ep)
+    animeav1_sync.guardar_ultimo_evento(nombre, ep, accion)
     await _emitidos_si_faltan(nombre)
-    return _respuesta_evento(nombre, local, "actualizado" if cambios else "sin cambios", origen=etiqueta)
+    return _respuesta_evento(nombre, local, accion, origen=etiqueta, marcado=ep)
 
 
 class DeshacerRequest(BaseModel):
@@ -4973,6 +5003,24 @@ async def extension_deshacer(req: DeshacerRequest, request: Request):
         await actualizar_anime(req.nombre, ActualizarRequest(**cambios), estricto=False)
     animeav1_sync.guardar_ultimo_evento(req.nombre, req.episodio, "deshecho" if cambios else "sin cambios")
     return _respuesta_evento(req.nombre, local, "deshecho" if cambios else "sin cambios")
+
+
+@app.post("/api/extension/poner")
+async def extension_poner(req: DeshacerRequest, request: Request):
+    """v2.17.12: «Poner en el ep N» en la ventana de la extensión. Marcaste un
+    episodio anterior al que Miraru tenía (p. ej. un anime que entró como
+    completado al importar una lista): se queda en ese episodio, «viendo»."""
+    if request.headers.get("X-Miraru-Extension") != "1":
+        raise HTTPException(403, "Solo la extensión de Miraru puede usar esta ruta")
+    local = db.obtener_anime(req.nombre)
+    if local is None:
+        raise HTTPException(404, "Ese anime ya no está en tu lista")
+    cambios = animeav1_sync.cambios_por_evento(local, req.episodio, None, "desmarcar")
+    if cambios:
+        await actualizar_anime(req.nombre, ActualizarRequest(**cambios), estricto=False)
+    accion = "corregido" if cambios else "sin cambios"
+    animeav1_sync.guardar_ultimo_evento(req.nombre, req.episodio, accion)
+    return _respuesta_evento(req.nombre, local, accion, marcado=req.episodio)
 
 
 # ── v2.16.1: la extensión trae tus listas de AnimeAV1 («Mis Listas») ─────────

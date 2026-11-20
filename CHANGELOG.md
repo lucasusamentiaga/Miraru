@@ -1,5 +1,30 @@
 # Changelog
 
+## v2.18.0 — Miraru Plus (extensión 1.10.0)
+
+- **Miraru Plus**: suscripción opcional (2,49 €/mes o 19,99 €/año) vendida como complementos de la
+  Microsoft Store (tokens `miraru_plus_mensual` / `miraru_plus_anual`). `plus.py` pregunta la
+  licencia con `Windows.Services.Store` (pywinrt), la guarda 6 h y aguanta 7 días sin internet; desde
+  el código fuente Plus está siempre activo (`MIRARU_PLUS=0` para probar sin él). Ventana común
+  `static/plus.js` (Más → Miraru Plus, `/app#plus`, menú de inicio), cargada por `customize.js` en
+  todas las páginas. Lo que ya había sigue gratis.
+- **Saltar opening y siguiente automático pasan a Plus**: la extensión pregunta a
+  `/api/extension/plus` (cada 30 min, guardado en `miraruPlus`); sin Plus los interruptores salen con
+  🔒 y abren la ventana de Plus, el botón «Saltar opening» se oculta y no pasa solo.
+- **Avisos en el móvil** (`avisos_movil.py`): con ntfy.sh, tema aleatorio, código QR y «Probar»; el
+  aviso de episodio nuevo se manda también ahí aunque no haya Web Push.
+- **Sincronización entre PCs** (`sincro_pcs.py`): lee las copias de los otros PCs en la carpeta de la
+  nube; añade lo que falta, nunca borra y aplica lo que cambió en el otro PC desde la última vez
+  (fusión a tres bandas).
+- **Estadísticas avanzadas** (`stats_plus.py`, `/api/stats/avanzadas`): hora y día favoritos, ritmo,
+  maratón más largo, horas que faltan, tasa de completado; sin Plus, vista previa borrosa.
+  **«Mi año» premium**: tus hábitos del año. **Temas exclusivos**: 6 colores de acento con ✨.
+- **Arreglo: «¡Completado!» falso en la extensión**: un anime que entró como completado al importar
+  una lista (sin episodios apuntados) y en el que marcas un episodio anterior ya se corrige a
+  «viendo» en ese episodio; la ventana enseña «Corregido» o «Marcaste el ep N» con «Poner en el ep N»
+  (`/api/extension/poner`). «pausa» ya cuenta en el orden de estados al fusionar.
+- Términos y privacidad actualizados (Plus, ntfy, sincronización).
+
 ## v2.17.11 — Del ending al siguiente, solo (extensión 1.9.0)
 
 - **Siguiente automático encendido por defecto** (y migración única en `onInstalled`): al empezar el

@@ -34,8 +34,19 @@
     ambar:     { nombre: "Ámbar",     a: "#d97706", b: "#f59e0b", c: "#fbbf24", light: "#fde68a", ink: "#b45309" },
     rosa:      { nombre: "Rosa",      a: "#db2777", b: "#ec4899", c: "#f472b6", light: "#fbcfe8", ink: "#be185d" },
     carmesi:   { nombre: "Carmesí",   a: "#dc2626", b: "#ef4444", c: "#f87171", light: "#fecaca", ink: "#b91c1c" },
-    pizarra:   { nombre: "Pizarra",   a: "#475569", b: "#64748b", c: "#94a3b8", light: "#cbd5e1", ink: "#334155" }
+    pizarra:   { nombre: "Pizarra",   a: "#475569", b: "#64748b", c: "#94a3b8", light: "#cbd5e1", ink: "#334155" },
+    // v2.18: temas exclusivos de Miraru Plus (degradados de dos tonos).
+    sakura:    { nombre: "Sakura",     a: "#e8508f", b: "#f07ab0", c: "#b794f6", light: "#fbcfe8", ink: "#be185d", plus: true },
+    aurora:    { nombre: "Aurora",     a: "#0d9488", b: "#14b8a6", c: "#a78bfa", light: "#99f6e4", ink: "#0f766e", plus: true },
+    atardecer: { nombre: "Atardecer",  a: "#ea580c", b: "#f97316", c: "#ec4899", light: "#fed7aa", ink: "#c2410c", plus: true },
+    medianoche:{ nombre: "Medianoche", a: "#1d4ed8", b: "#3b82f6", c: "#22d3ee", light: "#bfdbfe", ink: "#1e40af", plus: true },
+    oro:       { nombre: "Oro",        a: "#b7791f", b: "#d69e2e", c: "#f6e05e", light: "#fef3c7", ink: "#92400e", plus: true },
+    neon:      { nombre: "Neón",       a: "#7c3aed", b: "#c026d3", c: "#22d3ee", light: "#e9d5ff", ink: "#6d28d9", plus: true }
   };
+
+  function esPlus() {
+    try { return localStorage.getItem("miraru_plus") === "1"; } catch (e) { return false; }
+  }
 
   var DEFAULTS = {
     theme:   "dark",      // dark | light
@@ -57,6 +68,8 @@
     var out = {};
     for (var k in DEFAULTS) out[k] = p[k] || DEFAULTS[k];
     if (!ACCENTS[out.accent]) out.accent = DEFAULTS.accent;
+    // Sin Plus, los temas exclusivos vuelven al de siempre.
+    if (ACCENTS[out.accent].plus && !esPlus()) out.accent = DEFAULTS.accent;
     return out;
   }
 
@@ -184,31 +197,42 @@
     accWrap.appendChild(el("div",
       "font-size:11px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);margin-bottom:8px",
       "Color de acento"));
-    var grid = el("div", "display:grid;grid-template-columns:repeat(4,1fr);gap:9px");
+    var grid = el("div", "display:grid;grid-template-columns:repeat(7,1fr);gap:8px");
     Object.keys(ACCENTS).forEach(function (k) {
       var A = ACCENTS[k];
       var b = el("button", "");
       b.type = "button";
       b.title = A.nombre;
       var sel = k === p.accent;
+      var bloqueado = A.plus && !esPlus();
       b.style.cssText =
-        "height:46px;border-radius:12px;cursor:pointer;position:relative;" +
+        "height:40px;border-radius:11px;cursor:pointer;position:relative;" +
         "background:linear-gradient(135deg," + A.a + "," + A.c + ");" +
         "border:2px solid " + (sel ? "var(--fg)" : "transparent") + ";" +
         "transform:scale(" + (sel ? 1.06 : 1) + ");" +
         "box-shadow:" + (sel ? "0 8px 22px " + rgba(A.a, .45) : "0 2px 8px rgba(0,0,0,.25)") + ";" +
         "transition:transform .2s cubic-bezier(.16,1,.3,1),box-shadow .2s";
+      if (A.plus) {
+        b.title = A.nombre + " · Miraru Plus";
+        b.appendChild(el("span", "position:absolute;top:3px;right:5px;font-size:10px;line-height:1;" +
+          "text-shadow:0 1px 3px rgba(0,0,0,.6)", bloqueado ? "🔒" : "✨"));
+      }
       if (sel) {
         var chk = el("span", "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;" +
           "color:#fff;font-size:16px;font-weight:800;text-shadow:0 1px 4px rgba(0,0,0,.5)", "✓");
         b.appendChild(chk);
       }
-      b.addEventListener("click", function () { p.accent = k; rerender(); });
+      b.addEventListener("click", function () {
+        if (bloqueado) { close(); if (window.MiraruPlus) window.MiraruPlus.abrir("temas"); return; }
+        p.accent = k; rerender();
+      });
       grid.appendChild(b);
     });
     accWrap.appendChild(grid);
     accWrap.appendChild(el("div", "font-size:11px;color:var(--muted);margin-top:7px",
       "Acento actual: " + ACCENTS[p.accent].nombre));
+    accWrap.appendChild(el("div", "font-size:11px;color:var(--muted);margin-top:3px",
+      "✨ = tema exclusivo de Miraru Plus"));
     box.appendChild(accWrap);
 
     // Densidad / Esquinas / Fondo / Movimiento
@@ -405,5 +429,16 @@
     document.addEventListener("DOMContentLoaded", injectDock);
   } else {
     injectDock();
+  }
+
+  // ── Miraru Plus (v2.18): la ventana de Plus en todas las páginas ─────────
+  // Si cambia (compra, caduca), el tema se vuelve a aplicar: un tema exclusivo
+  // aparece al comprar Plus y se quita si deja de estar activo.
+  window.addEventListener("miraru-plus", function () { apply(); });
+  if (!window.MiraruPlus && !document.querySelector('script[src^="/static/plus.js"]')) {
+    var sp = document.createElement("script");
+    sp.src = "/static/plus.js";
+    sp.defer = true;
+    document.head.appendChild(sp);
   }
 })();

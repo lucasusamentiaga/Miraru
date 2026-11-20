@@ -1,6 +1,6 @@
 # Política de privacidad de Miraru / Miraru privacy policy
 
-*Última actualización / Last updated: 18 de noviembre de 2026*
+*Última actualización / Last updated: 20 de noviembre de 2026*
 
 ## Español
 
@@ -36,6 +36,17 @@ adultos.
   **no incluye** contraseñas, sesiones ni claves (token de AniList, cookie de AnimeAV1,
   sesiones del móvil). Esa carpeta la sincroniza tu proveedor de nube
   con tu cuenta; Miraru no envía nada a ningún otro sitio.
+- *Miraru Plus (suscripción opcional)*: la compra la hace la Microsoft Store con tu
+  cuenta de Microsoft; Miraru no ve tus datos de pago, solo pregunta a la Store si tienes
+  Plus activo y guarda la respuesta en tu ordenador.
+  - *Avisos en el móvil*: si los activas, cuando sale un episodio de algo que sigues
+    Miraru envía el nombre del anime y el número del episodio a ntfy.sh (un servicio
+    gratuito de avisos), a un «tema» con un nombre largo y aleatorio que solo conoces tú,
+    y la app de ntfy de tu móvil te lo muestra. Nada más viaja. Puedes apagarlos o crear
+    un código nuevo cuando quieras.
+  - *Sincronización entre PCs*: usa la misma carpeta de tu nube que la copia: cada PC lee
+    las copias de tus otros PCs y trae lo que ha cambiado. No pasa por ningún servidor
+    de Miraru.
 - *Conectar con AniList*: al pulsar «Conectar» se abre AniList para que autorices a
   Miraru; AniList devuelve una clave de acceso que se guarda solo en tu ordenador. Con
   ella Miraru lee tu lista de AniList y sube los cambios que hagas (estado, episodios y
@@ -116,6 +127,17 @@ Miraru hides from searches any content those sources flag as adults-only.
   include** passwords, sessions or keys (AniList token, AnimeAV1 cookie,
   phone sessions). That folder is synced by your cloud provider with your account; Miraru sends
   nothing anywhere else.
+- *Miraru Plus (optional subscription)*: the purchase is made by the Microsoft Store with
+  your Microsoft account; Miraru never sees your payment details, it only asks the Store
+  whether you have Plus and keeps the answer on your computer.
+  - *Phone alerts*: if you turn them on, when an episode of something you follow comes
+    out, Miraru sends the anime's name and the episode number to ntfy.sh (a free
+    notification service), to a "topic" with a long random name only you know, and the
+    ntfy app on your phone shows it. Nothing else is sent. You can turn them off or create
+    a new code at any time.
+  - *Sync across PCs*: uses the same cloud folder as the backup: each PC reads the backups
+    of your other PCs and brings over what changed. It does not go through any Miraru
+    server.
 - *Connect to AniList*: pressing "Connect" opens AniList so you can authorise Miraru;
   AniList returns an access key that is stored only on your computer. Miraru uses it to read
   your AniList list and upload the changes you make (status, episodes and score). You can

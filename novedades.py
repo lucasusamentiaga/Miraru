@@ -13,6 +13,36 @@ from __future__ import annotations
 # pasos (opcional): frases cortas → «Cómo empezar», numeradas.
 NOVEDADES: list[dict] = [
     {
+        "version": "2.18.0",
+        "titulo": "Llega Miraru Plus",
+        "puntos": [
+            {"icono": "✨", "titulo": "Miraru Plus, opcional",
+             "texto": "Una suscripción con funciones extra, por 2,49 € al mes o 19,99 € al año, que se paga en la Microsoft Store. Todo lo que ya tenías sigue gratis y sin anuncios.",
+             "donde": ["Más", "Miraru Plus"],
+             "accion": {"texto": "Ver Miraru Plus", "url": "/app#plus"}},
+            {"icono": "📲", "titulo": "Avisos en el móvil",
+             "texto": "Con Plus, cuando sale un episodio de lo que sigues te llega un aviso al móvil, aunque no estés en casa.",
+             "donde": ["Más", "Miraru Plus"],
+             "pasos": ["Instala la app gratuita «ntfy» en tu móvil.",
+                       "En Miraru Plus, pulsa «Activar avisos en el móvil».",
+                       "Escanea el código con el móvil y pulsa «Probar»."]},
+            {"icono": "🔄", "titulo": "Tu lista en todos tus PCs",
+             "texto": "Con Plus, lo que marcas en un PC aparece en los demás. Usa la carpeta de tu nube de la copia de seguridad y nunca borra nada.",
+             "donde": ["Más", "Miraru Plus"]},
+            {"icono": "📊", "titulo": "Estadísticas avanzadas",
+             "texto": "Con Plus: a qué horas y qué días ves más anime, tu ritmo, tu maratón más largo y cuánto te falta de lo que estás viendo. «Mi año en anime» suma tus hábitos del año.",
+             "donde": ["Estadísticas", "Tus hábitos"]},
+            {"icono": "🎨", "titulo": "Temas exclusivos",
+             "texto": "Seis colores nuevos para Miraru, solo con Plus: Sakura, Aurora, Atardecer, Medianoche, Oro y Neón.",
+             "donde": ["🎨 abajo a la derecha", "Color de acento"]},
+            {"icono": "⏭️", "titulo": "Saltar opening y siguiente, en Plus",
+             "texto": "Saltar el opening y pasar solo al siguiente episodio en AnimeAV1 pasan a ser de Miraru Plus. Marcar episodios desde la extensión sigue gratis.",
+             "donde": ["Extensión", "AnimeAV1", "Debajo del vídeo"]},
+            {"icono": "🧹", "titulo": "Arreglos",
+             "texto": "Si un anime entró como completado al importar una lista y marcas en AnimeAV1 un episodio anterior, Miraru lo corrige y te deja en ese episodio. La ventana de la extensión ya no dice «¡Completado!» si no lo has terminado."},
+        ],
+    },
+    {
         "version": "2.17.11",
         "titulo": "Del ending al siguiente, solo",
         "puntos": [

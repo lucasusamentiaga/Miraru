@@ -1,14 +1,20 @@
 # Términos de uso de Miraru / Miraru terms of use
 
-*Última actualización / Last updated: 15 de noviembre de 2026*
+*Última actualización / Last updated: 20 de noviembre de 2026*
 
 ## Español
 
 1. **Qué es.** Miraru es una aplicación gratuita y de código abierto (licencia MIT) para
    llevar la cuenta del anime, el manga, las películas y las series que ves. La publica
    Lucas Usamentiaga como particular.
-2. **Gratis y sin cuentas.** No hay suscripciones, compras dentro de la app, publicidad
-   ni cuentas de Miraru.
+2. **Gratis, sin anuncios y sin cuentas.** Todo lo que ya tenía Miraru sigue siendo
+   gratis. No hay publicidad ni cuentas de Miraru.
+   **Miraru Plus** es una suscripción opcional (mensual o anual) que añade funciones extra:
+   saltar opening y siguiente automático en la extensión, sincronización entre PCs, avisos
+   en el móvil, estadísticas avanzadas, «Mi año en anime» premium y temas exclusivos. Se
+   compra, se renueva y se cancela en la Microsoft Store, con tu cuenta de Microsoft; los
+   pagos, reembolsos e impuestos los gestiona Microsoft según sus condiciones. Si la
+   cancelas, Plus sigue activo hasta el final del periodo pagado y tu lista no se toca.
 3. **Tus datos son tuyos.** Tu lista se guarda en tu ordenador y, si activas la copia en
    la nube, en tu propia nube (OneDrive, Google Drive, Dropbox o iCloud Drive). Cómo se
    tratan se explica en la [política de privacidad](PRIVACY.md).
@@ -44,8 +50,14 @@ código, que siguen aplicándose.
 1. **What it is.** Miraru is a free, open-source app (MIT licence) to keep track of the
    anime, manga, movies and series you watch. It is published by Lucas Usamentiaga as an
    individual.
-2. **Free, no accounts.** There are no subscriptions, in-app purchases, ads or Miraru
-   accounts.
+2. **Free, no ads, no accounts.** Everything Miraru already had stays free. There are no
+   ads and no Miraru accounts.
+   **Miraru Plus** is an optional subscription (monthly or yearly) that adds extra
+   features: skip opening and autoplay next in the extension, sync across PCs, phone
+   alerts, advanced stats, premium "My year in anime" and exclusive themes. It is bought,
+   renewed and cancelled in the Microsoft Store with your Microsoft account; payments,
+   refunds and taxes are handled by Microsoft under its terms. If you cancel, Plus stays
+   active until the end of the paid period and your list is not touched.
 3. **Your data is yours.** Your list is stored on your computer and, if you turn on cloud
    backup, in your own cloud (OneDrive, Google Drive, Dropbox or iCloud Drive). How it is
    handled is explained in the [privacy policy](PRIVACY.md).

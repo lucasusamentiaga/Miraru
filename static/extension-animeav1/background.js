@@ -195,7 +195,8 @@ async function enviarUnaVez(forzar = false) {
         if (r.ok && d.nombre) {
           const ultimo = {cuando: Date.now(), nombre: d.nombre || '', episodio: d.episodios_vistos,
             accion: d.accion || '', estado: d.estado || '', imagen: d.imagen || '', capitulos: d.capitulos || '',
-            eps_emitidos: d.eps_emitidos || 0, servicio: ev.servicio || 'animeav1'};
+            eps_emitidos: d.eps_emitidos || 0, servicio: ev.servicio || 'animeav1',
+            marcado: Number(d.marcado) || 0};   // v1.9.1: el episodio que marcaste tú
           const {historial = []} = await chrome.storage.local.get('historial');
           await chrome.storage.local.set({ultimo, historial: [ultimo, ...historial.filter(h =>
             !(h.nombre === ultimo.nombre && h.episodio === ultimo.episodio))].slice(0, 8)});
@@ -336,6 +337,7 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
   if (msg && msg.tipo === 'streaming-ahora') { guardarAhora(msg, sender); return false; }
   if (msg && msg.tipo === 'streaming-desmarcar') { apuntarStreaming(msg.datos, 'desmarcar'); return false; }
   if (msg && msg.tipo === 'deshacer') { deshacer(msg.nombre, msg.episodio).then(responder); return true; }
+  if (msg && msg.tipo === 'poner-ep') { deshacer(msg.nombre, msg.episodio, '/api/extension/poner').then(responder); return true; }
   if (msg && msg.tipo === 'streaming-visto-marco') {
     // El vídeo de Crunchyroll vive en un marco: el nombre lo tiene la página.
     const tab = sender.tab && sender.tab.id;
@@ -359,10 +361,11 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
 
 // «Deshacer» en la ventana de la extensión: quita el último episodio apuntado
 // (solo si en Miraru sigues justo en ese episodio).
-async function deshacer(nombre, episodio) {
+// v1.9.1: con ruta '/api/extension/poner' es «Poner en el ep N».
+async function deshacer(nombre, episodio, ruta) {
   if (!nombre || !(episodio > 0)) return {ok: false};
   try {
-    const r = await fetch(`http://127.0.0.1:${await puerto()}/api/extension/deshacer`, {
+    const r = await fetch(`http://127.0.0.1:${await puerto()}${ruta || '/api/extension/deshacer'}`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Miraru-Extension': '1'},
       body: JSON.stringify({nombre, episodio}),
@@ -372,7 +375,7 @@ async function deshacer(nombre, episodio) {
     const {ultimo, historial = []} = await chrome.storage.local.get(['ultimo', 'historial']);
     if (ultimo && ultimo.nombre === nombre) {
       const nuevo = Object.assign({}, ultimo, {accion: d.accion, episodio: d.episodios_vistos, estado: d.estado,
-        eps_emitidos: d.eps_emitidos, cuando: Date.now()});
+        eps_emitidos: d.eps_emitidos, cuando: Date.now(), marcado: Number(d.marcado) || 0});
       await chrome.storage.local.set({ultimo: nuevo,
         historial: historial.filter(h => !(h.nombre === nombre && h.episodio === episodio))});
     }
@@ -515,3 +518,43 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, responder) => {
 });
 chrome.runtime.onStartup.addListener(saludar);
 saludar();
+
+// ── v1.10: Miraru Plus ─────────────────────────────────────────────────────
+// «Saltar opening» y «Siguiente automático» son de Miraru Plus. La extensión
+// pregunta a Miraru (que es quien sabe si lo has comprado) y lo guarda en
+// `miraruPlus` {plus, ts}: el reproductor y la ventanita lo leen de ahí. Si
+// Miraru está cerrado se queda lo último que dijo, durante una semana.
+const PLUS_GRACIA = 7 * 24 * 3600 * 1000;
+async function comprobarPlus() {
+  try {
+    const r = await fetch(`http://127.0.0.1:${await puerto()}/api/extension/plus`,
+                          {cache: 'no-store', headers: {'X-Miraru-Extension': '1'}});
+    if (r.ok) {
+      const plus = !!(await r.json()).plus;
+      await chrome.storage.local.set({miraruPlus: {plus, ts: Date.now()}});
+      return plus;
+    }
+    if (r.status === 404) {                     // Miraru anterior a 2.18: sin Plus
+      await chrome.storage.local.set({miraruPlus: {plus: false, ts: Date.now()}});
+      return false;
+    }
+  } catch (_) { /* Miraru cerrado */ }
+  const {miraruPlus} = await chrome.storage.local.get('miraruPlus');
+  if (miraruPlus && miraruPlus.plus && Date.now() - (miraruPlus.ts || 0) > PLUS_GRACIA) {
+    await chrome.storage.local.set({miraruPlus: {plus: false, ts: miraruPlus.ts}});
+    return false;
+  }
+  return !!(miraruPlus && miraruPlus.plus);
+}
+async function abrirPlus(seccion) {
+  chrome.tabs.create({url: `http://127.0.0.1:${await puerto()}/app#plus${seccion ? '=' + seccion : ''}`});
+}
+comprobarPlus();
+chrome.alarms.create('plus', {periodInMinutes: 30, delayInMinutes: 1});
+chrome.alarms.onAlarm.addListener(a => { if (a.name === 'plus') comprobarPlus(); });
+chrome.runtime.onStartup.addListener(comprobarPlus);
+chrome.runtime.onMessage.addListener((msg, _s, responder) => {
+  if (msg && msg.tipo === 'plus?') { comprobarPlus().then(plus => responder({plus})); return true; }
+  if (msg && msg.tipo === 'abrir-plus') { abrirPlus(msg.seccion || 'saltar'); return false; }
+  return false;
+});

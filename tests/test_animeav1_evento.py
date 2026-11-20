@@ -73,7 +73,7 @@ def test_un_episodio_atrasado_no_baja_el_progreso(cliente, db):
     import animeav1_sync
     animeav1_sync.recordar_id("Dandadan", 9)
     r = c.post("/api/animeav1/evento", headers=H, json={"mediaId": 9, "episode": 2})
-    assert r.json()["accion"] == "sin cambios"
+    assert r.json()["accion"] == "ya visto"          # v2.17.12: Miraru iba por delante
     assert db.obtener_anime("Dandadan")["episodios_vistos"] == 10
 
 
@@ -246,3 +246,37 @@ def test_animeav1_en_emision_no_completa(cliente, db):
     animeav1_sync.recordar_id("Santen", 6)
     r = c.post("/api/animeav1/evento", headers=H, json={"mediaId": 6, "episode": 7, "accion": "marcar"}).json()
     assert (r["episodios_vistos"], r["estado"], r["eps_emitidos"]) == (7, "viendo", 7)
+
+
+# ── v2.17.12: marcar un episodio anterior a lo que Miraru tenía «completado» ──
+def test_completado_importado_vuelve_al_episodio_marcado():
+    """Gurren Lagann entró como completado 27/27 al importar una lista, pero vas
+    por el 15: marcar el 15 lo deja en «viendo», ep 15 (nunca apuntaste del 16 en adelante)."""
+    import animeav1_sync as s
+    local = {"estado_usuario": "completado", "episodios_vistos": 27, "capitulos": "27"}
+    assert s.cambios_por_evento(local, 15, None, "marcar", registrado=0) == \
+        {"episodios_vistos": 15, "estado_usuario": "viendo"}
+    assert s.cambios_por_evento(local, 15, None, "marcar", registrado=14) == \
+        {"episodios_vistos": 15, "estado_usuario": "viendo"}
+
+
+def test_revisionado_no_baja_el_progreso():
+    import animeav1_sync as s
+    local = {"estado_usuario": "completado", "episodios_vistos": 27, "capitulos": "27"}
+    # Apuntaste del 1 al 27 de uno en uno: lo estás volviendo a ver, no se toca.
+    assert s.cambios_por_evento(local, 15, None, "marcar", registrado=27) == {}
+    # Sin saber lo apuntado (versiones antiguas), tampoco.
+    assert s.cambios_por_evento(local, 15, None, "marcar") == {}
+    # Si va «viendo», marcar uno antiguo nunca baja.
+    v = {"estado_usuario": "viendo", "episodios_vistos": 10, "capitulos": "27"}
+    assert s.cambios_por_evento(v, 5, None, "marcar", registrado=0) == {}
+
+
+def test_respuesta_dice_que_paso(cliente, db):
+    c, _ = cliente
+    db.guardar_anime({"nombre": "Gurren Lagann", "tipo": "anime", "capitulos": "27",
+                      "estado_usuario": "completado", "episodios_vistos": 27, "fuente": "anilist"})
+    import animeav1_sync
+    animeav1_sync.recordar_id("Gurren Lagann", 4242)
+    r = c.post("/api/animeav1/evento", headers=H, json={"mediaId": 4242, "episode": 15, "accion": "marcar"}).json()
+    assert r["accion"] == "corregido" and r["episodios_vistos"] == 15 and r["estado"] == "viendo" and r["marcado"] == 15

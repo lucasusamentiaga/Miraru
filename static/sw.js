@@ -44,7 +44,8 @@
 // v46 = aviso emergente de versión nueva para instalaciones de Microsoft Store.
 // v53 = el manga tiene su apartado (/manga).
 // v54 = móvil con un botón (QR con código, sin PIN ni reinicio).
-const CACHE_NAME = 'miraru-v66';
+// v67 = Miraru Plus (static/plus.js).
+const CACHE_NAME = 'miraru-v67';
 const STATIC_ASSETS = [
   '/',
   '/app',
@@ -58,6 +59,7 @@ const STATIC_ASSETS = [
   '/mobile',
   '/static/theme.css',
   '/static/customize.js',
+  '/static/plus.js',
   '/static/i18n-dom.js',
   '/static/dialogos.js',
   // Tipografias locales: sin esto la app offline pierde su tipografia

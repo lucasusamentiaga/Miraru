@@ -141,6 +141,9 @@ HIDDEN = [
     "cachetools", "pyasn1", "rsa",
     # Web Push (notificaciones con la pestaña cerrada)
     "pywebpush", "py_vapid", "http_ece",
+    # Miraru Plus: la Microsoft Store (solo existe en Windows; si falta, se ignora)
+    "winrt", "winrt._winrt", "winrt.system", "winrt.windows.foundation", "winrt.windows.foundation.collections",
+    "winrt.windows.services.store",
     # scraping
     "requests", "bs4", "beautifulsoup4",
     # urllib3 / certifi

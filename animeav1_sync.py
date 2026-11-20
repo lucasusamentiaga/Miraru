@@ -478,7 +478,7 @@ def recordar_id(nombre: str, media_id: int):
 
 
 def cambios_por_evento(local: dict, episodio: Optional[int], estado: Optional[int],
-                       accion: Optional[str] = None) -> dict:
+                       accion: Optional[str] = None, registrado: Optional[int] = None) -> dict:
     """Lo que hay que cambiar en Miraru.
 
     `accion` la deduce la extensión de la página donde pulsaste:
@@ -489,14 +489,22 @@ def cambios_por_evento(local: dict, episodio: Optional[int], estado: Optional[in
       tu progreso hasta ahí y Miraru también. Si desmarcas el episodio 1,
       vuelve a «pendiente» (lo marcaste sin querer).
     Sin `accion` (versiones viejas de la extensión): sube si va por delante y
-    baja solo si es justo el anterior (N-1), que es como desmarca AnimeAV1."""
+    baja solo si es justo el anterior (N-1), que es como desmarca AnimeAV1.
+
+    v2.17.12 — `registrado` (el episodio más alto apuntado de uno en uno): si
+    Miraru lo tiene «completado» por una lista importada (nunca apuntaste del
+    ep+1 en adelante) y marcas un episodio anterior, manda lo que acabas de
+    marcar: vuelve a «viendo» en ese episodio. Si sí los apuntaste (lo estás
+    revisionando), se queda como estaba."""
     cambios: dict = {}
     actual = local.get("estado_usuario") or "pendiente"
     if episodio is not None:
         ep = max(0, int(episodio))
         vistos = int(local.get("episodios_vistos") or 0)
         if accion == "marcar":
-            aplica = ep > vistos
+            aplica = ep > vistos or (
+                registrado is not None and actual == "completado" and 0 < ep < vistos
+                and registrado <= ep)
         elif accion == "desmarcar":
             aplica = ep < vistos               # desmarcar nunca sube
         else:

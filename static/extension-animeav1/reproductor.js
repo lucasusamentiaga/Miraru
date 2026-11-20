@@ -170,7 +170,7 @@
       mem.saltadoOp = true;
       toast(tx.saltado || 'Opening saltado', true);
     }
-    $('saltar').hidden = !d.botonSaltar;
+    $('saltar').hidden = !d.botonSaltar || !!config.sinPlus;     // v1.10: de Miraru Plus
     if (d.botonSaltar) $('saltar-t').textContent = config.op ? tx.saltar : tx.saltarSin;
     if (d.cuenta != null) {
       const lleno = $('lleno');

@@ -322,6 +322,38 @@ main{padding:20px;max-width:900px;margin:0 auto}
 .lk-fila .ir{color:var(--muted);font-size:14px}
 .lk-vacio{padding:30px 10px;text-align:center;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){.lk-fondo,.lk-caja{animation:none}}
+
+/* ── v2.18: Estadísticas avanzadas (Miraru Plus) ───────────────────────── */
+.av-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.av-cab h2{margin:0}
+.av-chip{font-size:11px;font-weight:800;letter-spacing:.04em;padding:3px 9px;border-radius:999px;background:var(--grad-accent);color:#fff}
+.av-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.av-kpi{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.av-kpi b{display:block;font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--light)}
+.av-kpi small{display:block;font-size:12px;color:var(--muted);line-height:1.35}
+.av-graficas{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+@media (max-width:760px){.av-graficas{grid-template-columns:1fr}}
+.av-g h3{margin:0 0 10px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.av-barras{display:flex;align-items:flex-end;gap:3px;height:110px}
+.av-barras .c{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+.av-barras i{display:block;width:100%;border-radius:4px 4px 2px 2px;background:var(--accent);opacity:.45;
+  height:calc(var(--h) * 100%);min-height:2px}
+.av-barras .c.top i{opacity:1;background:var(--grad-accent)}
+.av-barras span{display:block;height:14px;line-height:14px;font-size:10px;color:var(--muted);margin-top:4px;white-space:nowrap}
+.av-casi{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:6px}
+.av-casi li{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:8px 10px;border-radius:9px;background:var(--card2)}
+.av-casi li span:last-child{color:var(--muted);white-space:nowrap}
+.av-bloqueo{position:relative;overflow:hidden}
+.av-bloqueo .av-previa{filter:blur(6px);opacity:.5;pointer-events:none;user-select:none}
+.av-bloqueo .av-capa{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;gap:8px;padding:20px}
+.av-capa strong{font-size:16px}
+.av-capa p{margin:0;max-width:44ch;color:var(--muted);font-size:13px}
+.av-capa button,.wrap-plus button{padding:9px 16px;border-radius:10px;border:none;background:var(--grad-accent);color:#fff;
+  font:inherit;font-weight:800;cursor:pointer;box-shadow:var(--shadow-accent)}
+.wrap-plus{text-align:center;padding:16px;border-radius:14px;border:1px dashed var(--border);margin-top:14px}
+.wrap-plus p{margin:4px 0 10px;color:var(--muted);font-size:13px}
+.wrap-habitos{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px}
 </style>
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
@@ -399,6 +431,12 @@ main{padding:20px;max-width:900px;margin:0 auto}
     <p id="heatmap-empty" style="display:none;color:var(--muted);font-size:13px;text-align:center;padding:20px">
       Sin actividad registrada todavía. Marca un +1 episodio para empezar a ver el heatmap.
     </p>
+  </div>
+
+  <!-- v2.18: Estadísticas avanzadas (Miraru Plus) -->
+  <div class="section" id="avanzadas" style="margin-bottom:16px">
+    <div class="av-cab"><h2>📊 Tus hábitos</h2><span class="av-chip">PLUS</span></div>
+    <div id="av-cuerpo"></div>
   </div>
 
   <div style="margin-bottom:16px">
@@ -1205,6 +1243,7 @@ function _pintarWrapped(fondo, d) {
       dos.append(b);
     }
     cuerpo.append(dos);
+    _wrapPlus(cuerpo, d.year);     // v2.18: Miraru Plus
   }
 
   const pie = _wEl('div', 'wrap-pie');
@@ -1495,6 +1534,138 @@ async function exportarWrapped(btn) {
     }
   }catch(_){}
 })();
+</script>
+<script>
+// ── v2.18: Estadísticas avanzadas y «Mi año» premium (Miraru Plus) ─────────
+const _avTr = t => (window.miraruTraducir ? window.miraruTraducir(t) : t);
+function _avDias(formato) {
+  const f = new Intl.DateTimeFormat(document.documentElement.lang || 'es', {weekday: formato});
+  // 2026-11-02 es lunes: lunes → domingo, como en el servidor
+  return Array.from({length: 7}, (_, i) => {
+    const d = f.format(new Date(2026, 10, 2 + i)).replace(/\.$/, '');
+    return d.charAt(0).toUpperCase() + d.slice(1);
+  });
+}
+function _avBarras(valores, etiquetas, top) {
+  const g = _wEl('div', 'av-barras');
+  const max = Math.max(1, ...valores);
+  valores.forEach((n, i) => {
+    const c = _wEl('div', 'c' + (i === top ? ' top' : ''));
+    c.title = (etiquetas[i] || '') + ': ' + n;
+    const b = _wEl('i'); b.style.setProperty('--h', (n / max).toFixed(3));
+    c.append(b, _wEl('span', null, etiquetas[i] && (valores.length < 10 || i % 3 === 0) ? etiquetas[i] : ''));
+    g.append(c);
+  });
+  return g;
+}
+function _avKpi(v, txt) {
+  const k = _wEl('div', 'av-kpi');
+  const b = _wEl('b', null, v); b.setAttribute('data-no-i18n', '');
+  k.append(b, _wEl('small', null, txt));
+  return k;
+}
+const _FRANJA = {'mañana': 'Por la mañana', 'tarde': 'Por la tarde', 'noche': 'Por la noche', 'madrugada': 'De madrugada'};
+function _avPintar(cont, d) {
+  cont.innerHTML = '';
+  if (!d.marcas) {
+    cont.append(_wEl('p', 'nota-manga', 'Aún no hay suficientes episodios marcados con fecha. Cada +1 cuenta: vuelve en unos días.'));
+    return;
+  }
+  const kp = _wEl('div', 'av-kpis');
+  kp.append(_avKpi(_wNum(d.ritmo_semanal), _avTr('episodios por semana (últimas 8)')));
+  kp.append(_avKpi(d.hora_top != null ? String(d.hora_top).padStart(2, '0') + ':00' : '–', _avTr('tu hora favorita') + ' · ' + _avTr(_FRANJA[d.franja_top] || '')));
+  kp.append(_avKpi(d.dia_top != null ? _avDias('long')[d.dia_top] : '–', _avTr('el día que más ves')));
+  kp.append(_avKpi(_wNum(d.maraton_max), _avTr('episodios en tu maratón más largo')));
+  if (d.faltan_episodios) kp.append(_avKpi(_wNum(d.faltan_horas) + ' h', _avTr('para terminar lo que estás viendo') +
+    (d.faltan_semanas ? ' (~' + _wNum(d.faltan_semanas) + ' ' + _avTr('semanas a tu ritmo') + ')' : '')));
+  if (d.tasa_completado != null) kp.append(_avKpi(d.tasa_completado + ' %', _avTr('de lo que empiezas, lo terminas')));
+  if (d.nota_media != null) kp.append(_avKpi('⭐ ' + _wNum(d.nota_media), _avTr('tu nota media')));
+  const gr = _wEl('div', 'av-graficas');
+  const g1 = _wEl('div', 'av-g'); g1.append(_wEl('h3', null, 'A qué hora ves anime'),
+    _avBarras(d.por_hora, Array.from({length: 24}, (_, i) => String(i).padStart(2, '0')), d.hora_top));
+  const g2 = _wEl('div', 'av-g'); g2.append(_wEl('h3', null, 'Qué día de la semana'),
+    _avBarras(d.por_dia, _avDias('short'), d.dia_top));
+  gr.append(g1, g2);
+  cont.append(kp, gr);
+  const g3 = _wEl('div', 'av-g'); g3.style.marginTop = '16px';
+  g3.append(_wEl('h3', null, 'Episodios por semana'),
+    _avBarras(d.por_semana, d.por_semana.map((_, i) => i === 7 ? _avTr('esta') : '-' + (7 - i)), 7));
+  cont.append(g3);
+  if ((d.casi_terminados || []).length) {
+    const h = _wEl('h3', null, 'Lo que tienes más cerca de terminar'); h.style.cssText = 'margin:16px 0 0;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)';
+    const ul = _wEl('ul', 'av-casi');
+    d.casi_terminados.forEach(a => {
+      const li = _wEl('li');
+      const n = _wEl('span', null, a.nombre); n.setAttribute('data-no-i18n', '');
+      const f = _wEl('span'); f.setAttribute('data-no-i18n', '');
+      f.textContent = a.faltan + ' ' + _avTr(a.faltan === 1 ? 'episodio' : 'episodios') +
+        (a.semanas >= 1 ? ' · ~' + _wNum(a.semanas) + ' ' + _avTr('sem.') : '');
+      li.append(n, f); ul.append(li);
+    });
+    cont.append(h, ul);
+  }
+}
+function _avBloqueo(cont) {
+  // Vista previa borrosa con datos de ejemplo: se ve qué trae, no tus datos.
+  cont.innerHTML = '';
+  const caja = _wEl('div', 'av-bloqueo');
+  const previa = _wEl('div', 'av-previa');
+  _avPintar(previa, {marcas: 1, ritmo_semanal: 14, hora_top: 22, franja_top: 'noche', dia_top: 5, maraton_max: 9,
+    faltan_episodios: 40, faltan_horas: 16, faltan_semanas: 3, tasa_completado: 82, nota_media: 8.1,
+    por_hora: [2,1,0,0,0,0,0,1,1,2,2,3,4,3,2,3,4,6,8,10,12,14,16,9], por_dia: [6,5,7,6,9,14,12],
+    por_semana: [9,12,8,15,11,14,18,13], casi_terminados: []});
+  previa.setAttribute('aria-hidden', 'true');
+  const capa = _wEl('div', 'av-capa');
+  const b = _wEl('button', null, '✨ Desbloquear con Miraru Plus'); b.type = 'button';
+  b.onclick = () => window.MiraruPlus && MiraruPlus.abrir('stats');
+  capa.append(_wEl('strong', null, '🔒 Estadísticas avanzadas'),
+    _wEl('p', null, 'A qué horas y qué días ves más anime, tu ritmo, tu maratón más largo y cuánto te falta de lo que estás viendo.'), b);
+  caja.append(previa, capa);
+  cont.append(caja);
+}
+async function cargarAvanzadas() {
+  const cont = document.getElementById('av-cuerpo');
+  if (!cont) return;
+  const est = window.MiraruPlus ? await MiraruPlus.estado() : null;
+  if (!est || !est.plus) { _avBloqueo(cont); return; }
+  try {
+    const r = await fetch('/api/stats/avanzadas', {cache: 'no-store'});
+    if (r.status === 402) { _avBloqueo(cont); return; }
+    _avPintar(cont, await r.json());
+  } catch (_) { cont.textContent = _avTr('No se pudieron cargar las estadísticas avanzadas'); }
+  if (location.hash === '#avanzadas') document.getElementById('avanzadas').scrollIntoView({block: 'start'});
+}
+// plus.js llega con customize.js (defer): se espera a que esté.
+(function esperar(n) {
+  if (window.MiraruPlus || n > 40) return cargarAvanzadas();
+  setTimeout(() => esperar(n + 1), 100);
+})(0);
+window.addEventListener('miraru-plus', cargarAvanzadas);
+
+// «Mi año en anime» premium: tus hábitos del año (o la invitación a Plus).
+async function _wrapPlus(cuerpo, year) {
+  const sitio = _wEl('section', 'wrap-bloque');
+  cuerpo.append(sitio);
+  const est = window.MiraruPlus ? await MiraruPlus.estado() : null;
+  if (!est || !est.plus) {
+    sitio.className = 'wrap-plus';
+    const b = _wEl('button', null, '✨ Ver con Miraru Plus'); b.type = 'button';
+    b.onclick = () => { cerrarWrapped(); window.MiraruPlus && MiraruPlus.abrir('wrapped'); };
+    sitio.append(_wEl('strong', null, '🔒 Tus hábitos del año'),
+      _wEl('p', null, 'Tu hora favorita, tu día de la semana y tu maratón más largo.'), b);
+    return;
+  }
+  let d;
+  try { d = await (await fetch('/api/stats/wrapped/extra?year=' + year, {cache: 'no-store'})).json(); } catch (_) { sitio.remove(); return; }
+  if (!d || !d.marcas) { sitio.remove(); return; }
+  sitio.append(_wEl('h3', null, '✨ Tus hábitos del año'));
+  const k = _wEl('div', 'wrap-habitos');
+  k.append(_avKpi(String(d.hora_top).padStart(2, '0') + ':00', _avTr('tu hora favorita')),
+           _avKpi(_avDias('long')[d.dia_top], _avTr('tu día de anime')),
+           _avKpi(_avTr(_FRANJA[d.franja_top] || ''), _avTr('cuándo ves más')),
+           _avKpi(_wNum(d.maraton_max), _avTr('episodios en tu mayor maratón')));
+  sitio.append(k, _avBarras(d.por_hora, Array.from({length: 24}, (_, i) => String(i).padStart(2, '0')), d.hora_top));
+}
 </script>
 
 </body>

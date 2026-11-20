@@ -118,8 +118,13 @@ async function pintar() {
   if (ultimo && ultimo.nombre) {
     $('vacio').hidden = true;
     $('ultimo').hidden = false;
-    $('u-etq').textContent = tr(ultimo.accion === 'deshecho' ? '↩ Deshecho' : ultimo.accion === 'añadido' ? '＋ Añadido a tu lista'
-      : ultimo.estado === 'completado' ? '🏁 ¡Completado!' : '✓ Apuntado en Miraru');
+    // v1.9.1: «¡Completado!» solo si de verdad acabas de completarlo. Si marcaste un
+    // episodio anterior al que tenía Miraru, se dice qué pasó.
+    const marcado = Number(ultimo.marcado) || 0;
+    $('u-etq').textContent = ultimo.accion === 'corregido' ? tr('↺ Corregido: vas por el ep {e}', {e: ultimo.episodio})
+      : ultimo.accion === 'ya visto' ? tr('Marcaste el ep {e}', {e: marcado})
+      : tr(ultimo.accion === 'deshecho' ? '↩ Deshecho' : ultimo.accion === 'añadido' ? '＋ Añadido a tu lista'
+      : ultimo.estado === 'completado' && ultimo.accion !== 'sin cambios' ? '🏁 ¡Completado!' : '✓ Apuntado en Miraru');
     $('u-nombre').textContent = ultimo.nombre;
     const total = parseInt(ultimo.capitulos, 10);
     // En emisión: lo que ha salido (7 de 7 emitidos, 13 en total), no «7 de 13».
@@ -147,6 +152,22 @@ async function pintar() {
         pintar();
       }
     };
+    // «Ya ibas por delante» (lo estás revisionando o Miraru lo tenía de más): ofrecer ponerlo ahí.
+    const puedePoner = ultimo.accion === 'ya visto' && marcado > 0 && marcado < (ultimo.episodio || 0);
+    $('u-poner').hidden = !puedePoner;
+    if (puedePoner) {
+      $('u-ep').textContent = tr('En Miraru vas por el {v} de {t}', {v: ultimo.episodio, t: total || '?'});
+      $('u-poner').disabled = false;
+      $('u-poner').textContent = tr('Poner en el ep {e}', {e: marcado});
+      $('u-poner').onclick = async () => {
+        const b = $('u-poner');
+        b.disabled = true; b.textContent = tr('Guardando…');
+        let r = null;
+        try { r = await chrome.runtime.sendMessage({tipo: 'poner-ep', nombre: ultimo.nombre, episodio: marcado}); } catch (_) { /* nada */ }
+        if (!r || !r.ok) { b.textContent = (r && r.detalle) || tr('No se pudo'); setTimeout(() => { b.disabled = false; b.textContent = tr('Poner en el ep {e}', {e: marcado}); }, 2500); }
+        else pintar();
+      };
+    }
     $('ultimo').classList.toggle('deshecho', ultimo.accion === 'deshecho');
     pintarServ($('u-serv'), ultimo.servicio);
     requestAnimationFrame(() => requestAnimationFrame(() => { $('u-barra').style.transform = `scaleX(${fr})`; }));
@@ -239,8 +260,18 @@ async function iniciar() {
   const AV1_DEF = {saltarOpening: false, siguienteAuto: true, marcarAlPasar: true};
   const {av1Reproductor = {}} = await chrome.storage.local.get('av1Reproductor');
   const av1 = Object.assign({}, AV1_DEF, av1Reproductor);
+  // v1.10: «Saltar opening» y «Siguiente automático» son de Miraru Plus.
+  let {miraruPlus} = await chrome.storage.local.get('miraruPlus');
+  try { miraruPlus = await chrome.runtime.sendMessage({tipo: 'plus?'}); } catch (_) { /* lo guardado */ }
+  const conPlus = !!(miraruPlus && miraruPlus.plus);
+  $('av1-plus').hidden = conPlus;
+  $('av1-plus-btn').addEventListener('click', () => {
+    chrome.runtime.sendMessage({tipo: 'abrir-plus', seccion: 'saltar'});
+    window.close();
+  });
   [['av1-op', 'saltarOpening'], ['av1-sig', 'siguienteAuto'], ['av1-marcar', 'marcarAlPasar']].forEach(([id, k]) => {
-    $(id).checked = !!av1[k];
+    $(id).checked = !!av1[k] && conPlus;
+    $(id).disabled = !conPlus;
     $(id).addEventListener('change', async () => {
       const {av1Reproductor: actual = {}} = await chrome.storage.local.get('av1Reproductor');
       await chrome.storage.local.set({av1Reproductor: Object.assign({}, AV1_DEF, actual, {[k]: $(id).checked})});

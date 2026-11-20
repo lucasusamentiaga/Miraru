@@ -803,11 +803,11 @@ body.sel-mode .ac .salir{display:none}
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
 <script src="/static/customize.js"></script>
-<script src="/static/novedades.js?v=2.17.11" defer></script>
-<script src="/static/selects.js?v=2.17.11" defer></script>
-<script src="/static/temporadas.js?v=2.17.11"></script>
-<script src="/static/tour.js?v=2.17.11" defer></script>
-<script src="/static/navegador.js?v=2.17.11" defer></script>
+<script src="/static/novedades.js?v=2.18.0" defer></script>
+<script src="/static/selects.js?v=2.18.0" defer></script>
+<script src="/static/temporadas.js?v=2.18.0"></script>
+<script src="/static/tour.js?v=2.18.0" defer></script>
+<script src="/static/navegador.js?v=2.18.0" defer></script>
 <script src="/static/i18n-dom.js" defer></script>
 <script src="/static/dialogos.js" defer></script>
 </head>
@@ -1304,6 +1304,7 @@ fetch('/api/version').then(r => r.json()).then(d => {
         <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirCopia();toggleMenuMas(false)" title="Copia en la nube" id="btn-copia">☁<span class="lbl">Copia en la nube</span></button>
         <a href="/mobile" class="btn btn-ghost btn-sm" role="menuitem" title="Acceso móvil">📱<span class="lbl">Móvil</span></a>
         <div class="grupo">Aplicación</div>
+        <button class="btn btn-ghost btn-sm" role="menuitem" onclick="window.MiraruPlus&&MiraruPlus.abrir();toggleMenuMas(false)" title="Miraru Plus: funciones extra" id="btn-plus">✨<span class="lbl">Miraru Plus</span></button>
         <button class="btn btn-ghost btn-sm" role="menuitem" onclick="abrirNavegador();toggleMenuMas(false)" title="En qué navegador se abre Miraru" id="btn-navegador">🧭<span class="lbl">Navegador</span></button>
         <div class="fila-idioma">🌐
           <select class="lang-select" id="lang-sel" onchange="cambiarIdioma(this.value)" aria-label="Idioma">

@@ -60,6 +60,7 @@
 
   let estado = null;              // datos del episodio actual
   let ajustes = Object.assign({}, AJUSTES);
+  let plus = false;               // v1.10: «Saltar opening» y «Siguiente automático» son de Miraru Plus
 
   function enUrl() {
     const m = location.pathname.match(/^\/media\/([^/]+)\/(\d+)\/?$/);
@@ -67,9 +68,15 @@
   }
 
   async function cargarAjustes() {
-    try { ajustes = Object.assign({}, AJUSTES, (await chrome.storage.local.get('av1Reproductor')).av1Reproductor || {}); }
-    catch (_) { /* nada */ }
+    try {
+      const g = await chrome.storage.local.get(['av1Reproductor', 'miraruPlus']);
+      ajustes = Object.assign({}, AJUSTES, g.av1Reproductor || {});
+      plus = !!(g.miraruPlus && g.miraruPlus.plus);
+    } catch (_) { /* nada */ }
   }
+  // Sin Plus no se salta nada ni se pasa solo (aunque el interruptor estuviera encendido).
+  const saltarOn = () => plus && !!ajustes.saltarOpening;
+  const autoOn = () => plus && !!ajustes.siguienteAuto;
 
   async function preparar() {
     const u = enUrl();
@@ -114,7 +121,7 @@
     if (f && f.contentWindow) dest.add(f.contentWindow);
     if (!dest.size) return;
     const msg = {miraru: 'config', op: estado.op, ed: estado.ed,
-      saltar: !!ajustes.saltarOpening, auto: !!ajustes.siguienteAuto, haySiguiente: !!siguienteUrl(),
+      saltar: saltarOn(), auto: autoOn(), sinPlus: !plus, haySiguiente: !!siguienteUrl(),
       reproducir: !!estado.seguir,
       textos: {saltar: tr('Saltar opening'), saltarSin: tr('Saltar opening · +85 s'), saltado: tr('Opening saltado'),
                verOp: tr('Ver opening'), siguiente: tr('Siguiente episodio'), en: tr('Episodio {e}', {e: estado.ep + 1}),
@@ -125,7 +132,7 @@
   window.addEventListener('message', async e => {
     if (!ORIGEN_REPRODUCTOR.test(e.origin) || !e.data || typeof e.data !== 'object') return;
     if (e.data.miraru === 'hola') { if (e.source) ventanas.add(e.source); mandarConfig(); }
-    if (e.data.miraru === 'siguiente') pasarAlSiguiente();
+    if (e.data.miraru === 'siguiente' && autoOn()) pasarAlSiguiente();
   });
 
   let pasando = false;
@@ -212,6 +219,7 @@
       </div>`;
       try { sombra.getElementById('logo').src = chrome.runtime.getURL('iconos/48.png'); } catch (_) { /* nada */ }
       const alternar = clave => async () => {
+        if (!plus) { try { chrome.runtime.sendMessage({tipo: 'abrir-plus', seccion: 'saltar'}); } catch (_) { /* nada */ } return; }
         ajustes[clave] = !ajustes[clave];
         pintarBarra(); mandarConfig();
         try { await chrome.storage.local.set({av1Reproductor: ajustes}); } catch (_) { /* nada */ }
@@ -223,12 +231,13 @@
       barra = sombra;                       // barra.host = el contenedor
     }
     const op = barra.getElementById('op'), sig = barra.getElementById('sig');
-    op.setAttribute('aria-checked', String(!!ajustes.saltarOpening));
-    sig.setAttribute('aria-checked', String(!!ajustes.siguienteAuto));
-    barra.getElementById('op-t').textContent = tr('Saltar opening');
-    barra.getElementById('sig-t').textContent = tr('Siguiente automático');
-    op.title = tr('Salta el opening en cuanto empieza');
-    sig.title = tr('A los 2 s del ending pasa al siguiente episodio');
+    op.setAttribute('aria-checked', String(saltarOn()));
+    sig.setAttribute('aria-checked', String(autoOn()));
+    const candado = plus ? '' : ' 🔒';
+    barra.getElementById('op-t').textContent = tr('Saltar opening') + candado;
+    barra.getElementById('sig-t').textContent = tr('Siguiente automático') + candado;
+    op.title = plus ? tr('Salta el opening en cuanto empieza') : tr('Con Miraru Plus: pulsa para verlo');
+    sig.title = plus ? tr('A los 2 s del ending pasa al siguiente episodio') : tr('Con Miraru Plus: pulsa para verlo');
 
     // A la derecha: qué ha encontrado para este episodio.
     const est = barra.getElementById('estado'), txt = barra.getElementById('estado-t');
@@ -240,7 +249,7 @@
       html = `Opening <b>${mmss(estado.op[0])}–${mmss(estado.op[1])}</b>` +
              (estado.ed ? ` · Ending <b>${mmss(estado.ed[0])}</b>` : '');
     } else { clase = 'aviso'; html = esc(tr('Sin tiempos: el botón salta 85 s')); }
-    if (estado && estado.listo && ajustes.siguienteAuto && !siguienteUrl()) html += ' · ' + esc(tr('Último episodio'));
+    if (estado && estado.listo && autoOn() && !siguienteUrl()) html += ' · ' + esc(tr('Último episodio'));
     est.className = 'estado ' + clase;
     if (txt.innerHTML !== html) txt.innerHTML = html;
   }
@@ -261,8 +270,9 @@
   (async () => {
     if (I18N) { try { await I18N.cargar(); } catch (_) { /* nada */ } }
     await cargarAjustes();
+    try { chrome.runtime.sendMessage({tipo: 'plus?'}); } catch (_) { /* nada: llega por storage */ }
     chrome.storage.onChanged.addListener((c, area) => {
-      if (area === 'local' && c.av1Reproductor) { cargarAjustes().then(() => { pintarBarra(); mandarConfig(); }); }
+      if (area === 'local' && (c.av1Reproductor || c.miraruPlus)) { cargarAjustes().then(() => { pintarBarra(); mandarConfig(); }); }
     });
     vigilar();
     setInterval(vigilar, 1000);
