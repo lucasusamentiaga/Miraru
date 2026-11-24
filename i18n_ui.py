@@ -1481,6 +1481,7 @@ UI: dict[str, tuple[str, str, str]] = {
     'Arranque más fino': ('Smoother start-up', 'Démarrage plus soigné', 'Feinerer Start'),
     '«Abriendo Miraru…», siempre a tiempo': ('“Opening Miraru…”, always on time', '« Ouverture de Miraru… », toujours au bon moment', '„Miraru wird geöffnet…“, immer pünktlich'),
     'La ventanita de arranque se cierra en cuanto Miraru está listo y ya no se queda abierta de más.': ('The small start-up window closes as soon as Miraru is ready and no longer stays open too long.', 'La petite fenêtre de démarrage se ferme dès que Miraru est prêt et ne reste plus ouverte trop longtemps.', 'Das kleine Startfenster schließt sich, sobald Miraru bereit ist, und bleibt nicht mehr zu lange offen.'),
+    'Añadir a pantalla de inicio': ('Add to Home screen', "Ajouter à l'écran d'accueil", 'Zum Startbildschirm hinzufügen'),
 }
 
 # Textos con números u otras partes variables. Se prueban en orden.
@@ -1496,6 +1497,8 @@ PATTERNS: list[tuple[str, tuple[str, str, str]]] = [
     # v2.14.1: «¿Qué veo esta noche?» explicaba la elección solo en español.
     (r"^Ya está activada en (.+)$", ("Already on in $1", "Déjà activée dans $1", "Bereits aktiv in $1")),
     (r"^Tu lista está a salvo en (.+)$", ("Your list is safe in $1", "Votre liste est à l'abri dans $1", "Deine Liste ist sicher in $1")),
+    (r"^El código cambia en (\d+) min\.$", ("The code changes in $1 min.", "Le code change dans $1 min.", "Der Code ändert sich in $1 Min.")),
+    (r"^Conectado · móviles con Miraru: (\d+)$", ("Connected · phones with Miraru: $1", "Connecté · téléphones avec Miraru : $1", "Verbunden · Handys mit Miraru: $1")),
     (r"^hace (\d+) min$", ("$1 min ago", "il y a $1 min", "vor $1 Min.")),
     (r"^hace (\d+) h$", ("$1 h ago", "il y a $1 h", "vor $1 Std.")),
     (r"^hace (\d+) d$", ("$1 d ago", "il y a $1 j", "vor $1 T.")),
