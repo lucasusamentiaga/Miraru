@@ -47,3 +47,6 @@ tests/__pycache__/
 # Notas internas del proyecto (skill miraru-log): no se publican
 skills/
 store/
+
+# Acceso directo con el logo que crea Miraru.vbs (rutas de cada PC)
+Miraru.lnk

@@ -152,10 +152,6 @@ html.popup-html,.popup{width:360px;min-width:360px;max-width:none}
 .hist div span:last-child{color:var(--gris);flex-shrink:0;font-variant-numeric:tabular-nums}
 .fila{display:flex;gap:8px;flex-wrap:wrap}
 .fila .btn{flex:1 1 auto}
-.popup details{color:var(--gris);font-size:12px}
-.popup summary{cursor:pointer;width:max-content}
-.popup details p{margin:8px 0 0}
-.popup details input{width:84px;padding:5px 7px;border-radius:7px;border:1px solid var(--borde);background:var(--bg2);color:var(--fg);font:inherit}
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}
@@ -282,14 +278,6 @@ a.s-est:hover{border-color:var(--warn)}
 .gd-barra span{position:absolute;top:0;bottom:0;width:35%;border-radius:inherit;background:#60a5fa;animation:corre 1.1s var(--salida) infinite}
 @keyframes corre{from{left:-35%}to{left:100%}}
 
-/* Ajustes */
-.ajustes .aj-fila{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 0;flex-wrap:wrap}
-.ajustes select{padding:5px 8px;border-radius:7px;border:1px solid var(--borde);background:var(--bg2);color:var(--fg);font:inherit;font-size:12px}
-.ajustes small{color:var(--gris)}
-.ajustes b{color:var(--fg);font-weight:600}
-.popup details summary{transition:color .2s}
-.popup details summary:hover{color:var(--fg)}
-
 /* Guía: selector de idioma y ayuda de instalación */
 .bv-idioma{position:fixed;top:14px;right:14px;z-index:2}
 .bv-idioma select{appearance:none;-webkit-appearance:none;padding:7px 30px 7px 12px;border-radius:99px;font:600 12.5px/1.2 var(--texto);
@@ -305,10 +293,48 @@ a.s-est:hover{border-color:var(--warn)}
   .pastilla.espera i,.guardados.cerrado .gd-ico,.gd-barra span{animation:none}
 }
 
-/* v1.8: ajustes de AnimeAV1 en la ventana */
-.aj-av1{border:1px solid var(--borde);border-radius:10px;padding:8px 10px 10px;margin:10px 0 0}
-.aj-av1 legend{padding:0 4px;font-weight:600;color:var(--fg);font-size:12px}
-.aj-av1 label{display:flex;gap:8px;align-items:flex-start;margin-top:6px;cursor:pointer;line-height:1.4}
-.aj-av1 input{accent-color:var(--acento);margin-top:2px;flex-shrink:0}
-.aj-av1 input:disabled+span{opacity:.55}
-.aj-plus{margin:8px 0 0;font-size:12px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+/* ── v1.11: Ajustes ──────────────────────────────────────────────────────
+   Un panel de ajustes de verdad: grupos con su título, cada opción con su
+   explicación debajo e interruptores a la derecha (no casillas sueltas). */
+.ajustes{border-radius:12px;border:1px solid transparent;transition:border-color .25s var(--salida),background-color .25s var(--salida)}
+.ajustes[open]{background:var(--bg2);border-color:var(--borde)}
+.ajustes summary{list-style:none;display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:11px;cursor:pointer;
+  color:var(--gris);font:600 12.5px/1.2 var(--texto);transition:color .2s var(--salida),background-color .2s var(--salida)}
+.ajustes summary::-webkit-details-marker{display:none}
+.ajustes summary:hover{color:var(--fg);background:var(--card)}
+.ajustes[open] summary{color:var(--fg)}
+.ajustes[open] summary:hover{background:none}
+.aj-eng,.aj-flecha{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.aj-flecha{margin-left:auto;transition:transform .3s var(--salida)}
+.ajustes[open] .aj-flecha{transform:rotate(180deg)}
+.aj-panel{padding:0 10px 4px;animation:llega .35s var(--salida-expo) both}
+.aj-grupo{padding:10px 0;border-top:1px solid var(--borde)}
+.aj-tit{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 4px;
+  font:700 11.5px/1.3 var(--texto);color:var(--fg)}
+.aj-fila,.aj-sw{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0}
+.aj-sw{cursor:pointer}
+.aj-n{min-width:0;font-size:12.5px;line-height:1.35;color:var(--fg)}
+.aj-n small{display:block;font-size:11.5px;color:var(--gris);margin-top:1px}
+.aj-n b{font-weight:600;color:var(--gris);font-variant-numeric:tabular-nums}
+.ajustes select,.ajustes input[type=number]{flex-shrink:0;padding:6px 9px;border-radius:8px;border:1px solid var(--borde);
+  background:var(--card);color:var(--fg);font:500 12.5px/1.2 var(--texto);transition:border-color .2s var(--salida)}
+.ajustes select:hover,.ajustes input[type=number]:hover{border-color:var(--borde-hi)}
+.ajustes input[type=number]{width:78px;text-align:center;font-variant-numeric:tabular-nums}
+/* Interruptor: el checkbox real queda encima, invisible (teclado y lectores de pantalla siguen funcionando) */
+.aj-sw{position:relative}
+.aj-sw input{position:absolute;right:0;top:50%;width:36px;height:22px;margin:-11px 0 0;opacity:0;cursor:pointer}
+.aj-sw i{position:relative;flex-shrink:0;width:36px;height:22px;border-radius:99px;background:var(--borde-hi);
+  transition:background-color .25s var(--salida)}
+.aj-sw i::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#cfcbe3;
+  box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .3s var(--salida-expo),background-color .25s}
+.aj-sw input:checked+i{background:var(--acento)}
+.aj-sw input:checked+i::after{transform:translateX(14px);background:#fff}
+.aj-sw input:focus-visible+i{outline:2px solid var(--acento2);outline-offset:2px}
+.aj-sw:has(input:disabled){cursor:default}
+.aj-sw input:disabled{cursor:default}
+.aj-sw:has(input:disabled) .aj-n{color:var(--gris)}
+.aj-sw input:disabled+i{opacity:.45}
+.chip-plus{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;cursor:pointer;
+  border:1px solid rgba(var(--acento-rgb),.55);background:rgba(var(--acento-rgb),.14);color:#ddd0ff;
+  font:600 11px/1.3 var(--texto);transition:background-color .2s var(--salida)}
+.chip-plus:hover{background:rgba(var(--acento-rgb),.28)}

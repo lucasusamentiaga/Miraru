@@ -24,7 +24,6 @@ import locale
 import os
 import sys
 import threading
-import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Optional
@@ -49,56 +48,85 @@ def idioma_sistema() -> str:
 
 
 # ── 1. Pantalla de arranque ──────────────────────────────────────────────────
+# v2.18.1: en un PROCESO aparte, no en un hilo. Con tkinter en un hilo, a veces
+# el intérprete de Tcl se liberaba desde el hilo principal y Tcl abortaba el
+# proceso entero (tcl86t.dll, excepción 0x80000003: «Miraru no pudo arrancar
+# (código -2147483645)»). En otro proceso eso es imposible, y para cerrarla
+# basta con terminar ese proceso.
+ARG_SPLASH = "--miraru-splash"
+
+
+def _orden_splash(logo: Optional[Path]) -> list[str]:
+    logo_s = str(logo or "")
+    if getattr(sys, "frozen", False):
+        return [sys.executable, ARG_SPLASH, logo_s]
+    exe = Path(sys.executable)
+    sin_consola = exe.with_name("pythonw.exe")
+    exe = sin_consola if sin_consola.is_file() else exe
+    carpeta = str(Path(__file__).resolve().parent)
+    codigo = (f"import sys; sys.path.insert(0, {carpeta!r}); import ventana_windows as v; "
+              f"v.splash_proceso({logo_s!r})")
+    return [str(exe), "-c", codigo]
+
+
 def pantalla_de_arranque(listo: threading.Event, logo: Optional[Path] = None,
                          maximo: float = 45.0, log: Callable[[str], None] = lambda s: None) -> Optional[threading.Thread]:
     """Enseña «Abriendo Miraru…» hasta que `listo` se active (o `maximo` s)."""
     if not ES_WINDOWS or os.environ.get("MIRARU_SIN_DIALOGOS") == "1":
         return None
+    import subprocess
+    try:
+        proc = subprocess.Popen(_orden_splash(logo), creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as e:  # noqa: BLE001
+        log(f"Pantalla de arranque: {e}")
+        return None
 
-    def _hilo():
+    def _vigilar():
+        listo.wait(maximo)
         try:
-            import tkinter as tk
-            root = tk.Tk()
-            root.overrideredirect(True)
-            root.attributes("-topmost", True)
-            fondo, texto, gris = "#0a0812", "#edecf4", "#a49dc0"
-            root.configure(bg=fondo)
-            ancho, alto = 300, 108
-            x = (root.winfo_screenwidth() - ancho) // 2
-            y = (root.winfo_screenheight() - alto) // 2
-            root.geometry(f"{ancho}x{alto}+{x}+{y}")
-            marco = tk.Frame(root, bg=fondo, highlightbackground="#3a3258", highlightthickness=1)
-            marco.pack(fill="both", expand=True)
-            img = None
-            if logo and logo.is_file():
-                try:
-                    img = tk.PhotoImage(file=str(logo))
-                    if img.width() > 64:                    # se espera el icono de 48 px
-                        paso = img.width() // 48
-                        img = img.subsample(paso, paso)
-                    tk.Label(marco, image=img, bg=fondo).pack(side="left", padx=(18, 12))
-                except Exception:  # noqa: BLE001
-                    img = None
-            caja = tk.Frame(marco, bg=fondo)
-            caja.pack(side="left", fill="y", expand=True, anchor="w")
-            tk.Label(caja, text="Miraru", fg=texto, bg=fondo, font=("Segoe UI Semibold", 14)).pack(anchor="w", pady=(28, 0))
-            puntos = tk.Label(caja, text=TEXTOS[idioma_sistema()], fg=gris, bg=fondo, font=("Segoe UI", 10))
-            puntos.pack(anchor="w")
-            inicio = time.time()
+            proc.terminate()
+        except Exception:  # noqa: BLE001
+            pass
 
-            def mirar():
-                if listo.is_set() or time.time() - inicio > maximo:
-                    root.destroy()
-                    return
-                root.after(150, mirar)
-            root.after(150, mirar)
-            root.mainloop()
-        except Exception as e:  # noqa: BLE001
-            log(f"Pantalla de arranque: {e}")
-
-    t = threading.Thread(target=_hilo, daemon=True, name="miraru-arranque")
+    t = threading.Thread(target=_vigilar, daemon=True, name="miraru-arranque")
     t.start()
     return t
+
+
+def splash_proceso(logo: str = "", maximo: float = 45.0) -> None:
+    """Lo que se ejecuta en el proceso de la pantalla de arranque (hilo principal)."""
+    try:
+        import tkinter as tk
+        root = tk.Tk()
+        root.overrideredirect(True)
+        root.attributes("-topmost", True)
+        fondo, texto, gris = "#0a0812", "#edecf4", "#a49dc0"
+        root.configure(bg=fondo)
+        ancho, alto = 300, 108
+        x = (root.winfo_screenwidth() - ancho) // 2
+        y = (root.winfo_screenheight() - alto) // 2
+        root.geometry(f"{ancho}x{alto}+{x}+{y}")
+        marco = tk.Frame(root, bg=fondo, highlightbackground="#3a3258", highlightthickness=1)
+        marco.pack(fill="both", expand=True)
+        img = None
+        if logo and Path(logo).is_file():
+            try:
+                img = tk.PhotoImage(file=logo)
+                if img.width() > 64:                    # se espera el icono de 48 px
+                    paso = img.width() // 48
+                    img = img.subsample(paso, paso)
+                tk.Label(marco, image=img, bg=fondo).pack(side="left", padx=(18, 12))
+            except Exception:  # noqa: BLE001
+                img = None
+        caja = tk.Frame(marco, bg=fondo)
+        caja.pack(side="left", fill="y", expand=True, anchor="w")
+        tk.Label(caja, text="Miraru", fg=texto, bg=fondo, font=("Segoe UI Semibold", 14)).pack(anchor="w", pady=(28, 0))
+        tk.Label(caja, text=TEXTOS[idioma_sistema()], fg=gris, bg=fondo, font=("Segoe UI", 10)).pack(anchor="w")
+        root.after(int(maximo * 1000), root.destroy)
+        root.mainloop()
+    except Exception:  # noqa: BLE001
+        pass
 
 
 # ── 2. Ventana oculta: contestar a Windows y cerrarse en orden ──────────────

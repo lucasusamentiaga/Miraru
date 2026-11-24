@@ -111,7 +111,25 @@ def avanzadas() -> dict:
     est = Counter(a.get("estado_usuario") or "pendiente" for a in animes)
     empezados = est["completado"] + est["abandonado"]
     notas = [float(a["puntuacion"]) for a in animes if a.get("puntuacion")]
+    # v2.18.1: este mes frente al anterior, y el género de lo que ves últimamente.
+    with db.get_conn() as conn:
+        mes = conn.execute("SELECT COUNT(*) AS c FROM ep_log WHERE strftime('%Y-%m', fecha) = "
+                           "strftime('%Y-%m', 'now', 'localtime') AND " + db._SIN_MANGA).fetchone()["c"] or 0
+        mes_ant = conn.execute("SELECT COUNT(*) AS c FROM ep_log WHERE strftime('%Y-%m', fecha) = "
+                               "strftime('%Y-%m', 'now', 'localtime', 'start of month', '-1 month') AND "
+                               + db._SIN_MANGA).fetchone()["c"] or 0
+        recientes = [r["nombre"] for r in conn.execute(
+            "SELECT nombre, COUNT(*) AS c FROM ep_log WHERE date(fecha) >= date('now','localtime','-30 days') AND "
+            + db._SIN_MANGA + " GROUP BY nombre")]
+    por_nombre = {a["nombre"]: a for a in animes}
+    gen = Counter()
+    for n in recientes:
+        for g in (por_nombre.get(n, {}).get("genero") or "").split(","):
+            if g.strip():
+                gen[g.strip()] += 1
     return {**h,
+            "mes_actual": mes, "mes_anterior": mes_ant,
+            "genero_reciente": gen.most_common(1)[0][0] if gen else "",
             "ritmo_semanal": ritmo,
             "por_semana": por_semana,
             "faltan_episodios": faltan,

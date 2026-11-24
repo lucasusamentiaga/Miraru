@@ -45,7 +45,8 @@
 // v53 = el manga tiene su apartado (/manga).
 // v54 = móvil con un botón (QR con código, sin PIN ni reinicio).
 // v67 = Miraru Plus (static/plus.js).
-const CACHE_NAME = 'miraru-v67';
+// v68 = Retomar (static/retomar.js) y pestañas en Estadísticas.
+const CACHE_NAME = 'miraru-v68';
 const STATIC_ASSETS = [
   '/',
   '/app',
@@ -60,6 +61,7 @@ const STATIC_ASSETS = [
   '/static/theme.css',
   '/static/customize.js',
   '/static/plus.js',
+  '/static/retomar.js',
   '/static/i18n-dom.js',
   '/static/dialogos.js',
   // Tipografias locales: sin esto la app offline pierde su tipografia

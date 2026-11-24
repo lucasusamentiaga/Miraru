@@ -69,7 +69,8 @@ def nuevo_tema() -> dict:
     return activar()
 
 
-def enviar(titulo: str, texto: str, etiquetas: str = "tv", clic: str = "", sesion=None) -> bool:
+def enviar(titulo: str, texto: str, etiquetas: str = "tv", clic: str = "", sesion=None,
+           icono: str = "") -> bool:
     """Publica un aviso. Nunca lanza. True si ntfy lo aceptó."""
     e = estado()
     if not e["activo"]:
@@ -79,7 +80,9 @@ def enviar(titulo: str, texto: str, etiquetas: str = "tv", clic: str = "", sesio
         # Cabeceras HTTP en latin-1: el título va en el cuerpo JSON (admite tildes y emojis).
         r = s.post(SERVIDOR, timeout=10, json={
             "topic": e["tema"], "title": titulo[:200], "message": texto[:1000],
-            "tags": [t for t in etiquetas.split(",") if t], **({"click": clic} if clic else {})})
+            "tags": [t for t in etiquetas.split(",") if t], **({"click": clic} if clic else {}),
+            # v2.18.1: la portada del anime como icono del aviso (solo URLs públicas https)
+            **({"icon": icono} if icono.startswith("https://") else {})})
         return r.status_code < 300
     except Exception as ex:  # noqa: BLE001
         log.warning("ntfy: %s", ex)

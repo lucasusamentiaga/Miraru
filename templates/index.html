@@ -803,11 +803,12 @@ body.sel-mode .ac .salir{display:none}
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
 <script src="/static/customize.js"></script>
-<script src="/static/novedades.js?v=2.18.0" defer></script>
-<script src="/static/selects.js?v=2.18.0" defer></script>
-<script src="/static/temporadas.js?v=2.18.0"></script>
-<script src="/static/tour.js?v=2.18.0" defer></script>
-<script src="/static/navegador.js?v=2.18.0" defer></script>
+<script src="/static/retomar.js?v=2.18.1"></script>
+<script src="/static/novedades.js?v=2.18.1" defer></script>
+<script src="/static/selects.js?v=2.18.1" defer></script>
+<script src="/static/temporadas.js?v=2.18.1"></script>
+<script src="/static/tour.js?v=2.18.1" defer></script>
+<script src="/static/navegador.js?v=2.18.1" defer></script>
 <script src="/static/i18n-dom.js" defer></script>
 <script src="/static/dialogos.js" defer></script>
 </head>
@@ -1324,6 +1325,7 @@ fetch('/api/version').then(r => r.json()).then(d => {
 </header>
 
 <!-- Toolbar: búsqueda + filtros -->
+<div id="app-retomar" style="max-width:1400px;margin:10px auto 0;padding:0 20px"></div>
 <div class="toolbar">
   <input id="inp-nombre" type="text" placeholder="Nombre del anime o pega una URL…"
          autocomplete="off"
@@ -5991,6 +5993,8 @@ function _abrirPorHash() {
 }
 window.addEventListener('hashchange', _abrirPorHash);
 setTimeout(_abrirPorHash, 700);
+// v2.18.1: «Retomar por donde lo dejaste» (lo que viste a medias en AnimeAV1)
+setTimeout(() => { if (window.MiraruRetomar) MiraruRetomar.pintar(document.getElementById('app-retomar')); }, 400);
 
 // El botón ☁ avisa (punto naranja) si la lista NO está protegida.
 async function _marcarBotonCopia() {

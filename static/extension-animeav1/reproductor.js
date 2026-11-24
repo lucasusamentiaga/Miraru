@@ -153,11 +153,25 @@
   $('cancelar').addEventListener('click', () => { mem.cancelado = true; $('cuenta').hidden = true; });
 
   let ultimaCuenta = null;
+  // v1.11: «Retomar por donde lo dejaste». Cada pocos segundos se le dice a la
+  // página por qué minuto vas; si llegaste desde Miraru con un minuto, se va ahí.
+  let avisoTiempo = 0, retomado = false;
+  function tiempo(v) {
+    if (config.irA > 5 && !retomado && v.duration > config.irA + 30) {
+      retomado = true;
+      v.currentTime = config.irA;
+      mem.saltadoOp = true;                        // ya lo habías pasado
+    }
+    if (v.paused || Date.now() - avisoTiempo < 5000) return;
+    avisoTiempo = Date.now();
+    try { window.top.postMessage({miraru: 'tiempo', t: Math.floor(v.currentTime), d: Math.floor(v.duration)}, origenPadre); } catch (_) { /* nada */ }
+  }
   function vuelta() {
     if (!config) { hola(); return; }
     const v = video();
     if (!v) return;                                  // p. ej. el marco de fuera de Byse
     colocar(v);
+    tiempo(v);
     const tx = textos();
     if (config.reproducir && !mem.reproducido) {      // llegaste con «Siguiente automático»
       mem.reproducido = true;

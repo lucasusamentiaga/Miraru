@@ -1,5 +1,22 @@
 # Changelog
 
+## v2.18.1 — Retomar, estadísticas de todo y arreglo del arranque (extensión 1.11.0)
+
+- **Arreglo: «Miraru no pudo arrancar (código -2147483645)»**: era Tcl abortando el proceso
+  (tcl86t.dll, 0x80000003) porque la ventanita «Abriendo Miraru…» usaba tkinter en un hilo y a
+  veces se liberaba desde otro. Ahora es un proceso aparte (`--miraru-splash`) que se termina al
+  arrancar. El aviso de error del .vbs lee el log en UTF-8 (salían letras raras) y solo enseña las
+  últimas líneas.
+- **Retomar por donde lo dejaste**: el reproductor de AnimeAV1 manda el minuto cada 15 s
+  (`/api/extension/progreso`, `retomar.py`); al abrir Miraru (inicio y lista) sale una tarjeta que
+  abre el episodio con `#miraru-t=` y la extensión salta a ese minuto.
+- **Estadísticas**: pestañas Anime / Manga / Series y pelis (`/api/stats/biblioteca`) y columna
+  «Viendo actualmente» (lo tocado más recientemente primero).
+- **Plus**: `VENTA_ABIERTA = False` → Plus de estreno gratis para todos hasta abrir la venta; avisos
+  de ntfy con portada y enlace; «Tus hábitos» con este mes frente al anterior y género reciente.
+- **Extensión**: ajustes rediseñados (grupos, interruptores; las casillas medían 84 px por un selector
+  demasiado general). **Recorrido**: el progreso va en su línea y «Siguiente» ya no se sale.
+
 ## v2.18.0 — Miraru Plus (extensión 1.10.0)
 
 - **Miraru Plus**: suscripción opcional (2,49 €/mes o 19,99 €/año) vendida como complementos de la

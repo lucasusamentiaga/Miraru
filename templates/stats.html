@@ -40,6 +40,8 @@ main{padding:20px;max-width:900px;margin:0 auto}
 .kpi-btn .label{color:var(--light)}
 .kpi-btn:focus-visible{outline:2px solid var(--light);outline-offset:-2px}
 [data-theme=light] #kpis .kpi{background:#fff}
+.vo-kpis .kpi{border:0;border-radius:0;background:var(--card);box-shadow:none}
+[data-theme=light] .vo-kpis .kpi{background:#fff}
 /* v2.14.1: dos columnas que en el móvil se salían de la pantalla. */
 .grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 @media (max-width:640px){.grid-2{grid-template-columns:minmax(0,1fr)}}
@@ -354,6 +356,24 @@ main{padding:20px;max-width:900px;margin:0 auto}
 .wrap-plus{text-align:center;padding:16px;border-radius:14px;border:1px dashed var(--border);margin-top:14px}
 .wrap-plus p{margin:4px 0 10px;color:var(--muted);font-size:13px}
 .wrap-habitos{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px}
+
+/* ── v2.18.1: pestañas Anime / Manga / Series y pelis + «Viendo actualmente» ── */
+.st-tabs{display:flex;gap:4px;padding:4px;margin:0 0 18px;border-radius:14px;background:var(--card);
+  border:1px solid var(--border);width:max-content;max-width:100%;overflow-x:auto}
+.st-tabs button{border:0;background:none;color:var(--muted);font:600 13.5px Inter,system-ui,sans-serif;
+  padding:9px 16px;border-radius:10px;cursor:pointer;white-space:nowrap;transition:background .2s,color .2s}
+.st-tabs button:hover{color:var(--fg)}
+.st-tabs button[aria-selected="true"]{background:var(--grad-accent,var(--accent));color:#fff;box-shadow:var(--shadow-accent,none)}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:1000px){.grid-3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.grid-3{grid-template-columns:minmax(0,1fr)}}
+a.anime-row{color:inherit;text-decoration:none}
+a.anime-row:hover{background:var(--card2)}
+.anime-row .prog{display:block;height:3px;border-radius:9px;background:var(--border);margin-top:6px;overflow:hidden}
+.anime-row .prog i{display:block;height:100%;background:var(--grad-accent,var(--accent));border-radius:inherit}
+.vo-vacio{text-align:center;padding:48px 18px;color:var(--muted)}
+.vo-vacio .ico{font-size:40px;margin-bottom:8px}
+.vo-vacio a{display:inline-block;margin-top:12px;padding:9px 16px;border-radius:10px;background:var(--grad-accent,var(--accent));color:#fff;text-decoration:none;font-weight:700}
 </style>
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
@@ -370,6 +390,12 @@ main{padding:20px;max-width:900px;margin:0 auto}
   <a href="/app" id="btn-volver" class="back-btn" style="margin-left:8px">← Volver</a>
 </header>
 <main>
+  <nav class="st-tabs" role="tablist" aria-label="Qué estadísticas ver">
+    <button type="button" role="tab" data-vista="anime" aria-selected="true">📺 Anime</button>
+    <button type="button" role="tab" data-vista="manga" aria-selected="false">📖 Manga</button>
+    <button type="button" role="tab" data-vista="media" aria-selected="false">🎬 Series y pelis</button>
+  </nav>
+  <div id="vista-anime">
   <div class="grid" id="kpis">
     <div class="kpi">
       <div class="kpi-icon">📺</div>
@@ -498,16 +524,24 @@ main{padding:20px;max-width:900px;margin:0 auto}
     <div class="anime-list" id="list-completion"></div>
   </div>
 
-  <div class="grid-2">
+  <div class="grid-3">
     <div class="section">
       <h2 id="lbl-top">Mejor valorados</h2>
       <div class="anime-list" id="list-top"></div>
+    </div>
+    <div class="section">
+      <h2>Viendo actualmente</h2>
+      <div class="anime-list" id="list-watching"></div>
     </div>
     <div class="section">
       <h2 id="lbl-recent">Añadidos recientemente</h2>
       <div class="anime-list" id="list-recent"></div>
     </div>
   </div>
+  </div><!-- /vista-anime -->
+
+  <!-- v2.18.1: Manga y Series y pelis, en la misma página (una pestaña cada uno) -->
+  <div id="vista-otro" hidden></div>
 </main>
 
 <script>
@@ -535,8 +569,9 @@ function _haceCuanto(f) {
 }
 function makeAnimeRow(a, showScore=false, opts={}) {
   // DOM-safe: no innerHTML with user data
-  const row = document.createElement('div');
+  const row = document.createElement(opts.href ? 'a' : 'div');
   row.className = 'anime-row';
+  if (opts.href) row.href = opts.href;
 
   const img = document.createElement('img');
   // src="" haría que el navegador se bajase esta misma página como imagen.
@@ -559,9 +594,14 @@ function makeAnimeRow(a, showScore=false, opts={}) {
   else if (/pel/i.test(caps)) partes.push('Película');
   const gen = String(a.genero || '').split(',')[0].trim();
   if (gen) partes.push(gen);
-  meta.textContent = partes.join(' · ');
+  meta.textContent = opts.meta != null ? opts.meta : partes.join(' · ');
   info.appendChild(name);
   info.appendChild(meta);
+  if (opts.progreso != null) {
+    const pr = document.createElement('span'); pr.className = 'prog';
+    const pi = document.createElement('i'); pi.style.width = Math.max(3, Math.min(100, opts.progreso)) + '%';
+    pr.appendChild(pi); info.appendChild(pr);
+  }
   row.appendChild(info);
 
   if (opts.rank) {
@@ -755,6 +795,9 @@ async function loadStats() {
     p.textContent = 'Sin datos aún';
     listTop.appendChild(p);
   }
+
+  // v2.18.1: Viendo actualmente
+  _pintarViendo(document.getElementById('list-watching'), d.watching || [], 'anime');
 
   // Recientes
   const listRecent = document.getElementById('list-recent');
@@ -1573,6 +1616,12 @@ function _avPintar(cont, d) {
   }
   const kp = _wEl('div', 'av-kpis');
   kp.append(_avKpi(_wNum(d.ritmo_semanal), _avTr('episodios por semana (últimas 8)')));
+  if (d.mes_actual != null) {
+    const dif = d.mes_actual - (d.mes_anterior || 0);
+    kp.append(_avKpi(_wNum(d.mes_actual), _avTr('episodios este mes') + ' · ' +
+      (d.mes_anterior ? (dif >= 0 ? '+' : '') + dif + ' ' + _avTr('frente al mes pasado') : _avTr('el mes pasado, ninguno'))));
+  }
+  if (d.genero_reciente) kp.append(_avKpi(d.genero_reciente, _avTr('lo que más ves estos 30 días')));
   kp.append(_avKpi(d.hora_top != null ? String(d.hora_top).padStart(2, '0') + ':00' : '–', _avTr('tu hora favorita') + ' · ' + _avTr(_FRANJA[d.franja_top] || '')));
   kp.append(_avKpi(d.dia_top != null ? _avDias('long')[d.dia_top] : '–', _avTr('el día que más ves')));
   kp.append(_avKpi(_wNum(d.maraton_max), _avTr('episodios en tu maratón más largo')));
@@ -1665,6 +1714,132 @@ async function _wrapPlus(cuerpo, year) {
            _avKpi(_avTr(_FRANJA[d.franja_top] || ''), _avTr('cuándo ves más')),
            _avKpi(_wNum(d.maraton_max), _avTr('episodios en tu mayor maratón')));
   sitio.append(k, _avBarras(d.por_hora, Array.from({length: 24}, (_, i) => String(i).padStart(2, '0')), d.hora_top));
+}
+</script>
+<script>
+// ── v2.18.1: «Viendo actualmente» y pestañas Manga / Series y pelis ─────────
+// Una sola página de Estadísticas con una pestaña por apartado: así no hay
+// que buscar dónde está cada cosa y el anime (lo más completo) sigue igual.
+const _stTr = t => (window.miraruTraducir ? window.miraruTraducir(t) : t);
+function _filaViendo(a, tipo) {
+  const unidad = tipo === 'manga' ? 'Cap' : 'Ep';
+  const tot = parseInt(a.capitulos) || 0, v = a.episodios_vistos || 0;
+  let meta = unidad + ' ' + v + (tot ? ' / ' + tot : '');
+  if (tipo === 'media') meta = a.subtipo === 'serie' ? 'Serie' + (v ? ' · ' + 'Ep ' + v : '') : 'Película';
+  const href = tipo === 'anime' ? '/app#anime=' + encodeURIComponent(a.nombre)
+             : tipo === 'manga' ? '/manga' : '/peliculas';
+  return makeAnimeRow(a, false, {meta, href, progreso: tot ? v * 100 / tot : null});
+}
+function _pintarViendo(cont, lista, tipo) {
+  if (!cont) return;
+  cont.innerHTML = '';
+  if (!lista.length) {
+    const p = document.createElement('p');
+    p.style.cssText = 'color:var(--muted);font-size:13px';
+    p.textContent = _stTr(tipo === 'manga' ? 'No estás leyendo nada ahora mismo.' : 'No estás viendo nada ahora mismo.');
+    cont.appendChild(p);
+    return;
+  }
+  lista.forEach(a => cont.appendChild(_filaViendo(a, tipo)));
+}
+
+const _VO = {
+  manga: {ico: '📖', vacio: 'Aún no tienes mangas en tu lista.', ir: '/manga', irTxt: 'Ir a Manga',
+          viendo: 'Leyendo actualmente'},
+  media: {ico: '🎬', vacio: 'Aún no tienes series ni películas en tu lista.', ir: '/peliculas', irTxt: 'Ir a Series y pelis',
+          viendo: 'Viendo actualmente'},
+};
+function _voSeccion(titulo, hijo) {
+  const s = document.createElement('div'); s.className = 'section';
+  const h = document.createElement('h2'); h.textContent = _stTr(titulo);
+  s.append(h, hijo);
+  return s;
+}
+function _voLista(items, fn) {
+  const l = document.createElement('div'); l.className = 'anime-list';
+  if (!items.length) {
+    const p = document.createElement('p'); p.style.cssText = 'color:var(--muted);font-size:13px';
+    p.textContent = _stTr('Sin datos aún'); l.append(p);
+  } else items.forEach((a, i) => l.append(fn(a, i)));
+  return l;
+}
+function _voKpi(ico, valor, txt) {
+  const k = document.createElement('div'); k.className = 'kpi';
+  const i = document.createElement('div'); i.className = 'kpi-icon'; i.textContent = ico;
+  const v = document.createElement('div'); v.className = 'value'; v.textContent = valor;
+  if (String(valor).length > 9) v.style.cssText = 'font-size:16px;line-height:1.3';
+  const l = document.createElement('div'); l.className = 'label'; l.textContent = _stTr(txt);
+  k.append(i, v, l); return k;
+}
+async function _pintarOtro(tipo) {
+  const cont = document.getElementById('vista-otro');
+  const cfg = _VO[tipo];
+  cont.innerHTML = '<div class="vo-vacio"><div class="wrap-spin"></div></div>';
+  let d;
+  try { d = await (await fetch('/api/stats/biblioteca?tipo=' + tipo, {cache: 'no-store'})).json(); }
+  catch (_) { cont.innerHTML = ''; cont.append(_voSeccion('Sin datos aún', document.createElement('div'))); return; }
+  cont.innerHTML = '';
+  if (!d.total) {
+    const v = document.createElement('div'); v.className = 'section vo-vacio';
+    const ic = document.createElement('div'); ic.className = 'ico'; ic.textContent = cfg.ico;
+    const p = document.createElement('div'); p.textContent = _stTr(cfg.vacio);
+    const a = document.createElement('a'); a.href = cfg.ir; a.textContent = _stTr(cfg.irTxt);
+    v.append(ic, p, a); cont.append(v); return;
+  }
+  const bs = d.by_state || {};
+  const kp = document.createElement('div'); kp.className = 'grid'; kp.style.marginBottom = '16px';
+  if (tipo === 'manga') {
+    kp.append(_voKpi('📖', d.total, 'Mangas'), _voKpi('📄', (d.capitulos || 0).toLocaleString('es-ES'), 'Capítulos leídos'));
+  } else {
+    kp.append(_voKpi('📺', d.series || 0, 'Series'), _voKpi('🎬', d.peliculas || 0, 'Películas'),
+              _voKpi('▶️', (d.episodios_series || 0).toLocaleString('es-ES'), 'Episodios de series vistos'),
+              _voKpi('⏱️', d.horas || 0, 'Horas vistas'));
+  }
+  kp.append(_voKpi('⭐', d.avg_score || '–', 'Puntuación media'),
+            _voKpi('🏆', bs.completado || 0, 'Completados'),
+            _voKpi(tipo === 'manga' ? '👀' : '👀', bs.viendo || 0, tipo === 'manga' ? 'Leyendo ahora' : 'Viendo ahora'));
+  if (d.favorite_genre) kp.append(_voKpi('🎭', d.favorite_genre, 'Género favorito'));
+  // Que no queden huecos: 6 cifras → 3 columnas; 8 → 4.
+  const n = kp.children.length;
+  kp.classList.add('vo-kpis');
+  if (matchMedia('(min-width:761px)').matches) kp.style.gridTemplateColumns = 'repeat(' + (n % 3 === 0 && n % 4 ? 3 : 4) + ',minmax(0,1fr))';
+  cont.append(kp);
+  // Estado + géneros
+  const dos = document.createElement('div'); dos.className = 'grid-2'; dos.style.marginBottom = '16px';
+  const dn = document.createElement('div'); dn.className = 'donut-wrap';
+  const NOM = {pendiente: 'Pendiente', viendo: tipo === 'manga' ? 'Leyendo' : 'Viendo', completado: 'Completado',
+               abandonado: 'Abandonado', pausa: 'En pausa'};
+  const est = Object.entries(bs);
+  if (est.length) renderDonut(dn, est.map(([k, v], i) => ({label: _stTr(NOM[k] || k), value: v, color: COLORS[i % COLORS.length]})));
+  const gc = document.createElement('div'); gc.className = 'genre-cloud';
+  Object.entries(d.genres || {}).forEach(([g, n]) => {
+    const pill = document.createElement('span'); pill.className = 'genre-pill';
+    const c = document.createElement('span'); c.className = 'count'; c.textContent = '×' + n;
+    pill.append(document.createTextNode(g + ' '), c); gc.append(pill);
+  });
+  dos.append(_voSeccion('Por estado', dn), _voSeccion('Géneros', gc));
+  cont.append(dos);
+  // Las tres listas
+  const tres = document.createElement('div'); tres.className = 'grid-3';
+  const href = tipo === 'manga' ? '/manga' : '/peliculas';
+  tres.append(
+    _voSeccion('Mejor valorados', _voLista(d.top_rated || [], (a, i) => makeAnimeRow(a, true, {rank: i + 1, href}))),
+    _voSeccion(cfg.viendo, _voLista(d.watching || [], a => _filaViendo(a, tipo))),
+    _voSeccion('Añadidos recientemente', _voLista(d.recently_added || [], a => makeAnimeRow(a, false, {when: true, href}))));
+  cont.append(tres);
+}
+
+function _vistaStats(v, guardar) {
+  if (!['anime', 'manga', 'media'].includes(v)) v = 'anime';
+  document.querySelectorAll('.st-tabs [data-vista]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.vista === v)));
+  document.getElementById('vista-anime').hidden = v !== 'anime';
+  document.getElementById('vista-otro').hidden = v === 'anime';
+  if (v !== 'anime') _pintarOtro(v);
+  if (guardar) history.replaceState(null, '', v === 'anime' ? location.pathname : '#' + v);
+}
+document.querySelectorAll('.st-tabs [data-vista]').forEach(b => b.addEventListener('click', () => _vistaStats(b.dataset.vista, true)));
+if (location.hash === '#manga' || location.hash === '#media' || location.hash === '#series') {
+  _vistaStats(location.hash === '#manga' ? 'manga' : 'media', false);
 }
 </script>
 

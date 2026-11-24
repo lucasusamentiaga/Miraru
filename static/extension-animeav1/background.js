@@ -558,3 +558,27 @@ chrome.runtime.onMessage.addListener((msg, _s, responder) => {
   if (msg && msg.tipo === 'abrir-plus') { abrirPlus(msg.seccion || 'saltar'); return false; }
   return false;
 });
+
+// ── v1.11: «Retomar por donde lo dejaste» ─────────────────────────────────
+// El reproductor de AnimeAV1 dice por qué minuto vas; aquí se guarda el último
+// y se manda a Miraru, que al volver a abrirlo (tras apagar el PC, por ejemplo)
+// te ofrece seguir justo ahí. Si Miraru está cerrado, se manda cuando vuelva.
+async function mandarProgreso(p) {
+  if (p) await chrome.storage.local.set({av1Progreso: p});
+  const {av1Progreso} = await chrome.storage.local.get('av1Progreso');
+  if (!av1Progreso || av1Progreso.enviado) return;
+  try {
+    const r = await fetch(`http://127.0.0.1:${await puerto()}/api/extension/progreso`, {method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-Miraru-Extension': '1'}, body: JSON.stringify(av1Progreso)});
+    if (r.ok) await chrome.storage.local.set({av1Progreso: Object.assign({}, av1Progreso, {enviado: true})});
+  } catch (_) { /* Miraru cerrado: se reintenta con la cola */ }
+}
+chrome.alarms.onAlarm.addListener(a => { if (a.name === 'reintentar') mandarProgreso(); });
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg && msg.tipo === 'av1-progreso' && msg.slug && Number(msg.episode) > 0) {
+    mandarProgreso({mediaId: Number(msg.mediaId) || 0, slug: String(msg.slug).slice(0, 200),
+      episode: Number(msg.episode), titulo: String(msg.titulo || '').slice(0, 200),
+      t: Number(msg.t) || 0, d: Number(msg.d) || 0, url: String(msg.url || '').slice(0, 400), ts: Date.now()});
+  }
+  return false;
+});

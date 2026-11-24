@@ -70,6 +70,9 @@ body{background:#080810;color:#e2e2e8;font-family:"Segoe UI",system-ui,sans-seri
 a.stat-pill:hover{border-color:rgba(var(--accent-rgb,124,58,237),.6)}
 
 /* Continuar */
+#home-retomar{margin-top:22px;width:min(620px,94vw)}
+#home-retomar:empty{display:none}
+#home-retomar .mret{margin:0}
 #home-continue{margin-top:22px;width:min(620px,94vw);display:none;opacity:0;transition:opacity .7s}
 .hc-cab{margin-bottom:10px;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--light,#c4b1ff);opacity:.8}
 .hc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -107,10 +110,11 @@ a.stat-pill:hover{border-color:rgba(var(--accent-rgb,124,58,237),.6)}
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
 <script src="/static/customize.js"></script>
-<script src="/static/novedades.js?v=2.18.0" defer></script>
+<script src="/static/retomar.js?v=2.18.1"></script>
+<script src="/static/novedades.js?v=2.18.1" defer></script>
 <script src="/static/i18n-dom.js" defer></script>
 <script src="/static/dialogos.js" defer></script>
-<script src="/static/navegador.js?v=2.18.0" defer></script>
+<script src="/static/navegador.js?v=2.18.1" defer></script>
 </head>
 <body>
 <script>try{if(localStorage.getItem('theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(_){}</script>
@@ -172,6 +176,7 @@ a.stat-pill:hover{border-color:rgba(var(--accent-rgb,124,58,237),.6)}
 
   <div class="stats-row" id="stats-row"></div>
   <!-- v2.4: widget «Continuar» — gancho diario, solo si hay algo a medias -->
+  <div id="home-retomar"></div>
   <div id="home-continue"></div>
 </div>
 
@@ -484,6 +489,7 @@ async function init() {
   animTitle();
   loadStats();
   loadContinue();
+  if (window.MiraruRetomar) MiraruRetomar.pintar(document.getElementById('home-retomar'));   // v2.18.1
   // v2.15: al volver a esta pestaña (p. ej. tras marcar un episodio en AnimeAV1)
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') { loadContinue(); }

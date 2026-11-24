@@ -13,6 +13,28 @@ from __future__ import annotations
 # pasos (opcional): frases cortas → «Cómo empezar», numeradas.
 NOVEDADES: list[dict] = [
     {
+        "version": "2.18.1",
+        "titulo": "Retoma donde lo dejaste",
+        "puntos": [
+            {"icono": "▶️", "titulo": "Retomar por donde lo dejaste",
+             "texto": "Si apagas el PC o cierras el navegador a mitad de un episodio de AnimeAV1, al abrir Miraru te ofrece seguir justo en ese minuto. Un clic y el vídeo arranca donde ibas.",
+             "donde": ["Inicio", "Anime"],
+             "pasos": ["Abre la ventana de la extensión y pulsa «Actualizar» si te lo pide."]},
+            {"icono": "📊", "titulo": "Estadísticas de todo",
+             "texto": "Estadísticas tiene ahora tres pestañas: Anime, Manga y Series y pelis. Y una lista nueva, «Viendo actualmente», con lo que llevas a medias.",
+             "donde": ["Estadísticas"],
+             "accion": {"texto": "Ver mis estadísticas", "url": "/stats"}},
+            {"icono": "✨", "titulo": "Plus, de estreno y gratis",
+             "texto": "Mientras se abre la venta en la Microsoft Store, Miraru Plus es gratis para todos. Además: los avisos del móvil llevan la portada y te llevan al anime, y hay cifras nuevas en «Tus hábitos».",
+             "donde": ["Más", "Miraru Plus"]},
+            {"icono": "🧩", "titulo": "Ajustes de la extensión, más claros",
+             "texto": "Los ajustes de la ventana de la extensión van ahora en grupos, con interruptores y una explicación debajo de cada uno.",
+             "donde": ["Extensión", "Ajustes"]},
+            {"icono": "🧹", "titulo": "Arreglos",
+             "texto": "Miraru a veces no arrancaba (código -2147483645) por la ventanita «Abriendo Miraru…»: ahora va aparte y no puede tumbarlo. En el recorrido, «Siguiente» ya no se sale de la tarjeta."},
+        ],
+    },
+    {
         "version": "2.18.0",
         "titulo": "Llega Miraru Plus",
         "puntos": [

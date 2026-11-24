@@ -50,8 +50,7 @@
 .mplus-cab{position:relative;padding:26px 24px 20px;background:var(--grad-accent-soft,rgba(124,58,237,.15));
   border-bottom:1px solid var(--border,#2b2542);border-radius:20px 20px 0 0}
 .mplus-cab h2{margin:0;font-size:24px;font-weight:800;letter-spacing:-.03em}
-.mplus-cab h2 span{background:var(--grad-accent,linear-gradient(135deg,#7c3aed,#d946ef));-webkit-background-clip:text;
-  background-clip:text;color:transparent}
+.mplus-cab h2 span{color:var(--light,#c4b1ff)}
 .mplus-cab p{margin:6px 0 0;color:var(--muted,#a49dc0);font-size:13.5px;max-width:42ch}
 .mplus-x{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--muted,#a49dc0);font-size:24px;
   line-height:1;cursor:pointer;padding:4px 8px;border-radius:8px}
@@ -247,11 +246,15 @@
     h.append(document.createTextNode('Miraru '), el('span', '', 'Plus'), document.createTextNode(' ✨'));
     h.setAttribute('data-no-i18n', '');
     const x = el('button', 'mplus-x', '×'); x.type = 'button'; x.setAttribute('aria-label', tr('Cerrar')); x.onclick = cerrar;
-    cab.append(h, el('p', '', d.plus ? 'Gracias por apoyar Miraru. Esto es lo que tienes:'
-                                     : 'Lo de siempre sigue gratis. Plus añade esto y ayuda a que Miraru siga creciendo.'), x);
+    const lanzamiento = d.fuente === 'lanzamiento';
+    cab.append(h, el('p', '', lanzamiento
+      ? 'De estreno: mientras se abre la venta en la Microsoft Store, todo esto es gratis para ti.'
+      : d.plus ? 'Gracias por apoyar Miraru. Esto es lo que tienes:'
+               : 'Lo de siempre sigue gratis. Plus añade esto y ayuda a que Miraru siga creciendo.'), x);
     if (d.plus) {
       const ins = el('span', 'mplus-insignia');
-      ins.textContent = '✓ ' + tr(d.fuente === 'desarrollo' ? 'Plus activo (versión de desarrollo)'
+      ins.textContent = '✓ ' + tr(lanzamiento ? 'Plus de estreno, gratis por ahora'
+        : d.fuente === 'desarrollo' ? 'Plus activo (versión de desarrollo)'
         : d.plan === 'anual' ? 'Plus activo · plan anual' : d.plan === 'mensual' ? 'Plus activo · plan mensual' : 'Plus activo');
       ins.setAttribute('data-no-i18n', '');
       cab.append(ins);
@@ -281,6 +284,13 @@
     });
     cuerpo.append(lista);
 
+    if (lanzamiento) {
+      const n = el('p', 'mplus-nota');
+      n.textContent = tr('Cuando abra la venta costará') + ' ' + d.precios.mensual + ' · ' + d.precios.anual + '. ' +
+                      tr('Lo de siempre seguirá gratis.');
+      n.setAttribute('data-no-i18n', '');
+      cuerpo.append(n);
+    }
     if (!d.plus) {
       let plan = 'anual';
       const planes = el('div', 'mplus-planes');

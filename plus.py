@@ -36,6 +36,12 @@ PRECIOS = {"mensual": "2,49 €/mes", "anual": "19,99 €/año"}
 APP_STORE_ID = "9PJZK97ZG03G"
 
 CLAVE = "plus_estado"
+
+# v2.18.1: mientras los complementos de Plus no estén a la venta en la Store
+# (falta el perfil de cobros de la cuenta), Plus está abierto para todos: así se
+# puede publicar sin dejar a nadie sin «Saltar opening» y sin poder comprarlo.
+# Al abrir la venta: True, y la ventana de Plus pasa a enseñar los planes.
+VENTA_ABIERTA = False
 CADA = 6 * 3600          # se vuelve a preguntar a la Store cada 6 h
 GRACIA = 7 * 86400       # sin poder preguntar (sin internet): 7 días más
 
@@ -97,9 +103,12 @@ def activo() -> bool:
 
 def estado(refrescar_si_toca: bool = True) -> dict:
     """{plus, fuente, plan, caduca, se_puede_comprar, precios, ventajas}."""
-    base = {"precios": PRECIOS, "ventajas": VENTAJAS, "se_puede_comprar": empaquetado()}
+    base = {"precios": PRECIOS, "ventajas": VENTAJAS, "se_puede_comprar": empaquetado() and VENTA_ABIERTA,
+            "venta_abierta": VENTA_ABIERTA}
     if os.environ.get("MIRARU_PLUS") == "1" or desde_codigo():
         return {**base, "plus": True, "fuente": "desarrollo", "plan": "", "caduca": 0}
+    if not VENTA_ABIERTA and os.environ.get("MIRARU_PLUS") != "0":
+        return {**base, "plus": True, "fuente": "lanzamiento", "plan": "", "caduca": 0}
     d = _leer()
     ahora = time.time()
     if refrescar_si_toca and empaquetado() and ahora - float(d.get("comprobado", 0) or 0) > CADA:

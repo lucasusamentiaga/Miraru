@@ -8,8 +8,16 @@ en lugar de 'from main import app', para evitar el error
 from __future__ import annotations
 
 import multiprocessing
+import sys
 
 multiprocessing.freeze_support()
+
+# v2.18.1: el propio .exe hace de «Abriendo Miraru…» en un proceso aparte
+# (ver ventana_windows.pantalla_de_arranque). Antes de nada más: ni log ni BD.
+if len(sys.argv) >= 2 and sys.argv[1] == "--miraru-splash":
+    import ventana_windows as _vw
+    _vw.splash_proceso(sys.argv[2] if len(sys.argv) > 2 else "")
+    sys.exit(0)
 
 import io
 import os

@@ -21,6 +21,7 @@ import sqlite3
 import tempfile
 import threading
 import time as _time
+import urllib.parse
 import zipfile
 from collections import Counter, OrderedDict
 from contextlib import asynccontextmanager
@@ -907,7 +908,9 @@ def _comprobar_nuevos_episodios() -> list[tuple[str, int]]:
                 except Exception as e:
                     _sync_log.warning("push: %s", e)
             if movil:
-                avisos_movil.enviar(a["nombre"], texto)
+                # Al tocar el aviso: buscar el anime en AnimeAV1 para verlo ya.
+                clic = "https://animeav1.com/catalogo?search=" + urllib.parse.quote(a["nombre"])
+                avisos_movil.enviar(a["nombre"], texto, clic=clic, icono=a.get("imagen") or "")
     if avisados:
         db.set_config(_CFG_NOTIF_VISTO, json.dumps(visto))
     return avisados
@@ -2648,6 +2651,7 @@ async def get_stats():
     )[:6]
     # Mismo número en las dos listas (antes 5 y 8: una tarjeta quedaba medio vacía).
     recently_added = sorted(animes, key=lambda x: x.get("creado_en") or "", reverse=True)[:6]
+    watching = _viendo_ahora(animes)
 
     return {
         "total":          total,
@@ -2660,9 +2664,74 @@ async def get_stats():
         "genres":         dict(sorted(genres.items(), key=lambda x: -x[1])[:10]),
         "top_rated":      top_rated,
         "recently_added": recently_added,
+        "watching":       watching,
         "mangas":         len(mangas),
         "capitulos_manga": sum(int(a.get("episodios_vistos") or 0) for a in mangas),
     }
+
+def _viendo_ahora(items: list[dict], n: int = 6) -> list[dict]:
+    """v2.18.1: lo que estás viendo (o leyendo), lo tocado más recientemente primero."""
+    viendo = [a for a in items if a.get("estado_usuario") in ("viendo", "watching")]
+    if not viendo:
+        return []
+    with db.get_conn() as conn:
+        ultimo = {r["nombre"]: r["f"] for r in conn.execute(
+            "SELECT nombre, MAX(fecha) AS f FROM ep_log GROUP BY nombre")}
+    viendo.sort(key=lambda a: (ultimo.get(a["nombre"]) or a.get("creado_en") or ""), reverse=True)
+    return viendo[:n]
+
+
+@app.get("/api/stats/biblioteca")
+async def stats_biblioteca(tipo: str = "manga"):
+    """v2.18.1: Estadísticas del manga y de las series y películas (la página de
+    Estadísticas tiene una pestaña para cada apartado; el anime usa /api/stats)."""
+    if tipo == "manga":
+        items = [dict(a) for a in db.listar_animes() if (a.get("tipo") or "anime") == "manga"]
+        unidades = sum(int(a.get("episodios_vistos") or 0) for a in items)
+        extra = {"capitulos": unidades}
+    elif tipo == "media":
+        items = []
+        for m in db.listar_media():
+            d = dict(m)
+            d["nombre"] = m.get("titulo") or ""
+            d["subtipo"] = m.get("tipo") or "pelicula"
+            items.append(d)
+        pelis = [m for m in items if m["subtipo"] == "pelicula"]
+        series = [m for m in items if m["subtipo"] == "serie"]
+        vistas = [m for m in pelis if m.get("estado_usuario") == "completado"]
+        min_pelis = sum(int(m.get("duracion") or 0) or 110 for m in vistas)
+        eps_series = sum(int(m.get("episodios_vistos") or 0) for m in series)
+        extra = {"peliculas": len(pelis), "series": len(series), "peliculas_vistas": len(vistas),
+                 "episodios_series": eps_series,
+                 "horas": round((min_pelis + eps_series * 42) / 60)}
+    else:
+        raise HTTPException(400, "tipo: manga o media")
+    by_state: dict[str, int] = {}
+    genres: dict[str, int] = {}
+    scores = []
+    for a in items:
+        e = a.get("estado_usuario") or "pendiente"
+        by_state[e] = by_state.get(e, 0) + 1
+        for g in (a.get("genero") or "").split(","):
+            g = g.strip()
+            if g:
+                genres[g] = genres.get(g, 0) + 1
+        if a.get("puntuacion"):
+            scores.append(float(a["puntuacion"]))
+    top = sorted([a for a in items if a.get("puntuacion")], key=lambda x: float(x["puntuacion"]), reverse=True)[:6]
+    recientes = sorted(items, key=lambda x: x.get("creado_en") or "", reverse=True)[:6]
+    viendo = [a for a in items if a.get("estado_usuario") in ("viendo", "watching")]
+    if tipo == "manga":
+        viendo = _viendo_ahora(items)
+    else:
+        viendo = sorted(viendo, key=lambda x: x.get("creado_en") or "", reverse=True)[:6]
+    return {"tipo": tipo, "total": len(items), **extra,
+            "avg_score": round(sum(scores) / len(scores), 2) if scores else 0,
+            "favorite_genre": max(genres, key=genres.get) if genres else "",
+            "by_state": by_state,
+            "genres": dict(sorted(genres.items(), key=lambda x: -x[1])[:16]),
+            "top_rated": top, "watching": viendo, "recently_added": recientes}
+
 
 # ── Importar desde texto ─────────────────────────────────────────────────────
 
@@ -4818,6 +4887,9 @@ async def animeav1_evento(req: AnimeAV1EventoRequest, request: Request):
     página puede cambiarte la lista por la espalda."""
     if request.headers.get("X-Miraru-Extension") != "1":
         raise HTTPException(403, "Solo la extensión de Miraru puede usar esta ruta")
+    if req.status != -1 and req.accion != "desmarcar":
+        import retomar
+        retomar.marcado(req.mediaId, req.episode)      # v2.18.1: ya no hay nada que retomar
     loop = asyncio.get_running_loop()
     try:
         r = await asyncio.wait_for(loop.run_in_executor(
@@ -5021,6 +5093,41 @@ async def extension_poner(req: DeshacerRequest, request: Request):
     accion = "corregido" if cambios else "sin cambios"
     animeav1_sync.guardar_ultimo_evento(req.nombre, req.episodio, accion)
     return _respuesta_evento(req.nombre, local, accion, marcado=req.episodio)
+
+
+# ── v2.18.1: «Retomar por donde lo dejaste» (ver retomar.py) ───────────────
+class ProgresoRequest(BaseModel):
+    mediaId: int = 0
+    slug: str = ""
+    episode: int = 0
+    titulo: str = ""
+    t: int = 0
+    d: int = 0
+    url: str = ""
+
+
+@app.post("/api/extension/progreso")
+async def extension_progreso(req: ProgresoRequest, request: Request):
+    if request.headers.get("X-Miraru-Extension") != "1":
+        raise HTTPException(403, "Solo la extensión de Miraru puede usar esta ruta")
+    import retomar
+    r = retomar.guardar(req.dict())
+    if not r["ok"]:
+        raise HTTPException(422, "Episodio no válido")
+    return r
+
+
+@app.get("/api/retomar")
+async def retomar_pendiente():
+    import retomar
+    return {"retomar": retomar.pendiente()}
+
+
+@app.post("/api/retomar/descartar")
+async def retomar_descartar():
+    import retomar
+    retomar.descartar()
+    return {"ok": True}
 
 
 # ── v2.16.1: la extensión trae tus listas de AnimeAV1 («Mis Listas») ─────────

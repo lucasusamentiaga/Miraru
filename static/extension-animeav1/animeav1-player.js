@@ -84,6 +84,9 @@
     const yo = estado = {slug: u.slug, ep: u.ep, mediaId: 0, malId: 0, episodios: 0, op: null, ed: null, listo: false, seguir: false};
     // ¿Llegaste aquí con «Siguiente automático»? Se lee una vez (Byse tiene dos marcos).
     try { yo.seguir = sessionStorage.getItem('miraru-seguir') === String(u.ep); sessionStorage.removeItem('miraru-seguir'); } catch (_) { /* nada */ }
+    // v1.11: «Retomar» desde Miraru: …/media/slug/5#miraru-t=754 → al minuto 12:34.
+    const mt = location.hash.match(/miraru-t=(\d+)/);
+    yo.irA = mt ? Number(mt[1]) : 0;
     pintarBarra();                // «Buscando tiempos…» mientras tanto
     try {
       const j = await (await fetch(`/media/${u.slug}/${u.ep}/__data.json`, {cache: 'no-store'})).json();
@@ -122,7 +125,7 @@
     if (!dest.size) return;
     const msg = {miraru: 'config', op: estado.op, ed: estado.ed,
       saltar: saltarOn(), auto: autoOn(), sinPlus: !plus, haySiguiente: !!siguienteUrl(),
-      reproducir: !!estado.seguir,
+      reproducir: !!estado.seguir || estado.irA > 0, irA: estado.irA || 0,
       textos: {saltar: tr('Saltar opening'), saltarSin: tr('Saltar opening · +85 s'), saltado: tr('Opening saltado'),
                verOp: tr('Ver opening'), siguiente: tr('Siguiente episodio'), en: tr('Episodio {e}', {e: estado.ep + 1}),
                cancelar: tr('Cancelar'), pasando: tr('Pasando al siguiente…')}};
@@ -133,9 +136,24 @@
     if (!ORIGEN_REPRODUCTOR.test(e.origin) || !e.data || typeof e.data !== 'object') return;
     if (e.data.miraru === 'hola') { if (e.source) ventanas.add(e.source); mandarConfig(); }
     if (e.data.miraru === 'siguiente' && autoOn()) pasarAlSiguiente();
+    if (e.data.miraru === 'tiempo') guardarTiempo(Number(e.data.t) || 0, Number(e.data.d) || 0);
   });
 
   let pasando = false;
+  // v1.11: por qué minuto vas (para «Retomar por donde lo dejaste» en Miraru).
+  let tiempoMandado = 0;
+  function guardarTiempo(t, d) {
+    if (!estado || !estado.listo || !(d > 0)) return;
+    if (Date.now() - tiempoMandado < 15000 && t / d < 0.92) return;   // cada 15 s basta
+    tiempoMandado = Date.now();
+    const titulo = (document.querySelector('h1') || {}).textContent || document.title || '';
+    try {
+      chrome.runtime.sendMessage({tipo: 'av1-progreso', mediaId: estado.mediaId, slug: estado.slug, episode: estado.ep,
+        titulo: titulo.trim().slice(0, 200), t: Math.floor(t), d: Math.floor(d),
+        url: `${location.origin}/media/${estado.slug}/${estado.ep}`});
+    } catch (_) { /* extensión recargada */ }
+  }
+
   async function pasarAlSiguiente() {
     if (pasando || !estado) return;
     const url = siguienteUrl();

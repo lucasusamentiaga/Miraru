@@ -24,6 +24,22 @@ logFile = carpeta & "\arranque.log"
 
 shell.CurrentDirectory = carpeta
 
+' === 0. Acceso directo con el logo =========================================
+' Un .vbs no puede tener icono propio: se deja al lado "Miraru.lnk", que abre
+' este mismo archivo y lleva el logo de Miraru. Se crea una vez.
+If Not fso.FileExists(carpeta & "\Miraru.lnk") And fso.FileExists(carpeta & "\static\icon.ico") Then
+    On Error Resume Next
+    Dim acceso
+    Set acceso = shell.CreateShortcut(carpeta & "\Miraru.lnk")
+    acceso.TargetPath = shell.ExpandEnvironmentStrings("%WINDIR%") & "\System32\wscript.exe"
+    acceso.Arguments = """" & WScript.ScriptFullName & """"
+    acceso.WorkingDirectory = carpeta
+    acceso.IconLocation = carpeta & "\static\icon.ico,0"
+    acceso.Description = "Miraru"
+    acceso.Save
+    On Error GoTo 0
+End If
+
 ' === 1. Buscar Python ========================================================
 ' Orden de prioridad:
 '   1) venv local del proyecto
@@ -192,10 +208,37 @@ If codigo <> 0 Then
     detalle = ""
     If fso.FileExists(logInterno) Then
         On Error Resume Next
-        detalle = vbCrLf & vbCrLf & "Detalle:" & vbCrLf & _
-                  fso.OpenTextFile(logInterno, 1).ReadAll()
+        detalle = vbCrLf & vbCrLf & "Detalle:" & vbCrLf & UltimasLineas(LeerUtf8(logInterno), 18)
         On Error GoTo 0
     End If
     MsgBox "Miraru no pudo arrancar (codigo " & codigo & ")." & detalle, _
            vbExclamation, "Miraru"
 End If
+
+
+' === Utilidades ===============================================================
+' El log se escribe en UTF-8: leido como ANSI salian letras raras.
+' Y solo las ultimas lineas, que son las que dicen el fallo.
+Function LeerUtf8(ruta)
+    Dim st
+    Set st = CreateObject("ADODB.Stream")
+    st.Type = 2
+    st.Charset = "utf-8"
+    st.Open
+    st.LoadFromFile ruta
+    LeerUtf8 = st.ReadText(-1)
+    st.Close
+End Function
+
+Function UltimasLineas(texto, n)
+    Dim lineas, i, desde, out
+    lineas = Split(Replace(texto, vbCrLf, vbLf), vbLf)
+    desde = UBound(lineas) - n
+    If desde < 0 Then desde = 0
+    out = ""
+    For i = desde To UBound(lineas)
+        If Len(lineas(i)) > 220 Then lineas(i) = Left(lineas(i), 220) & "..."
+        out = out & lineas(i) & vbCrLf
+    Next
+    UltimasLineas = out
+End Function
