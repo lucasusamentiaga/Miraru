@@ -16,7 +16,8 @@ multiprocessing.freeze_support()
 # (ver ventana_windows.pantalla_de_arranque). Antes de nada más: ni log ni BD.
 if len(sys.argv) >= 2 and sys.argv[1] == "--miraru-splash":
     import ventana_windows as _vw
-    _vw.splash_proceso(sys.argv[2] if len(sys.argv) > 2 else "")
+    _vw.splash_proceso(sys.argv[2] if len(sys.argv) > 2 else "",
+                       padre=int(sys.argv[3]) if len(sys.argv) > 3 and sys.argv[3].isdigit() else 0)
     sys.exit(0)
 
 import io

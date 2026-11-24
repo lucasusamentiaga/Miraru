@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.18.2 — La ventanita de arranque se cierra siempre
+
+- **La pantalla «Abriendo Miraru…» se cierra siempre**: (proceso aparte desde 2.18.1) se cierra sola en cuanto Miraru
+  contesta o si Miraru se cierra, y arranca fuera de la carpeta del programa: con el Python de un
+  venv, terminar el proceso lanzado no cerraba el que pinta, y al desinstalar la carpeta no se
+  podía borrar (lo cazó la prueba de instalación en Windows).
+
 ## v2.18.1 — Retomar, estadísticas de todo y arreglo del arranque (extensión 1.11.0)
 
 - **Arreglo: «Miraru no pudo arrancar (código -2147483645)»**: era Tcl abortando el proceso

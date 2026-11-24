@@ -13,6 +13,14 @@ from __future__ import annotations
 # pasos (opcional): frases cortas → «Cómo empezar», numeradas.
 NOVEDADES: list[dict] = [
     {
+        "version": "2.18.2",
+        "titulo": "Arranque más fino",
+        "puntos": [
+            {"icono": "🪟", "titulo": "«Abriendo Miraru…», siempre a tiempo",
+             "texto": "La ventanita de arranque se cierra en cuanto Miraru está listo y ya no se queda abierta de más."},
+        ],
+    },
+    {
         "version": "2.18.1",
         "titulo": "Retoma donde lo dejaste",
         "puntos": [

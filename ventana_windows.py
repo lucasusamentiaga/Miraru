@@ -58,14 +58,15 @@ ARG_SPLASH = "--miraru-splash"
 
 def _orden_splash(logo: Optional[Path]) -> list[str]:
     logo_s = str(logo or "")
+    padre = os.getpid()
     if getattr(sys, "frozen", False):
-        return [sys.executable, ARG_SPLASH, logo_s]
+        return [sys.executable, ARG_SPLASH, logo_s, str(padre)]
     exe = Path(sys.executable)
     sin_consola = exe.with_name("pythonw.exe")
     exe = sin_consola if sin_consola.is_file() else exe
     carpeta = str(Path(__file__).resolve().parent)
     codigo = (f"import sys; sys.path.insert(0, {carpeta!r}); import ventana_windows as v; "
-              f"v.splash_proceso({logo_s!r})")
+              f"v.splash_proceso({logo_s!r}, padre={padre})")
     return [str(exe), "-c", codigo]
 
 
@@ -76,8 +77,12 @@ def pantalla_de_arranque(listo: threading.Event, logo: Optional[Path] = None,
         return None
     import subprocess
     try:
+        import tempfile
+        # cwd fuera de la carpeta de Miraru: un proceso «dentro» impediría
+        # borrarla al desinstalar.
         proc = subprocess.Popen(_orden_splash(logo), creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-                                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                cwd=tempfile.gettempdir(), stdin=subprocess.DEVNULL,
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception as e:  # noqa: BLE001
         log(f"Pantalla de arranque: {e}")
         return None
@@ -94,8 +99,28 @@ def pantalla_de_arranque(listo: threading.Event, logo: Optional[Path] = None,
     return t
 
 
-def splash_proceso(logo: str = "", maximo: float = 45.0) -> None:
-    """Lo que se ejecuta en el proceso de la pantalla de arranque (hilo principal)."""
+def _vive(pid: int) -> bool:
+    """¿Sigue vivo el proceso `pid`? (Windows: sin psutil)."""
+    if not pid or not ES_WINDOWS:
+        return True
+    try:
+        import ctypes
+        k = ctypes.windll.kernel32
+        h = k.OpenProcess(0x00100000, False, int(pid))      # SYNCHRONIZE
+        if not h:
+            return False
+        try:
+            return k.WaitForSingleObject(h, 0) == 0x102      # WAIT_TIMEOUT = sigue
+        finally:
+            k.CloseHandle(h)
+    except Exception:  # noqa: BLE001
+        return True
+
+
+def splash_proceso(logo: str = "", maximo: float = 45.0, padre: int = 0) -> None:
+    """Lo que se ejecuta en el proceso de la pantalla de arranque (hilo principal).
+    Se cierra sola si Miraru (el proceso `padre`) ya no está: con el Python de
+    un venv, «terminar» el proceso que se lanzó no siempre cierra el que pinta."""
     try:
         import tkinter as tk
         root = tk.Tk()
@@ -124,6 +149,26 @@ def splash_proceso(logo: str = "", maximo: float = 45.0) -> None:
         tk.Label(caja, text="Miraru", fg=texto, bg=fondo, font=("Segoe UI Semibold", 14)).pack(anchor="w", pady=(28, 0))
         tk.Label(caja, text=TEXTOS[idioma_sistema()], fg=gris, bg=fondo, font=("Segoe UI", 10)).pack(anchor="w")
         root.after(int(maximo * 1000), root.destroy)
+
+        puerto = int(os.environ.get("MIRARU_PUERTO") or 0)
+
+        def escucha() -> bool:
+            if not puerto:
+                return False
+            import socket
+            try:
+                with socket.create_connection(("127.0.0.1", puerto), timeout=0.2):
+                    return True
+            except OSError:
+                return False
+
+        def vigilar_padre():
+            # Se cierra en cuanto Miraru contesta o si Miraru ya no está.
+            if not _vive(padre) or escucha():
+                root.destroy()
+                return
+            root.after(400, vigilar_padre)
+        root.after(300, vigilar_padre)
         root.mainloop()
     except Exception:  # noqa: BLE001
         pass
