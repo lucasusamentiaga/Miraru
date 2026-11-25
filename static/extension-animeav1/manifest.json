@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Miraru — episodios vistos",
   "short_name": "Miraru",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "description": "Lo que ves en AnimeAV1, AnimeFLV, Netflix y Crunchyroll se apunta en tu Miraru. En AnimeAV1 salta openings y sigue solo.",
   "icons": {
     "16": "iconos/16.png",

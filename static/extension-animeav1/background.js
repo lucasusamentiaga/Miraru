@@ -417,13 +417,17 @@ function versionMayor(a, b) {
   return false;
 }
 
+// v1.11.1: instalada desde Edge Add-ons u Opera Add-ons (la tienda añade
+// update_url al manifest) → se actualiza sola desde la tienda, no desde Miraru.
+const DE_TIENDA = !!chrome.runtime.getManifest().update_url;
+
 async function buscarActualizacion() {
   const mia = chrome.runtime.getManifest().version;
   try {
     const r = await fetch(`http://127.0.0.1:${await puerto()}/api/extension/version`, {cache: 'no-store'});
     if (!r.ok) return null;
     const d = await r.json();
-    const hay = versionMayor(d.version, mia);
+    const hay = !DE_TIENDA && versionMayor(d.version, mia);
     saludar();
     await chrome.storage.local.set({actualizacion: hay ? {version: d.version, carpeta: d.carpeta, cuando: Date.now()} : null});
     if (hay) {

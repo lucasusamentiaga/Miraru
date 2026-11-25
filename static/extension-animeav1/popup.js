@@ -313,6 +313,8 @@ async function iniciar() {
       $('nv-txt').textContent = r.detalle ? tr(r.detalle) : tr('No se pudo actualizar');
     }
   });
+  // v1.11.1: desde una tienda de extensiones se actualiza sola.
+  if (chrome.runtime.getManifest().update_url) $('buscar-act').hidden = true;
   $('buscar-act').addEventListener('click', async () => {
     const b = $('buscar-act');
     b.disabled = true; b.textContent = tr('Buscando…');
