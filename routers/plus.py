@@ -15,6 +15,7 @@ import avisos_movil
 import plus
 import sincro_pcs
 import stats_plus
+import valorar
 from core import executor
 
 router = APIRouter(tags=["plus"])
@@ -35,6 +36,15 @@ class _Plan(BaseModel):
 
 class _Activa(BaseModel):
     activa: bool
+
+
+@router.post("/api/valorar/quizas")
+async def valorar_quizas():
+    """v2.18.4: tras un buen momento (marcar un episodio, completar un anime) la
+    página pregunta; si toca, se abre la ventana de valorar de la Store."""
+    if not valorar.toca():
+        return {"pedida": False}
+    return await _hilo(valorar.pedir)
 
 
 @router.get("/api/plus")

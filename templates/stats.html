@@ -1295,7 +1295,11 @@ function _pintarWrapped(fondo, d) {
   if (d.total_episodios) {
     const dl = _wEl('button', 'wrap-btn', '📸 Descargar imagen'); dl.type = 'button';
     dl.onclick = () => exportarWrapped(dl);
-    pie.append(dl);
+    // v2.18.4: formato vertical 9:16 para stories de Instagram y TikTok
+    const st = _wEl('button', 'wrap-btn sec', '📱 Para stories'); st.type = 'button';
+    st.title = 'Imagen vertical para Instagram, TikTok o WhatsApp';
+    st.onclick = () => exportarWrapped(st, 'story');
+    pie.append(st, dl);
   }
   caja.append(x, cab, cuerpo, pie);
   fondo.innerHTML = '';
@@ -1304,7 +1308,7 @@ function _pintarWrapped(fondo, d) {
 }
 
 // Imagen para compartir (1080×1350, formato de publicación vertical).
-async function exportarWrapped(btn) {
+async function exportarWrapped(btn, formato) {
   if (btn) btn.disabled = true;
   try {
     const d = _wrapDatos || await (await fetch('/api/stats/wrapped?year=' + new Date().getFullYear())).json();
@@ -1469,13 +1473,43 @@ async function exportarWrapped(btn) {
     ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.font = F(600, 22);
     ctx.fillText(extra, W - 80, MY);
 
-    ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.font = F(400, 17); ctx.textAlign = 'center';
-    ctx.fillText('github.com/lucasusamentiaga/Miraru', W / 2, H - 22);
+    // v2.18.4: el pie dice dónde conseguir Miraru (antes, la web de GitHub).
+    ctx.fillStyle = 'rgba(255,255,255,.42)'; ctx.font = F(600, 18); ctx.textAlign = 'center';
+    ctx.fillText('Miraru: Anime Tracker · Microsoft Store', W / 2, H - 22);
+
+    let lienzo = canvas;
+    if (formato === 'story') {
+      // 1080×1920: la misma tarjeta en el centro, con título arriba y llamada abajo.
+      const SW = 1080, SH = 1920, s = document.createElement('canvas');
+      s.width = SW; s.height = SH;
+      const c2 = s.getContext('2d');
+      c2.fillStyle = '#0b0912'; c2.fillRect(0, 0, SW, SH);
+      const luz = c2.createRadialGradient(SW * .2, 0, 40, SW * .2, 0, SH * .55);
+      luz.addColorStop(0, `rgba(${ACC},.55)`); luz.addColorStop(1, `rgba(${ACC},0)`);
+      c2.fillStyle = luz; c2.fillRect(0, 0, SW, SH);
+      const luz2 = c2.createRadialGradient(SW, SH, 40, SW, SH, SH * .45);
+      luz2.addColorStop(0, `rgba(${ACC},.35)`); luz2.addColorStop(1, `rgba(${ACC},0)`);
+      c2.fillStyle = luz2; c2.fillRect(0, 0, SW, SH);
+      const y0 = 250;
+      c2.save(); c2.shadowColor = 'rgba(0,0,0,.6)'; c2.shadowBlur = 50; c2.shadowOffsetY = 20;
+      c2.beginPath(); c2.roundRect(0, y0, SW, H, 0); c2.fillStyle = '#0b0912'; c2.fill(); c2.restore();
+      c2.drawImage(canvas, 0, y0);
+      c2.textAlign = 'center'; c2.fillStyle = '#fff'; c2.font = `800 64px "Space Grotesk", Inter, "Segoe UI", sans-serif`;
+      c2.fillText(T('#MiAñoEnAnime'), SW / 2, 150);
+      c2.fillStyle = 'rgba(255,255,255,.7)'; c2.font = F(500, 30);
+      c2.fillText(T('¿Y el tuyo?'), SW / 2, 205);
+      const yb = y0 + H + 120;
+      c2.fillStyle = '#fff'; c2.font = F(800, 40);
+      c2.fillText('Miraru: Anime Tracker', SW / 2, yb);
+      c2.fillStyle = 'rgba(255,255,255,.75)'; c2.font = F(500, 28);
+      c2.fillText(T('Gratis en la Microsoft Store'), SW / 2, yb + 50);
+      lienzo = s;
+    }
 
     const link = document.createElement('a');
     // Nombre solo con ASCII: con «ñ» Chrome descartaba el nombre y bajaba un archivo «download» sin extensión.
-    link.download = `miraru-resumen-${d.year || "anime"}.png`;
-    link.href = canvas.toDataURL('image/png');
+    link.download = `miraru-resumen-${d.year || "anime"}${formato === 'story' ? '-stories' : ''}.png`;
+    link.href = lienzo.toDataURL('image/png');
     link.click();
   } catch (e) {
     miraruAviso('No se pudo generar la imagen: ' + (e.message || 'error'));

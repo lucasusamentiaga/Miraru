@@ -13,6 +13,15 @@ from __future__ import annotations
 # pasos (opcional): frases cortas → «Cómo empezar», numeradas.
 NOVEDADES: list[dict] = [
     {
+        "version": "2.18.4",
+        "titulo": "Tu año en anime, para stories",
+        "puntos": [
+            {"icono": "📱", "titulo": "«Mi año en anime» en vertical",
+             "texto": "Nuevo botón «Para stories»: la misma tarjeta en formato vertical, lista para Instagram, TikTok o WhatsApp.",
+             "donde": ["Estadísticas", "Mi año en anime"]},
+        ],
+    },
+    {
         "version": "2.18.3",
         "titulo": "Nombre nuevo en la Store",
         "puntos": [

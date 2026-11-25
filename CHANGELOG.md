@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.18.4 — «Mi año en anime» para stories, valorar en la Store y extensión para tiendas (extensión 1.11.1)
+
+- **«Mi año en anime» para stories**: botón «📱 Para stories» que baja la tarjeta en 1080×1920
+  (#MiAñoEnAnime arriba, «Miraru: Anime Tracker · Gratis en la Microsoft Store» abajo). El pie de
+  la imagen normal dice «Miraru: Anime Tracker · Microsoft Store» en vez de la web de GitHub.
+- **Valorar en la Store** (`valorar.py`, `POST /api/valorar/quizas`): tras +1 o completar un anime,
+  si no hay otra ventana abierta, la versión de la Store abre la ventana oficial de valorar
+  (≥ 20 episodios, ≥ 3 días de uso, máximo 2 veces con 90 días entre ellas, nunca si ya valoraste).
+- **Extensión 1.11.1, lista para Edge Add-ons y Opera Add-ons**: nombre y descripción traducidos
+  (`_locales` es/en); instalada desde una tienda (`update_url` en el manifest) no ofrece
+  actualizarse desde Miraru. Material de las fichas en `packaging/extension-tiendas/`.
+
 ## v2.18.3 — «Miraru: Anime Tracker» en la Store
 
 - **Nombre en la Store «Miraru: Anime Tracker»** (`build_msix.py`, `NOMBRE_STORE` en

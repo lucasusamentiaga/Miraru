@@ -803,12 +803,12 @@ body.sel-mode .ac .salir{display:none}
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
 <script src="/static/customize.js"></script>
-<script src="/static/retomar.js?v=2.18.3"></script>
-<script src="/static/novedades.js?v=2.18.3" defer></script>
-<script src="/static/selects.js?v=2.18.3" defer></script>
-<script src="/static/temporadas.js?v=2.18.3"></script>
-<script src="/static/tour.js?v=2.18.3" defer></script>
-<script src="/static/navegador.js?v=2.18.3" defer></script>
+<script src="/static/retomar.js?v=2.18.4"></script>
+<script src="/static/novedades.js?v=2.18.4" defer></script>
+<script src="/static/selects.js?v=2.18.4" defer></script>
+<script src="/static/temporadas.js?v=2.18.4"></script>
+<script src="/static/tour.js?v=2.18.4" defer></script>
+<script src="/static/navegador.js?v=2.18.4" defer></script>
 <script src="/static/i18n-dom.js" defer></script>
 <script src="/static/dialogos.js" defer></script>
 </head>
@@ -3954,6 +3954,20 @@ async function setRating(enc, score) {
 
 // v2.4: marcar completado de un toque — fija estado, episodios al total y la
 // fecha de fin (local) si no estaba puesta.
+// v2.18.4: tras un buen momento, la Store puede pedir una valoración (lo decide
+// Miraru: solo en la versión de la Store, con uso real y como mucho dos veces).
+// Nunca encima de otra ventana de Miraru.
+function quizasValorar() {
+  if (window._valorarPreguntado) return;
+  window._valorarPreguntado = true;
+  setTimeout(() => {
+    const abierta = document.querySelector('.modal-bg.open, .mnv-bg, .mnav-bg, .mdlg-fondo, #mplus, #wrap-fondo')
+      || document.body.classList.contains('mtour-on');
+    if (abierta) { window._valorarPreguntado = false; return; }
+    fetch('/api/valorar/quizas', {method: 'POST'}).catch(() => {});
+  }, 2500);
+}
+
 async function markComplete(enc) {
   const nombre = decodeURIComponent(enc);
   const idx = ANIMES.findIndex(a => a.nombre === nombre);
@@ -3978,6 +3992,7 @@ async function markComplete(enc) {
     await cargar();
     if (typeof cargarContinuar === 'function') cargarContinuar();
     toast('✓ ' + nombre + ' · ' + (T('completed') || 'Completado'));
+    quizasValorar();
   } catch(_) { toast(T('error'), 'err'); }
 }
 
@@ -4003,6 +4018,7 @@ async function plusEpisodio(enc) {
     const idx = ANIMES.findIndex(a => a.nombre === nombre);
     if (idx >= 0) ANIMES[idx].episodios_vistos = d.episodios_vistos;
     render();
+    quizasValorar();
     // v2.4: contador de maratón — eps marcados en la sesión actual. Se reinicia
     // tras 10 min sin actividad.
     window._marathon = (window._marathon || 0) + 1;
