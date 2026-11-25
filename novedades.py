@@ -13,6 +13,16 @@ from __future__ import annotations
 # pasos (opcional): frases cortas → «Cómo empezar», numeradas.
 NOVEDADES: list[dict] = [
     {
+        "version": "2.18.3",
+        "titulo": "Nombre nuevo en la Store",
+        "puntos": [
+            {"icono": "🔎", "titulo": "Ahora es «Miraru: Anime Tracker»",
+             "texto": "En la Microsoft Store Miraru se llama así para que lo encuentre más gente. En tu PC sigue siendo Miraru y tu lista no cambia."},
+            {"icono": "📱", "titulo": "El móvil, entero en tu idioma",
+             "texto": "La versión del móvil ya traduce el estado de la conexión, el aviso de que el código caduca y «Añadir a pantalla de inicio»."},
+        ],
+    },
+    {
         "version": "2.18.2",
         "titulo": "Arranque más fino",
         "puntos": [

@@ -33,6 +33,10 @@ LAYOUT = ROOT / "build" / "msix"
 SALIDA = ROOT / "dist" / "Miraru.msix"
 
 NOMBRE_PRUEBAS = "Miraru.Pruebas"
+# Nombre en la Store (Package/Properties/DisplayName): tiene que ser uno de los
+# reservados en Partner Center (Administración de productos → Nombres de la app).
+# En el menú Inicio sigue saliendo «Miraru» (VisualElements/DisplayName).
+NOMBRE_STORE = "Miraru: Anime Tracker"
 EDITOR_PRUEBAS = "CN=MiraruPruebas"
 
 # (archivo, tamaño en px) que pide el manifiesto
@@ -68,7 +72,7 @@ def generar_manifiesto(nombre: str, editor: str, editor_visible: str, version: s
   IgnorableNamespaces="uap rescap">
   <Identity Name={quoteattr(nombre)} Publisher={quoteattr(editor)} Version="{version}" ProcessorArchitecture="x64" />
   <Properties>
-    <DisplayName>Miraru</DisplayName>
+    <DisplayName>{escape(NOMBRE_STORE)}</DisplayName>
     <PublisherDisplayName>{escape(editor_visible)}</PublisherDisplayName>
     <Logo>Assets\\StoreLogo.png</Logo>
     <Description>Tu biblioteca de anime: seguimiento, estadisticas y recomendaciones.</Description>

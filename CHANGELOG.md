@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.18.3 — «Miraru: Anime Tracker» en la Store
+
+- **Nombre en la Store «Miraru: Anime Tracker»** (`build_msix.py`, `NOMBRE_STORE` en
+  `Package/Properties/DisplayName`; reservado en Partner Center): Miraru no salía en la Store
+  al buscar «anime tracker», «anime list» ni «lista de anime», solo por su nombre. En el menú
+  Inicio sigue siendo «Miraru» (`VisualElements`).
+- **Móvil**: traducidos el estado de la conexión, la caducidad del código y «Añadir a pantalla
+  de inicio».
+
 ## v2.18.2 — La ventanita de arranque se cierra siempre
 
 - **La pantalla «Abriendo Miraru…» se cierra siempre**: (proceso aparte desde 2.18.1) se cierra sola en cuanto Miraru

@@ -24,6 +24,10 @@ def test_manifiesto_valido_para_la_store():
     assert app.get("EntryPoint") == "Windows.FullTrustApplication"
     assert "runFullTrust" in xml
     assert raiz.find("m:Properties/m:PublisherDisplayName", NS).text == "Lucas & co"
+    # Nombre reservado en Partner Center (Store) y nombre corto en el menú Inicio.
+    assert raiz.find("m:Properties/m:DisplayName", NS).text == "Miraru: Anime Tracker"
+    vis = app.find("{http://schemas.microsoft.com/appx/manifest/uap/windows10}VisualElements")
+    assert vis.get("DisplayName") == "Miraru"
 
 
 def test_identidad_de_pruebas_sin_variables(monkeypatch):
