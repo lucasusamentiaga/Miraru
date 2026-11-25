@@ -1099,7 +1099,8 @@ async function abrirListaKpi(tipo) {
     if (tipo === 'anio') {
       const w = _wrapDatos && _wrapDatos.year === new Date().getFullYear() ? _wrapDatos
         : await (await fetch('/api/stats/wrapped?year=' + new Date().getFullYear(), {cache: 'no-store'})).json();
-      filas = (w.vistos_anio || []).map(a => ({nombre: a.nombre, imagen: a.imagen, meta: a.episodios + ' ' + (a.episodios === 1 ? 'episodio' : 'episodios') + ' este año'}));
+      filas = (w.vistos_anio || []).map(a => ({nombre: a.nombre, imagen: a.imagen, meta: a.episodios + ' ' + (a.episodios === 1 ? 'episodio' : 'episodios') + ' este año'
+        + (Number(a.vas_por || 0) > a.episodios ? ' · ' + (window.miraruTraducir ? window.miraruTraducir('vas por el ep {n}') : 'vas por el ep {n}').replace('{n}', a.vas_por) : '')}));
     } else {
       const d = await (await fetch('/api/animes/slim', {cache: 'no-store'})).json();
       const est = tipo === 'viendo' ? ['viendo', 'watching'] : ['completado', 'completed'];
@@ -1257,7 +1258,8 @@ function _pintarWrapped(fondo, d) {
         if (a.imagen) img.src = _thumbUrl(a.imagen); else img.style.visibility = 'hidden';
         img.onerror = () => { img.style.visibility = 'hidden'; };
         const t = _wEl('div', 't');
-        t.append(_wEl('strong', null, a.nombre), _wEl('small', null, a.episodios + ' episodios' + (a.puntuacion ? ' · ⭐ ' + a.puntuacion : '')));
+        const vas = Number(a.vas_por || 0) > a.episodios ? ' · ' + _wTr('vas por el ep {n}').replace('{n}', a.vas_por) : '';
+        t.append(_wEl('strong', null, a.nombre), _wEl('small', null, a.episodios + ' episodios' + vas + (a.puntuacion ? ' · ⭐ ' + a.puntuacion : '')));
         li.append(img, t);
         ol.append(li);
       });
@@ -1420,10 +1422,13 @@ async function exportarWrapped(btn, formato) {
     if (top[0]) {
       ctx.fillStyle = `rgba(${ACC},1)`; ctx.font = F(700, 22); ctx.fillText(T('Tu anime del año').toUpperCase(), cx0, yy);
       ctx.fillStyle = '#fff'; ctx.font = G(700, 44);
-      lineas(top[0].nombre, anchoD, 2).forEach((t, i) => ctx.fillText(t, cx0, yy + 54 + i * 50));
-      yy += 54 + Math.min(2, lineas(top[0].nombre, anchoD, 2).length) * 50;
+      const l0 = lineas(top[0].nombre, anchoD, 2);
+      l0.forEach((t, i) => ctx.fillText(t, cx0, yy + 54 + i * 50));
+      yy += 54 + l0.length * 50;
       ctx.fillStyle = 'rgba(255,255,255,.65)'; ctx.font = F(500, 24);
-      ctx.fillText(T(top[0].episodios + ' episodios este año') + (top[0].puntuacion ? '  ·  ★ ' + top[0].puntuacion : ''), cx0, yy - 6);
+      // v2.18.5: si ya ibas más avanzado (lo importado no tiene fecha), se dice.
+      const vas = Number(top[0].vas_por || 0) > top[0].episodios ? '  ·  ' + T('vas por el ep {n}').replace('{n}', top[0].vas_por) : '';
+      ctx.fillText(recorta(T(top[0].episodios + ' episodios este año') + vas + (top[0].puntuacion ? '  ·  ★ ' + top[0].puntuacion : ''), anchoD), cx0, yy - 6);
       yy += 30;
     }
     const horas = Number(d.horas_estimadas || 0);
@@ -1448,9 +1453,12 @@ async function exportarWrapped(btn, formato) {
         poster(imgs[i + 1], a, x, y, pw, ph, 14);
         insignia(i + 2, x + 26, y + 26, 20);
         ctx.fillStyle = '#fff'; ctx.font = F(600, 21);
-        lineas(a.nombre, pw, 2).forEach((t, k) => ctx.fillText(t, x, y + ph + 32 + k * 26));
+        // v2.18.5: las líneas se miden UNA vez con la letra del título (antes se
+        // volvían a medir con la de «eps», más pequeña, y se montaban: «Black Clover Season 2»).
+        const ls = lineas(a.nombre, pw, 2);
+        ls.forEach((t, k) => ctx.fillText(t, x, y + ph + 32 + k * 26));
         ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.font = F(500, 18);
-        ctx.fillText(a.episodios + ' eps', x, y + ph + 32 + Math.min(2, lineas(a.nombre, pw, 2).length) * 26 + 2);
+        ctx.fillText(a.episodios + ' eps', x, y + ph + 32 + ls.length * 26 + 2);
       });
     }
 

@@ -284,6 +284,7 @@ async function cargarNoticias(btn) {
 
 let LISTA_LOCAL = new Set(); // nombres ya en la lista del usuario
 let TR = {};
+let GENEROS = {};
 
 async function init() {
   try {
@@ -291,6 +292,7 @@ async function init() {
     const langD   = await langR.json();
     const animesD = await animesR.json();
     TR = langD.translations || {};
+    GENEROS = langD.generos || {};          // v2.18.5: géneros traducidos
     LISTA_LOCAL = new Set((animesD.animes||[]).map(a => a.nombre.toLowerCase()));
   } catch(_) {}
   // Por [data-p="all"] y no por '.plat-btn': querySelector devuelve el primero
@@ -463,7 +465,7 @@ function makeCard(a) {
   (a.generos||[]).slice(0,3).forEach(g => {
     const span = document.createElement('span');
     span.className = 'genre-tag';
-    span.textContent = g;
+    span.textContent = GENEROS[g] || g;
     genres.appendChild(span);
   });
   info.appendChild(genres);

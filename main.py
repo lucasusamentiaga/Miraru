@@ -81,6 +81,7 @@ import animeav1_sync
 import copia_nube
 import database as db
 import emision
+import generos
 import metadatos
 import sheets_sync
 import trabajos
@@ -1467,7 +1468,9 @@ async def peliculas_page():
 
 @app.get("/api/lang")
 async def get_language():
-    return {"lang": get_lang(), "translations": TRANSLATIONS.get(get_lang(), {})}
+    # v2.18.5: «generos» traduce los géneros (vienen en inglés) en las tarjetas.
+    return {"lang": get_lang(), "translations": TRANSLATIONS.get(get_lang(), {}),
+            "generos": generos.mapa(get_lang())}
 
 @app.post("/api/lang")
 async def set_language(req: LangRequest):
@@ -2608,7 +2611,7 @@ async def get_stats():
         by_source[fuente] = by_source.get(fuente, 0) + 1
 
         for g in (a.get("genero") or "").split(","):
-            g = g.strip()
+            g = generos.nombre(g)       # v2.18.5: en el idioma de la interfaz
             if g:
                 genres[g] = genres.get(g, 0) + 1
 
@@ -2713,7 +2716,7 @@ async def stats_biblioteca(tipo: str = "manga"):
         e = a.get("estado_usuario") or "pendiente"
         by_state[e] = by_state.get(e, 0) + 1
         for g in (a.get("genero") or "").split(","):
-            g = g.strip()
+            g = generos.nombre(g)
             if g:
                 genres[g] = genres.get(g, 0) + 1
         if a.get("puntuacion"):
@@ -3108,7 +3111,7 @@ async def mobile_stats(request: Request):
         else:
             total_eps += max(ep_vistos, caps_total) if completado else ep_vistos
         for g in (a.get("genero") or "").split(","):
-            g = g.strip()
+            g = generos.nombre(g)
             if g: genres[g] += 1
     return {
         "total": len(animes),
@@ -4269,7 +4272,7 @@ def _fetch_recomendaciones(top_genres: list, existentes: set, existentes_ids: se
                 "trending": a.get("trending") or 0,
             })
         recos.sort(key=lambda x: -x["trending"])
-        return {"recomendaciones": recos[:15], "generos_base": top_genres,
+        return {"recomendaciones": recos[:15], "generos_base": [generos.nombre(g) for g in top_genres],
                 "fuente": "AniList"}
     except Exception as e:
         _sync_log.warning("Recomendaciones error: %s", e)
@@ -4283,14 +4286,14 @@ def _recomendaciones_respaldo(top_genres: list, existentes: set, motivo: str) ->
         recos = fuentes_respaldo.recomendaciones(top_genres, existentes)
         return {
             "recomendaciones": recos[:15],
-            "generos_base": top_genres,
+            "generos_base": [generos.nombre(g) for g in top_genres],
             "fuente": "Kitsu",
             "aviso": ("Ahora mismo hay menos datos de lo normal: estas "
                       "recomendaciones pueden ser menos precisas.") if recos else "",
         }
     except Exception as e:
         _sync_log.warning("Respaldo de recomendaciones (Kitsu): %s", e)
-        return {"recomendaciones": [], "generos_base": top_genres,
+        return {"recomendaciones": [], "generos_base": [generos.nombre(g) for g in top_genres],
                 "error": "Ahora mismo no se pueden cargar los datos. Inténtalo en un rato."}
 
 
@@ -4410,7 +4413,7 @@ async def api_reco_principiante():
     if aviso:
         base["aviso"] = aviso
 
-    base["generos_base"] = top_genres
+    base["generos_base"] = [generos.nombre(g) for g in top_genres]
     return base
 
 
@@ -4568,7 +4571,7 @@ async def stats_wrapped(year: Optional[int] = None):
         genre_cnt: Counter = Counter()
         for a in relevantes:
             for g in (a.get("genero") or "").split(","):
-                g = g.strip()
+                g = generos.nombre(g)
                 if g: genre_cnt[g] += 1
         recientes_year = relevantes[:5]
     else:
@@ -4577,7 +4580,7 @@ async def stats_wrapped(year: Optional[int] = None):
         genre_cnt = Counter()
         for a in animes:
             for g in (a.get("genero") or "").split(","):
-                g = g.strip()
+                g = generos.nombre(g)
                 if g: genre_cnt[g] += 1
         recientes_year = animes[:5]
 
@@ -4624,7 +4627,11 @@ async def stats_wrapped(year: Optional[int] = None):
             por_nombre = {a["nombre"]: a for a in animes}
             for r in por_anime:
                 a = por_nombre.get(r["nombre"], {})
+                # v2.18.5: «vas por el ep N». Solo cuentan los episodios apuntados con
+                # fecha; los que entraron al importar tu lista no tienen día y no
+                # pueden contarse como de este año (Gurren Lagann: 7 este año, vas por el 21).
                 vistos_anio.append({"nombre": r["nombre"], "episodios": r["c"],
+                                    "vas_por": int(a.get("episodios_vistos") or 0),
                                     "imagen": a.get("imagen") or "", "puntuacion": a.get("puntuacion")})
             mas_vistos = vistos_anio[:5]
             nuevos_year = sum(1 for a in animes if str(a.get("creado_en") or "").startswith(y))
@@ -4640,7 +4647,9 @@ async def stats_wrapped(year: Optional[int] = None):
         "animes_vistos":   len(nombres_activos) if use_year else None,
         # Pocos episodios apuntados frente a una lista grande: casi todo vino de
         # una importación (sin fecha). La ventana lo explica en vez de mentir.
-        "pocos_datos":     bool(use_year and total_eps < 30 and len(animes) >= 40),
+        # v2.18.5: o cuando de lo que ves este año ya ibas por delante (lo importado).
+        "pocos_datos":     bool(use_year and ((total_eps < 30 and len(animes) >= 40)
+                                              or sum(max(0, v["vas_por"] - v["episodios"]) for v in vistos_anio) >= 10)),
         "nuevos":          nuevos_year,
         "por_mes":         por_mes,
         "mes_top":         mes_top,

@@ -803,12 +803,12 @@ body.sel-mode .ac .salir{display:none}
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
 <script src="/static/customize.js"></script>
-<script src="/static/retomar.js?v=2.18.4"></script>
-<script src="/static/novedades.js?v=2.18.4" defer></script>
-<script src="/static/selects.js?v=2.18.4" defer></script>
-<script src="/static/temporadas.js?v=2.18.4"></script>
-<script src="/static/tour.js?v=2.18.4" defer></script>
-<script src="/static/navegador.js?v=2.18.4" defer></script>
+<script src="/static/retomar.js?v=2.18.5"></script>
+<script src="/static/novedades.js?v=2.18.5" defer></script>
+<script src="/static/selects.js?v=2.18.5" defer></script>
+<script src="/static/temporadas.js?v=2.18.5"></script>
+<script src="/static/tour.js?v=2.18.5" defer></script>
+<script src="/static/navegador.js?v=2.18.5" defer></script>
 <script src="/static/i18n-dom.js" defer></script>
 <script src="/static/dialogos.js" defer></script>
 </head>
@@ -1476,6 +1476,10 @@ function T(k, vars={}) {
   return txt;
 }
 
+// v2.18.5: los géneros vienen en inglés de las fuentes; se enseñan traducidos.
+let GENEROS = {};
+const _gen = g => GENEROS[g] || g;
+
 async function cargarIdioma() {
   try {
     const r = await fetch('/api/lang');
@@ -1483,6 +1487,7 @@ async function cargarIdioma() {
     const d = await r.json();
     LANG = d.lang;
     TR   = d.translations || {};
+    GENEROS = d.generos || {};
     const sel = document.getElementById('lang-sel');
     if (sel) sel.value = LANG;
     aplicarTraducciones();
@@ -2192,7 +2197,7 @@ function render() {
     const EM       = window.miraruEmision(a);       // v2.17.3: en emisión, lo emitido manda
     const pct      = capNum > 0 ? Math.min(100, Math.round(vistos / capNum * 100)) : 0;
     const showProg = capNum > 0;
-    const gens     = (a.genero||'').split(',').slice(0,2).map(g=>g.trim()).filter(Boolean);
+    const gens     = (a.genero||'').split(',').slice(0,2).map(g=>_gen(g.trim())).filter(Boolean);
     const enc      = encodeURIComponent(a.nombre);
     const thumbSrc = _esc(_thumbUrl(a.imagen) || BLANK_IMG);
     const curStars = Math.round((a.puntuacion || 0) / 2);
@@ -2786,7 +2791,7 @@ function abrirModal(enc) {
   (a.genero || '').split(',').map(g => g.trim()).filter(Boolean).forEach(g => {
     const sp = document.createElement('span');
     sp.className = 'badge b-genre';
-    sp.textContent = g;
+    sp.textContent = _gen(g);
     egEl.appendChild(sp);
   });
 
@@ -4201,7 +4206,7 @@ async function pedirQueVeo() {
     const meta = [];
     if (d.episodios_restantes != null) meta.push(`${d.episodios_restantes} eps restantes`);
     if (d.tiempo_estimado_min) meta.push(`~${d.tiempo_estimado_min} min`);
-    if (a.genero) meta.push(a.genero.split(',').slice(0, 3).join(', '));
+    if (a.genero) meta.push(a.genero.split(',').slice(0, 3).map(g => _gen(g.trim())).join(', '));
     document.getElementById('qv-meta').textContent = meta.join(' · ');
   } catch(e) { toast(T('conn_error'), 'err'); }
 }

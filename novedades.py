@@ -13,6 +13,16 @@ from __future__ import annotations
 # pasos (opcional): frases cortas → «Cómo empezar», numeradas.
 NOVEDADES: list[dict] = [
     {
+        "version": "2.18.5",
+        "titulo": "Géneros en tu idioma",
+        "puntos": [
+            {"icono": "🎭", "titulo": "Géneros traducidos",
+             "texto": "Acción, Comedia, Recuentos de la vida…: los géneros salen en tu idioma en la lista, en Estadísticas (anime, manga y series y pelis), en Novedades y en Recomendados."},
+            {"icono": "✨", "titulo": "«Mi año en anime», más claro",
+             "texto": "Si ya ibas avanzado en un anime cuando empezaste a usar Miraru, ahora dice «vas por el ep 21»: este año solo cuentan los episodios que marcaste tú. Y los títulos largos ya no se montan en la imagen."},
+        ],
+    },
+    {
         "version": "2.18.4",
         "titulo": "Tu año en anime, para stories",
         "puntos": [

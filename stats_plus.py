@@ -13,6 +13,7 @@ from collections import Counter
 
 import animeav1_sync
 import database as db
+import generos
 
 MIN_POR_EP = 24
 DIAS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
@@ -126,7 +127,7 @@ def avanzadas() -> dict:
     for n in recientes:
         for g in (por_nombre.get(n, {}).get("genero") or "").split(","):
             if g.strip():
-                gen[g.strip()] += 1
+                gen[generos.nombre(g)] += 1
     return {**h,
             "mes_actual": mes, "mes_anterior": mes_ant,
             "genero_reciente": gen.most_common(1)[0][0] if gen else "",

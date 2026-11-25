@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.18.5 — Géneros en tu idioma y «Mi año en anime» más claro
+
+- **Géneros traducidos** (`generos.py`): las fuentes los dan en inglés y se guardan así (filtros y
+  recomendaciones no cambian); se traducen al enseñarlos en `/api/stats`, `/api/stats/biblioteca`
+  (manga, series y pelis), `/api/stats/wrapped`, «Tus hábitos», Recomendados (`generos_base`) y, con
+  el mapa `generos` de `/api/lang`, en las tarjetas de la lista y en Novedades.
+- **«Mi año en anime»**: `vistos_anio[].vas_por` (episodios_vistos) → «7 episodios este año · vas por
+  el ep 21» cuando lo anterior entró al importar (sin fecha); el aviso de «pocos datos» sale también
+  si ese hueco suma ≥ 10 episodios. **Arreglo**: en la imagen, los títulos de 2 líneas se montaban con
+  «N eps» (las líneas se medían otra vez con la letra pequeña).
+
 ## v2.18.4 — «Mi año en anime» para stories, valorar en la Store y extensión para tiendas (extensión 1.11.1)
 
 - **«Mi año en anime» para stories**: botón «📱 Para stories» que baja la tarjeta en 1080×1920
