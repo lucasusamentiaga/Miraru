@@ -1982,8 +1982,12 @@ def saga_casa_con(q: str, entradas: list[dict]) -> bool:
             ws = re.findall(r"\w+", str(t).casefold())
             titulos.update(w for w in ws if len(w) >= 2)
             titulos.add("".join(w[0] for w in ws))      # siglas: "aot", "snk"
-    return any(p in titulos or difflib.get_close_matches(p, titulos, n=1, cutoff=0.75)
-               for p in palabras)
+    aciertos = sum(1 for p in palabras
+                   if p in titulos or difflib.get_close_matches(p, titulos, n=1, cutoff=0.75))
+    # v2.18.6: con títulos largos no basta una palabra suelta («saki» dentro de
+    # «Tenkou-saki no Seiso…» casaba con la saga de «Saki»).
+    hacen_falta = 1 if len(palabras) < 4 else max(2, -(-len(palabras) * 3 // 10))
+    return aciertos >= hacen_falta
 
 
 _FORMATOS_SERIE = ("TV", "TV_SHORT", "ONA")
@@ -2164,6 +2168,19 @@ _TIMEOUT_BUSQUEDA_TOTAL = 30
 _TIMEOUT_BUSQUEDA_MULTI = 15
 
 
+def _es_trozo(consulta: str, r) -> bool:
+    """v2.18.6: ¿el resultado es solo un trozo del título buscado? Con
+    «Tenkou-saki no Seiso Karen na Bishoujo ga, …» una fuente devolvía «Saki»
+    (la palabra «saki» está dentro) y se añadía ese anime. Solo cuenta con
+    búsquedas largas: con «Shingeki no Kyojin» → «Attack on Titan» no aplica."""
+    palabras = [w for w in re.findall(r"\w+", consulta.casefold()) if len(w) >= 3]
+    if len(palabras) < 4:
+        return False
+    kq = db.clave_nombre(consulta)
+    kr = db.clave_nombre(getattr(r, "nombre", "") or "")
+    return bool(kr) and kr in kq and len(kr) < 0.35 * len(kq)
+
+
 async def _buscar_con_fallback(nombre: str, fuente_pref: str) -> tuple[Optional[AnimeData], str]:
     """v2: prueba la fuente preferida primero; si falla, lanza las demás en paralelo
     y se queda con la primera que devuelva resultado. Antes era serial → hasta 80s."""
@@ -2186,8 +2203,11 @@ async def _buscar_con_fallback(nombre: str, fuente_pref: str) -> tuple[Optional[
             _sync_log.warning("La fuente preferida %r no respondió a tiempo", fuente_pref)
         except Exception as e:
             _sync_log.warning("La fuente preferida %r falló: %s", fuente_pref, e)
-        if r:
+        if r and not _es_trozo(nombre, r):
             return await _rellenar_huecos(r, nombre, fuente_pref), fuente_pref
+        reserva = (r, fuente_pref) if r else None      # solo si nada mejor aparece
+    else:
+        reserva = None
     # Resto en paralelo, devolver el primero válido.
     # NB: run_in_executor devuelve un Future (no una corutina), así que se usa
     # asyncio.ensure_future —NO create_task, que exige corutina y lanzaba
@@ -2217,6 +2237,9 @@ async def _buscar_con_fallback(nombre: str, fuente_pref: str) -> tuple[Optional[
                     r = task.result()
                 except Exception:
                     r = None
+                if r and _es_trozo(nombre, r):
+                    reserva = reserva or (r, fuente)
+                    continue
                 if r:
                     return await _rellenar_huecos(r, nombre, fuente), fuente
     finally:
@@ -2224,6 +2247,8 @@ async def _buscar_con_fallback(nombre: str, fuente_pref: str) -> tuple[Optional[
         # esperarlo. El hilo se libera cuando vence el timeout de su petición.
         for task in pending:
             task.cancel()
+    if reserva:
+        return await _rellenar_huecos(reserva[0], nombre, reserva[1]), reserva[1]
     return None, fuente_pref
 
 

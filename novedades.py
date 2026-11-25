@@ -13,6 +13,15 @@ from __future__ import annotations
 # pasos (opcional): frases cortas → «Cómo empezar», numeradas.
 NOVEDADES: list[dict] = [
     {
+        "version": "2.18.6",
+        "titulo": "Añadir ya no se equivoca de anime",
+        "silenciosa": True,
+        "puntos": [
+            {"icono": "🎯", "titulo": "El anime que buscas, no otro",
+             "texto": "Con títulos muy largos, al añadir podía colarse otro anime cuyo nombre era solo una palabra del título (por ejemplo «Saki»). Arreglado."},
+        ],
+    },
+    {
         "version": "2.18.5",
         "titulo": "Géneros en tu idioma",
         "puntos": [

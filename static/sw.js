@@ -46,7 +46,7 @@
 // v54 = móvil con un botón (QR con código, sin PIN ni reinicio).
 // v67 = Miraru Plus (static/plus.js).
 // v68 = Retomar (static/retomar.js) y pestañas en Estadísticas.
-const CACHE_NAME = 'miraru-v72';
+const CACHE_NAME = 'miraru-v73';
 const STATIC_ASSETS = [
   '/',
   '/app',

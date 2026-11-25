@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.18.6 — Añadir ya no se equivoca de anime con títulos largos
+
+- **Arreglo**: al añadir «Tenkou-saki no Seiso Karen na Bishoujo ga, Mukashi Danshi to Omotte Issho ni
+  Asonda Osananajimi Datta Ken» (copiado de AnimeAV1) se añadía «Saki»: AniList no lo encontraba y la
+  primera fuente de reserva que contestó (Crunchyroll) devolvió «Saki», cuyo nombre está DENTRO del
+  título. `_es_trozo()`: con búsquedas de 4+ palabras, un resultado que es solo un trozo del título
+  (< 35 % de su largo) queda de reserva y se espera a otra fuente (Kitsu lo encuentra bien).
+  `saga_casa_con()` pedía una sola palabra en común: ahora, con 4+ palabras, ≥ 2 y ≥ 30 %.
+
 ## v2.18.5 — Géneros en tu idioma y «Mi año en anime» más claro
 
 - **Géneros traducidos** (`generos.py`): las fuentes los dan en inglés y se guardan así (filtros y
