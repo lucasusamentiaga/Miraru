@@ -798,17 +798,104 @@ body.sel-mode .ac .salir{display:none}
 .sp-lrow .e{font-size:11px;color:var(--muted);flex-shrink:0}
 .sp-lrow .ir{font-size:11px;color:var(--light);font-weight:600;flex-shrink:0}
 .sp-online-h{margin:0;padding:10px 12px 2px;font-size:12.5px;font-weight:600;color:var(--muted)}
+
+/* ── v2.18.7: buscador principal ───────────────────────────────────────────
+   Es lo primero que se usa: más alto que el resto de la barra, con lupa,
+   botón de borrar y la tecla N. El buscador de la lista lleva otro icono
+   (filtrar) para que no parezcan el mismo campo. */
+.bz{position:relative;flex:1 1 320px;min-width:0;display:flex;align-items:center}
+.toolbar .bz input{flex:1;min-width:0;height:44px;padding:0 74px 0 42px;font-size:14.5px;border-radius:12px;
+  background:var(--card2);border:1px solid rgba(var(--accent-rgb),.32);
+  transition:border-color .2s cubic-bezier(.25,1,.5,1),box-shadow .2s cubic-bezier(.25,1,.5,1),background-color .2s}
+.toolbar .bz input:hover{border-color:rgba(var(--accent-rgb),.6)}
+.toolbar .bz input:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(var(--accent-rgb),.16)}
+.toolbar .bz input::placeholder{color:var(--muted);opacity:1}
+.bz-ico{position:absolute;left:14px;top:50%;width:18px;height:18px;margin-top:-9px;pointer-events:none;
+  fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;transition:stroke .2s,transform .3s cubic-bezier(.25,1,.5,1)}
+.bz:focus-within .bz-ico{stroke:var(--light);transform:scale(1.08)}
+.bz.buscando .bz-ico{animation:bzLupa 1.1s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes bzLupa{0%,100%{transform:translate(0,0)}25%{transform:translate(1.5px,-1.5px)}75%{transform:translate(-1.5px,1px)}}
+.bz-borrar{position:absolute;right:42px;top:50%;width:26px;height:26px;margin-top:-13px;display:grid;place-items:center;
+  border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer;transition:background .15s,color .15s}
+.bz-borrar svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.bz-borrar:hover{background:rgba(var(--accent-rgb),.14);color:var(--fg)}
+.bz-borrar:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.bz-borrar[hidden]{display:none}
+.bz-kbd{position:absolute;right:12px;top:50%;transform:translateY(-50%);min-width:22px;height:22px;padding:0 6px;display:grid;place-items:center;
+  font:600 11px/1 inherit;color:var(--muted);background:var(--card);border:1px solid var(--border);border-bottom-width:2px;border-radius:6px;
+  pointer-events:none;transition:opacity .15s}
+.bz:focus-within .bz-kbd{opacity:0}
+@media (max-width:640px){.bz-kbd{display:none}.toolbar .bz input{padding-right:42px}.bz-borrar{right:8px}}
+/* El de la lista: icono de filtrar dentro del campo */
+.tb2-fija > .bz-ico-filtro{left:11px;width:16px;height:16px;margin-top:-8px}
+#f-nombre{padding-left:34px}
+
+/* Desplegable: entra suave y cada fila un poco después de la anterior */
+#search-preview{border-radius:14px!important;overscroll-behavior:contain}
+#search-preview.sp-entra{animation:spEntra .22s cubic-bezier(.25,1,.5,1)}
+@keyframes spEntra{from{opacity:0;transform:translateY(-6px)}}
+#search-preview .sp-lrow,#search-preview .sp-item,#search-preview .sp-rec-chip{animation:spFila .3s cubic-bezier(.25,1,.5,1) both;animation-delay:calc(var(--i,0) * 35ms)}
+@keyframes spFila{from{opacity:0;transform:translateY(4px)}}
+#search-preview .sp-item{padding:12px 14px;gap:12px;align-items:center}
+#search-preview .sp-item img{width:48px;height:68px;border-radius:8px}
+#search-preview .sp-item .sp-title{font-size:14px}
+#search-preview .sp-item .sp-meta{font-size:11.5px}
+#search-preview .sp-item .sp-add{padding:8px 14px;font-size:12.5px;border-radius:9px}
+#search-preview .sp-item:focus-within,#search-preview .sp-lrow:focus-visible{background:rgba(var(--accent-rgb),.12)}
+
+/* Buscando… (esqueleto con la forma del resultado) */
+.sp-cargando{display:flex;gap:12px;align-items:center;padding:12px 14px}
+.sp-cargando .sk{background:linear-gradient(90deg,rgba(var(--accent-rgb),.10) 0%,rgba(var(--accent-rgb),.26) 50%,rgba(var(--accent-rgb),.10) 100%);
+  background-size:220% 100%;animation:skBarrido 1.2s linear infinite;border-radius:6px}
+.sp-cargando .sk-img{width:48px;height:68px;border-radius:8px;flex-shrink:0}
+.sp-cargando .sk-t{flex:1;display:flex;flex-direction:column;gap:7px;min-width:0}
+.sp-cargando .sk-l1{height:12px;width:58%}
+.sp-cargando .sk-l2{height:10px;width:36%}
+.sp-cargando small{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@keyframes skBarrido{from{background-position:120% 0}to{background-position:-120% 0}}
+
+/* Sin resultados */
+.sp-vacio{padding:16px 16px 14px;display:flex;gap:12px;align-items:flex-start}
+.sp-vacio .ico{width:34px;height:34px;flex-shrink:0;display:grid;place-items:center;border-radius:10px;background:rgba(var(--accent-rgb),.12)}
+.sp-vacio .ico svg{width:18px;height:18px;fill:none;stroke:var(--light);stroke-width:2;stroke-linecap:round}
+.sp-vacio b{display:block;font-size:13.5px;color:var(--fg);margin-bottom:3px;overflow-wrap:anywhere}
+.sp-vacio p{margin:0 0 10px;font-size:12px;color:var(--muted);line-height:1.5;max-width:60ch}
+
+/* Recientes (al entrar en el buscador vacío) */
+.sp-rec{padding:10px 14px 12px}
+.sp-rec-cab{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sp-rec-cab h4{margin:0;font-size:12.5px;font-weight:600;color:var(--muted)}
+.sp-rec-cab button{border:0;background:none;color:var(--muted);font:inherit;font-size:11.5px;cursor:pointer;padding:2px 4px;border-radius:5px}
+.sp-rec-cab button:hover{color:var(--fg)}
+.sp-rec-lista{display:flex;flex-wrap:wrap;gap:6px}
+.sp-rec-chip{display:inline-flex;align-items:center;gap:6px;max-width:260px;padding:6px 11px;border-radius:99px;cursor:pointer;
+  border:1px solid var(--border);background:var(--card2);color:var(--fg);font:inherit;font-size:12.5px;transition:border-color .15s,background .15s}
+.sp-rec-chip span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-rec-chip svg{width:13px;height:13px;flex-shrink:0;fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round}
+.sp-rec-chip:hover,.sp-rec-chip:focus-visible{border-color:var(--accent);background:rgba(var(--accent-rgb),.1);outline:none}
+
+/* Pie con las teclas */
+.sp-pie{display:flex;gap:14px;flex-wrap:wrap;padding:8px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);
+  background:var(--card)}
+.sp-pie kbd{font:600 10.5px/1 inherit;padding:2px 5px;margin-right:4px;border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;background:var(--card2);color:var(--fg)}
+@media (max-width:640px){.sp-pie{display:none}}
+[data-theme=light] .sp-pie{background:#fff}
+@media (prefers-reduced-motion:reduce){
+  #search-preview.sp-entra,#search-preview .sp-lrow,#search-preview .sp-item,#search-preview .sp-rec-chip,.bz.buscando .bz-ico{animation:none}
+  .sp-cargando .sk{animation:none}
+  .toolbar .bz input,.bz-ico{transition:none}
+}
 /* Twitter/X floating button */
 </style>
 <!-- Sistema visual unificado (theme.css) -->
 <link rel="stylesheet" href="/static/theme.css">
 <script src="/static/customize.js"></script>
-<script src="/static/retomar.js?v=2.18.6"></script>
-<script src="/static/novedades.js?v=2.18.6" defer></script>
-<script src="/static/selects.js?v=2.18.6" defer></script>
-<script src="/static/temporadas.js?v=2.18.6"></script>
-<script src="/static/tour.js?v=2.18.6" defer></script>
-<script src="/static/navegador.js?v=2.18.6" defer></script>
+<script src="/static/retomar.js?v=2.18.7"></script>
+<script src="/static/novedades.js?v=2.18.7" defer></script>
+<script src="/static/selects.js?v=2.18.7" defer></script>
+<script src="/static/temporadas.js?v=2.18.7"></script>
+<script src="/static/tour.js?v=2.18.7" defer></script>
+<script src="/static/navegador.js?v=2.18.7" defer></script>
 <script src="/static/i18n-dom.js" defer></script>
 <script src="/static/dialogos.js" defer></script>
 </head>
@@ -1327,10 +1414,19 @@ fetch('/api/version').then(r => r.json()).then(d => {
 <!-- Toolbar: búsqueda + filtros -->
 <div id="app-retomar" style="max-width:1400px;margin:10px auto 0;padding:0 20px"></div>
 <div class="toolbar">
-  <input id="inp-nombre" type="text" placeholder="Nombre del anime o pega una URL…"
-         autocomplete="off"
-         oninput="autocompletar(this.value); detectarURL(this.value)"
-         onkeydown="if(event.key==='Enter'){cerrarAutocomplete();previsualizarAnime()}">
+  <!-- v2.18.7: buscador principal con lupa, borrar, atajo y estados (buscando / sin resultados / recientes) -->
+  <div class="bz" id="bz">
+    <svg class="bz-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+    <input id="inp-nombre" type="text" placeholder="Busca un anime para añadirlo o pega su enlace…"
+           autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"
+           aria-controls="search-preview" aria-expanded="false"
+           oninput="autocompletar(this.value); detectarURL(this.value); _bzEstado()"
+           onfocus="_bzFoco()"
+           onkeydown="_bzTecla(event)">
+    <button type="button" class="bz-borrar" id="bz-borrar" hidden onclick="_bzBorrar()" aria-label="Borrar" title="Borrar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg></button>
+    <kbd class="bz-kbd" id="bz-kbd" title="Pulsa N para buscar desde cualquier sitio">N</kbd>
+  </div>
   <span id="url-badge" style="display:none;align-self:center;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.4);color:var(--light);padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600">🔗 URL detectada</span>
   <!-- v2.16.2: la fuente la elige Miraru por detrás (no se enseña) -->
   <select id="inp-fuente" data-nativo hidden>
@@ -1349,6 +1445,7 @@ fetch('/api/version').then(r => r.json()).then(d => {
 </div>
 <div class="toolbar" id="tb2" style="border-top:none;padding-top:6px">
   <div class="tb2-fija" style="position:relative;flex:1;min-width:150px">
+  <svg class="bz-ico bz-ico-filtro" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
   <input id="f-nombre" type="text"
          placeholder="Buscar… (operadores: genre:action eps:>20 year:2024 fav:1)"
          title="Operadores: genre:|genero:, status:|estado:, list:|lista:, eps:OP N, score:OP N, year:|año:, fav:1/0. Ej: genre:action eps:>20"
@@ -2741,6 +2838,7 @@ function _yaEnLista(nombre, tipo) {
 // ── Añadir directo (sin preview) ─────────────────────────────────────────────
 async function agregarDirecto() {
   const nombre = document.getElementById('inp-nombre').value.trim();
+  _guardarReciente(nombre);
   const fuente = document.getElementById('inp-fuente').value;
   if (!nombre) return;
 
@@ -4367,9 +4465,11 @@ function autocompletar(q) {
   _acTimer = setTimeout(() => {
     const sp = document.getElementById('search-preview');
     if (!sp) return;
+    if ((q || '').trim().length < 2) { sp.querySelector('.sp-local')?.remove(); return; }
+    sp.querySelector('.sp-rec')?.remove();
     const n = _pintarLocales(sp, q);
-    if (n) { _anclarPreview(sp); sp.style.display = 'block'; }
-    else if (!sp.querySelector('.sp-item')) cerrarPreview();
+    if (n) { _spPie(sp); _mostrarPreview(sp); }
+    else if (!sp.querySelector('.sp-item, .sp-cargando, .sp-vacio')) cerrarPreview();
   }, 120);
 }
 function cerrarAutocomplete() { /* v2.16: ya no hay desplegable aparte */ }
@@ -5029,20 +5129,165 @@ function closeCommandPalette() {
 
 // ── Search preview ───────────────────────────────────────────────────────────
 let _spTimer = null;
+let _spSeq = 0;               // v2.18.7: una respuesta lenta ya no pisa a la de lo último que escribiste
 const searchInput = document.getElementById('inp-nombre');
 if (searchInput) {
   searchInput.addEventListener('input', () => {
     clearTimeout(_spTimer);
     const q = searchInput.value.trim();
-    if (q.length < 3) { cerrarPreview(); return; }
+    _spSeq++;
+    if (q.length < 3) {
+      const sp = document.getElementById('search-preview');
+      sp?.querySelectorAll('.sp-cargando, .sp-vacio, .sp-item, .sp-online-h, .sp-saga, .sp-saga-lista').forEach(e => e.remove());
+      _bzBuscando(false);
+      if (!q) _bzFoco(); else if (sp && !sp.querySelector('.sp-local')) cerrarPreview();
+      return;
+    }
+    _spCargando(q);
     _spTimer = setTimeout(() => buscarPreview(q), 400);
   });
 }
 
 function cerrarPreview() {
   const sp = document.getElementById('search-preview');
-  if (sp) { sp.style.display = 'none'; sp.innerHTML = ''; }
+  if (sp) { sp.style.display = 'none'; sp.innerHTML = ''; sp.classList.remove('sp-entra'); }
+  document.getElementById('inp-nombre')?.setAttribute('aria-expanded', 'false');
+  _bzBuscando(false);
 }
+
+// ── v2.18.7: el buscador principal, más claro y vivo ────────────────────────
+const _SVG = (d, extra = '') => `<svg viewBox="0 0 24 24" aria-hidden="true"${extra}>${d}</svg>`;
+function _mostrarPreview(sp) {
+  _anclarPreview(sp);
+  const estaba = sp.style.display === 'block';
+  sp.style.display = 'block';
+  if (!estaba) { sp.classList.remove('sp-entra'); void sp.offsetWidth; sp.classList.add('sp-entra'); }
+  sp.querySelectorAll('.sp-lrow, .sp-item, .sp-rec-chip').forEach((el, i) => el.style.setProperty('--i', Math.min(i, 8)));
+  document.getElementById('inp-nombre')?.setAttribute('aria-expanded', 'true');
+}
+function _bzBuscando(si) { document.getElementById('bz')?.classList.toggle('buscando', !!si); }
+function _bzEstado() {
+  const v = document.getElementById('inp-nombre')?.value || '';
+  const b = document.getElementById('bz-borrar'); if (b) b.hidden = !v;
+}
+function _bzBorrar() {
+  const i = document.getElementById('inp-nombre'); if (!i) return;
+  i.value = ''; i.dispatchEvent(new Event('input')); detectarURL(''); _bzEstado(); i.focus();
+}
+// Lo que vas buscando se recuerda (solo en este navegador) para repetirlo con un toque.
+const _REC_K = 'miraru_busquedas';
+function _recientes() {
+  try { const v = JSON.parse(localStorage.getItem(_REC_K + '_' + TIPO) || '[]'); return Array.isArray(v) ? v.filter(x => typeof x === 'string') : []; }
+  catch (_) { return []; }
+}
+function _guardarReciente(t) {
+  t = (t || '').trim();
+  if (t.length < 2 || /^https?:\/\//i.test(t)) return;
+  const k = _claveTxt(t);
+  const v = [t, ..._recientes().filter(x => _claveTxt(x) !== k)].slice(0, 6);
+  try { localStorage.setItem(_REC_K + '_' + TIPO, JSON.stringify(v)); } catch (_) {}
+}
+function _bzFoco() {
+  const i = document.getElementById('inp-nombre'), sp = document.getElementById('search-preview');
+  if (!i || !sp) return;
+  // Volver al buscador con algo escrito: vuelve a enseñar lo que había.
+  if (i.value.trim()) { if (sp.style.display !== 'block') { i.dispatchEvent(new Event('input')); autocompletar(i.value); } return; }
+  const rec = _recientes();
+  if (!rec.length) { cerrarPreview(); return; }
+  sp.innerHTML = '';
+  const caja = document.createElement('div'); caja.className = 'sp-rec';
+  const cab = document.createElement('div'); cab.className = 'sp-rec-cab';
+  const h = document.createElement('h4'); h.textContent = _tr('Búsquedas recientes');
+  const borrar = document.createElement('button'); borrar.type = 'button'; borrar.textContent = _tr('Borrar');
+  borrar.onmousedown = e => e.preventDefault();
+  borrar.onclick = () => { try { localStorage.removeItem(_REC_K + '_' + TIPO); } catch (_) {} cerrarPreview(); i.focus(); };
+  cab.append(h, borrar);
+  const lista = document.createElement('div'); lista.className = 'sp-rec-lista';
+  rec.forEach(t => {
+    const c = document.createElement('button'); c.type = 'button'; c.className = 'sp-rec-chip';
+    c.innerHTML = _SVG('<path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="8.5"/>');
+    const sp_ = document.createElement('span'); sp_.textContent = t; sp_.setAttribute('data-no-i18n', ''); c.appendChild(sp_);
+    c.onmousedown = e => e.preventDefault();
+    c.onclick = () => { i.value = t; i.dispatchEvent(new Event('input')); autocompletar(t); _bzEstado(); i.focus(); };
+    lista.appendChild(c);
+  });
+  caja.append(cab, lista);
+  sp.appendChild(caja);
+  _mostrarPreview(sp);
+}
+function _spPie(sp) {
+  sp.querySelector('.sp-pie')?.remove();
+  const p = document.createElement('div'); p.className = 'sp-pie';
+  p.innerHTML = '<span><kbd>↑</kbd><kbd>↓</kbd><b></b></span><span><kbd>Enter</kbd><b></b></span><span><kbd>Esc</kbd><b></b></span>';
+  const t = [_tr('moverte'), _tr('ver todas las opciones'), _tr('cerrar')];
+  p.querySelectorAll('b').forEach((b, k) => { b.style.fontWeight = '400'; b.textContent = t[k]; });
+  sp.appendChild(p);
+}
+function _spCargando(q) {
+  const sp = document.getElementById('search-preview'); if (!sp) return;
+  sp.querySelectorAll('.sp-rec, .sp-vacio, .sp-item, .sp-online-h, .sp-saga, .sp-saga-lista').forEach(e => e.remove());
+  let c = sp.querySelector('.sp-cargando');
+  if (!c) {
+    c = document.createElement('div'); c.className = 'sp-cargando'; c.setAttribute('role', 'status');
+    c.innerHTML = '<span class="sk sk-img"></span><span class="sk-t"><span class="sk sk-l1"></span><span class="sk sk-l2"></span><small></small></span>';
+    sp.querySelector('.sp-pie') ? sp.insertBefore(c, sp.querySelector('.sp-pie')) : sp.appendChild(c);
+  }
+  c.querySelector('small').textContent = _tr('Buscando en internet…');
+  // Si algún sitio tarda en contestar, que se note que sigue trabajando.
+  const seq = _spSeq;
+  setTimeout(() => { const cc = seq === _spSeq && sp.querySelector('.sp-cargando small');
+                     if (cc) cc.textContent = _tr('Sigue buscando, a veces tarda un poco…'); }, 7000);
+  _bzBuscando(true);
+  _spPie(sp);
+  _mostrarPreview(sp);
+}
+function _spVacio(sp, q) {
+  sp.querySelector('.sp-cargando')?.remove();
+  const v = document.createElement('div'); v.className = 'sp-vacio';
+  v.innerHTML = '<span class="ico">' + _SVG('<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5M8.5 11h5"/>') + '</span><div><b></b><p></p></div>';
+  v.querySelector('b').textContent = _tr('No he encontrado') + ' «' + q + '»';
+  v.querySelector('p').textContent = _tr('Prueba con el título en japonés o en inglés, o pega el enlace de la página donde lo ves.');
+  const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'sp-saga-btn prim';
+  btn.textContent = _tr('Ver más opciones');
+  btn.onmousedown = e => e.preventDefault();
+  btn.onclick = () => { cerrarPreview(); previsualizarAnime(); };
+  v.querySelector('div').appendChild(btn);
+  sp.querySelector('.sp-local') ? sp.querySelector('.sp-local').after(v) : sp.prepend(v);
+  _spPie(sp);
+  _mostrarPreview(sp);
+}
+// Teclado: ↓ entra en la lista, ↑/↓ se mueven por lo que se puede pulsar, Esc cierra.
+function _spFocos(sp) {
+  return [...sp.querySelectorAll('button:not(:disabled), [tabindex="0"]')].filter(e => e.offsetParent !== null);
+}
+function _bzTecla(e) {
+  const sp = document.getElementById('search-preview');
+  if (e.key === 'Enter') { e.preventDefault(); cerrarAutocomplete(); _guardarReciente(e.target.value); previsualizarAnime(); return; }
+  if (e.key === 'Escape') { if (sp && sp.style.display === 'block') { e.preventDefault(); e.stopPropagation(); cerrarPreview(); } return; }
+  if (e.key === 'ArrowDown' && sp && sp.style.display === 'block') {
+    const f = _spFocos(sp); if (f.length) { e.preventDefault(); f[0].focus(); }
+  }
+}
+document.getElementById('search-preview')?.addEventListener('keydown', e => {
+  const sp = e.currentTarget;
+  if (!['ArrowDown', 'ArrowUp', 'Escape'].includes(e.key)) return;
+  const inp = document.getElementById('inp-nombre');
+  if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cerrarPreview(); inp?.focus(); return; }
+  const f = _spFocos(sp), k = f.indexOf(document.activeElement);
+  e.preventDefault();
+  if (e.key === 'ArrowUp' && k <= 0) { inp?.focus(); return; }
+  f[Math.max(0, Math.min(f.length - 1, k + (e.key === 'ArrowDown' ? 1 : -1)))]?.focus();
+  document.activeElement?.scrollIntoView({block: 'nearest'});
+});
+// El pie con las teclas siempre al final (la saga se pinta después y se ponía debajo).
+(() => {
+  const sp = document.getElementById('search-preview');
+  if (!sp || !window.MutationObserver) return;
+  new MutationObserver(() => {
+    const pie = sp.querySelector(':scope > .sp-pie');
+    if (pie && pie !== sp.lastElementChild) sp.appendChild(pie);
+  }).observe(sp, {childList: true});
+})();
 
 async function buscarPreview(q) {
   const sp = document.getElementById('search-preview');
@@ -5050,17 +5295,22 @@ async function buscarPreview(q) {
   const fuente = document.getElementById('inp-fuente')?.value || 'anilist';
   // v2.16.2: con «📖 Manga» elegido se busca y se añade manga (antes salía anime).
   const tipo = TIPO;
+  const seq = _spSeq;
+  const vigente = () => seq === _spSeq && (document.getElementById('inp-nombre')?.value.trim() === q);
   try {
     const r = await fetch(tipo === 'manga' ? '/api/buscar/manga' : '/api/buscar', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({nombre: q, fuente, tipo})
     });
-    if (!r.ok) { cerrarPreview(); return; }
-    const d = await r.json();
+    if (!vigente()) return;
+    _bzBuscando(false);
+    const d = r.ok ? await r.json() : {};
+    if (!vigente()) return;
     // /api/buscar devuelve un único resultado: {ok, data, fuente_usada}
-    if (!d.ok || !d.data) { cerrarPreview(); return; }
+    if (!d.ok || !d.data) { _spVacio(sp, q); return; }
     const items = [d.data];
     sp.innerHTML = '';
+    sp.classList.add('sp-entra');
     items.slice(0, 6).forEach(a => {
       const item = document.createElement('div');
       item.className = 'sp-item';
@@ -5100,6 +5350,7 @@ async function buscarPreview(q) {
           });
           const d2 = await r2.json();
           if (r2.ok) {
+            _guardarReciente(q);
             toast(T('added_ok', {name: a.nombre, src: fuente}));
             cerrarPreview();
             searchInput.value = '';
@@ -5123,12 +5374,12 @@ async function buscarPreview(q) {
     }
     _pintarLocales(sp, q);
     _quitarRepetido(sp);
-    _anclarPreview(sp);
-    sp.style.display = 'block';
+    _spPie(sp);
+    _mostrarPreview(sp);
     // v2.13: la búsqueda solo daba la primera temporada. Ahora se busca toda
     // la saga en AniList y se ofrece añadirla de golpe.
     if (!MODO_MANGA) _sagaPreview(q, sp);
-  } catch(_) { cerrarPreview(); }
+  } catch(_) { if (vigente()) _spVacio(sp, q); }
 }
 
 const _claveTxt = t => (t || '').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
@@ -5362,7 +5613,7 @@ async function completarSaga(fq) {
 // Close preview on outside click
 document.addEventListener('click', e => {
   const sp = document.getElementById('search-preview');
-  if (sp && !sp.contains(e.target) && e.target.id !== 'inp-nombre') cerrarPreview();
+  if (sp && !sp.contains(e.target) && !e.target.closest?.('#bz')) cerrarPreview();
 });
 
 // ── Table/Grid toggle ─────────────────────────────────────────────────────────

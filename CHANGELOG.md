@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.18.7 — Buscador principal más claro y vivo
+
+- **Buscador para añadir** (`#bz`): 44 px de alto, lupa, botón borrar, tecla `N` visible; placeholder
+  «Busca un anime para añadirlo o pega su enlace…». El de la lista pasa a «Filtrar mi lista…» con icono de filtro.
+- **Estados del desplegable**: esqueleto «Buscando en internet…» (a los 7 s «Sigue buscando…»), «No he
+  encontrado…» con consejo y botón «Ver más opciones» (antes se cerraba sin decir nada), pie con teclas.
+- **Recientes**: hasta 6 por apartado en `localStorage` (`miraru_busquedas_<tipo>`), al entrar vacío.
+- **Teclado**: ↓ entra en los resultados, ↑/↓ se mueven, Esc cierra y vuelve al campo. `role=combobox` + `aria-expanded`.
+- **Arreglo**: una respuesta lenta ya no pisa la de lo último escrito (`_spSeq`); clic en borrar ya no cierra el desplegable.
+- Entrada del desplegable y filas escalonadas; todo con `prefers-reduced-motion`.
+
 ## v2.18.6 — Añadir ya no se equivoca de anime con títulos largos
 
 - **Arreglo**: al añadir «Tenkou-saki no Seiso Karen na Bishoujo ga, Mukashi Danshi to Omotte Issho ni

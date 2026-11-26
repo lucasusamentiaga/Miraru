@@ -13,6 +13,18 @@ from __future__ import annotations
 # pasos (opcional): frases cortas → «Cómo empezar», numeradas.
 NOVEDADES: list[dict] = [
     {
+        "version": "2.18.7",
+        "titulo": "Buscar y añadir, más fácil",
+        "puntos": [
+            {"icono": "🔍", "titulo": "Un buscador que se entiende",
+             "texto": "El buscador para añadir es más grande, con lupa y botón de borrar, y ya no se confunde con el de filtrar tu lista. Pulsa N desde cualquier sitio para ir a él."},
+            {"icono": "⚡", "titulo": "Ves lo que pasa mientras buscas",
+             "texto": "Mientras busca en internet lo dice; si no encuentra nada, te explica qué probar. Con ↑ ↓ te mueves por los resultados y Enter abre todas las opciones."},
+            {"icono": "🕘", "titulo": "Búsquedas recientes",
+             "texto": "Al entrar en el buscador vacío salen tus últimas búsquedas para repetirlas con un toque."},
+        ],
+    },
+    {
         "version": "2.18.6",
         "titulo": "Añadir ya no se equivoca de anime",
         "silenciosa": True,
